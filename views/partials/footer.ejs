@@ -1,0 +1,33 @@
+  </div><!-- Fin del contenedor principal -->
+  
+  <footer class="footer bg-light py-3 mt-auto">
+    <div class="container">
+      <div class="text-muted text-center">
+        &copy; <%= new Date().getFullYear() %> Sistema Carlini - Gestión de Órdenes de Compra y Pago
+      </div>
+    </div>
+  </footer>
+  
+  <script>
+    // Inicializar componentes comunes
+    $(document).ready(function() {
+      // Inicializar Select2
+      $('.select2').select2({
+        theme: 'bootstrap-5'
+      });
+      
+      // Inicializar Flatpickr (selector de fechas)
+      $(".datepicker").flatpickr({
+        locale: "es",
+        dateFormat: "Y-m-d",
+        allowInput: true
+      });
+      
+      // Cerrar automáticamente las alertas después de 5 segundos
+      setTimeout(function() {
+        $('.alert-success').alert('close');
+      }, 5000);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+/* Estilos generales */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.container {
+  flex: 1;
+}
+
+.footer {
+  margin-top: auto;
+}
+
+/* Estilos de tablas */
+.table-responsive {
+  overflow-x: auto;
+}
+
+.table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(13, 110, 253, 0.05);
+}
+
+/* Estados de órdenes */
+.badge.bg-borrador {
+  background-color: #6c757d;
+}
+
+.badge.bg-esperando_aprobacion {
+  background-color: #fd7e14;
+}
+
+.badge.bg-aprobado {
+  background-color: #198754;
+}
+
+.badge.bg-rechazado {
+  background-color: #dc3545;
+}
+
+.badge.bg-pendiente {
+  background-color: #0dcaf0;
+}
+
+.badge.bg-parcial {
+  background-color: #6610f2;
+}
+
+.badge.bg-total {
+  background-color: #20c997;
+}
+
+/* Estilos de cards */
+.card {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  margin-bottom: 1.5rem;
+}
+
+.card-header {
+  font-weight: 500;
+}
+
+/* Estilos de formularios */
+.form-label {
+  font-weight: 500;
+}
+
+.required-field::after {
+  content: " *";
+  color: #dc3545;
+}
+
+/* Estilos para Select2 */
+.select2-container--bootstrap-5 .select2-selection {
+  min-height: 38px;
+}
+
+/* Progress bars */
+.progress {
+  height: 20px;
+  margin-bottom: 1rem;
+}
+
+.progress-bar {
+  line-height: 20px;
+  font-weight: 600;
+}
+
+/* Botones de acción en tablas */
+.btn-action {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+/* Dashboard */
+.dashboard-stats .card {
+  transition: transform 0.2s;
+}
+
+.dashboard-stats .card:hover {
+  transform: translateY(-5px);
+}
+
+.dashboard-stats .card-title {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.dashboard-stats .stats-number {
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.dashboard-stats .stats-icon {
+  font-size: 2.5rem;
+  opacity: 0.7;
+}

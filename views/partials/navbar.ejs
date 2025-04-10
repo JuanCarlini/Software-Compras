@@ -1,0 +1,128 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <i class="bi bi-building me-2"></i>
+      Sistema Carlini
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link <%= locals.activeLink === 'home' ? 'active' : '' %>" href="/">
+            <i class="bi bi-house me-1"></i> Inicio
+          </a>
+        </li>
+        
+        <!-- Órdenes de Compra -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle <%= locals.activeLink === 'ordenes-compra' ? 'active' : '' %>" href="#" id="navbarDropdown1" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-cart me-1"></i> Órdenes de Compra
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="navbarDropdown1">
+            <li>
+              <a class="dropdown-item" href="/ordenes-compra">
+                <i class="bi bi-list me-1"></i> Listar Órdenes
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/ordenes-compra/create">
+                <i class="bi bi-plus-circle me-1"></i> Nueva Orden
+              </a>
+            </li>
+            <% if (locals.user && (locals.user.rol === 'admin' || locals.user.rol === 'aprobador')) { %>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item" href="/ordenes-compra/pendientes-aprobacion">
+                <i class="bi bi-check-circle me-1"></i> Pendientes de Aprobación
+              </a>
+            </li>
+            <% } %>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item" href="/ordenes-compra/pendientes">
+                <i class="bi bi-clipboard-data me-1"></i> Reporte de Pendientes
+              </a>
+            </li>
+          </ul>
+        </li>
+        
+        <!-- Órdenes de Pago -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle <%= locals.activeLink === 'ordenes-pago' ? 'active' : '' %>" href="#" id="navbarDropdown2" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-cash-coin me-1"></i> Órdenes de Pago
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="navbarDropdown2">
+            <li>
+              <a class="dropdown-item" href="/ordenes-pago">
+                <i class="bi bi-list me-1"></i> Listar Pagos
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/ordenes-pago/select-proveedor">
+                <i class="bi bi-plus-circle me-1"></i> Nuevo Pago
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item" href="/ordenes-pago/reporte">
+                <i class="bi bi-clipboard-data me-1"></i> Reporte de Pagos
+              </a>
+            </li>
+          </ul>
+        </li>
+        
+        <% if (locals.user && locals.user.rol === 'admin') { %>
+        <!-- Administración (Solo para admins) -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle <%= locals.activeLink === 'admin' ? 'active' : '' %>" href="#" id="navbarDropdownAdmin" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-gear me-1"></i> Administración
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="navbarDropdownAdmin">
+            <li>
+              <a class="dropdown-item" href="/usuarios">
+                <i class="bi bi-people me-1"></i> Usuarios
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/proveedores">
+                <i class="bi bi-building me-1"></i> Proveedores
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/cajas">
+                <i class="bi bi-safe me-1"></i> Cajas
+              </a>
+            </li>
+          </ul>
+        </li>
+        <% } %>
+      </ul>
+      
+      <% if (locals.user) { %>
+      <ul class="navbar-nav">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-person-circle me-1"></i> <%= locals.user.nombre %>
+            <span class="badge bg-light text-dark ms-1"><%= locals.user.rol %></span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+            <li>
+              <a class="dropdown-item" href="/auth/change-password">
+                <i class="bi bi-key me-1"></i> Cambiar Contraseña
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item" href="/auth/logout">
+                <i class="bi bi-box-arrow-right me-1"></i> Cerrar Sesión
+              </a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+      <% } %>
+    </div>
+  </div>
+</nav>

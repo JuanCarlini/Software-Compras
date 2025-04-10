@@ -1,0 +1,321 @@
+<%- include('partials/header', { activeLink: 'home' }) %>
+
+<div class="row mb-4">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="card-title">
+          <i class="bi bi-speedometer2 me-2"></i> Panel de Control
+        </h2>
+        <h5 class="text-muted">Bienvenido, <%= user.nombre %></h5>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="row dashboard-stats mb-4">
+  <div class="col-md-3 col-sm-6 mb-3">
+    <div class="card bg-light">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h5 class="card-title">Total Órdenes</h5>
+            <div class="stats-number"><%= ordenesStats.total %></div>
+          </div>
+          <div class="stats-icon text-primary">
+            <i class="bi bi-cart4"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3 col-sm-6 mb-3">
+    <div class="card bg-light">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h5 class="card-title">Pendientes Aprobación</h5>
+            <div class="stats-number"><%= ordenesStats.esperando_aprobacion %></div>
+          </div>
+          <div class="stats-icon text-warning">
+            <i class="bi bi-hourglass-split"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3 col-sm-6 mb-3">
+    <div class="card bg-light">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h5 class="card-title">Órdenes Aprobadas</h5>
+            <div class="stats-number"><%= ordenesStats.aprobado %></div>
+          </div>
+          <div class="stats-icon text-success">
+            <i class="bi bi-check-circle"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3 col-sm-6 mb-3">
+    <div class="card bg-light">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h5 class="card-title">Pendientes de Pago</h5>
+            <div class="stats-number"><%= ordenesStats.pendiente_pago + ordenesStats.parcial_pago %></div>
+          </div>
+          <div class="stats-icon text-danger">
+            <i class="bi bi-cash-coin"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Órdenes Pendientes de Aprobación -->
+  <% if (user.rol === 'admin' || user.rol === 'aprobador') { %>
+  <div class="col-lg-6 mb-4">
+    <div class="card h-100">
+      <div class="card-header bg-warning text-white">
+        <h5 class="card-title mb-0">
+          <i class="bi bi-hourglass-split me-2"></i> Órdenes Pendientes de Aprobación
+        </h5>
+      </div>
+      <div class="card-body">
+        <% if (ordenesPendientesAprobacion.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Número</th>
+                  <th>Proveedor</th>
+                  <th>Monto</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% ordenesPendientesAprobacion.forEach(orden => { %>
+                <tr>
+                  <td><%= orden.numero %></td>
+                  <td><%= orden.proveedor_nombre %></td>
+                  <td><%= orden.moneda === 'peso' ? '$' : 'USD' %> <%= orden.monto_total.toFixed(2) %></td>
+                  <td>
+                    <a href="/ordenes-compra/<%= orden.id %>" class="btn btn-sm btn-primary">
+                      <i class="bi bi-eye"></i> Ver
+                    </a>
+                  </td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <div class="text-center mt-3">
+            <a href="/ordenes-compra/pendientes-aprobacion" class="btn btn-outline-warning">
+              <i class="bi bi-list-check me-1"></i> Ver Todas
+            </a>
+          </div>
+        <% } else { %>
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i> No hay órdenes pendientes de aprobación.
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  <% } %>
+  
+  <!-- Cajas (solo admin) -->
+  <% if (user.rol === 'admin' && cajas.length > 0) { %>
+  <div class="col-lg-6 mb-4">
+    <div class="card h-100">
+      <div class="card-header bg-success text-white">
+        <h5 class="card-title mb-0">
+          <i class="bi bi-safe me-2"></i> Estado de Cajas
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Moneda</th>
+                <th>Saldo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% cajas.forEach(caja => { %>
+              <tr>
+                <td><%= caja.nombre %></td>
+                <td><%= caja.moneda === 'peso' ? 'Pesos' : 'Dólares' %></td>
+                <td><strong><%= caja.moneda === 'peso' ? '$' : 'USD' %> <%= caja.saldo.toFixed(2) %></strong></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <div class="text-center mt-3">
+          <a href="/cajas" class="btn btn-outline-success">
+            <i class="bi bi-safe me-1"></i> Gestionar Cajas
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% } %>
+  
+  <!-- Últimas Órdenes de Compra -->
+  <div class="col-lg-6 mb-4">
+    <div class="card h-100">
+      <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">
+          <i class="bi bi-cart4 me-2"></i> Últimas Órdenes de Compra
+        </h5>
+      </div>
+      <div class="card-body">
+        <% if (ultimasOrdenes.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Número</th>
+                  <th>Proveedor</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% ultimasOrdenes.forEach(orden => { %>
+                <tr>
+                  <td><%= orden.numero %></td>
+                  <td><%= orden.proveedor_nombre %></td>
+                  <td>
+                    <span class="badge bg-<%= orden.estado %>">
+                      <%= {
+                        'borrador': 'Borrador',
+                        'esperando_aprobacion': 'Esperando Aprobación',
+                        'aprobado': 'Aprobado',
+                        'rechazado': 'Rechazado'
+                      }[orden.estado] %>
+                    </span>
+                  </td>
+                  <td>
+                    <a href="/ordenes-compra/<%= orden.id %>" class="btn btn-sm btn-primary">
+                      <i class="bi bi-eye"></i> Ver
+                    </a>
+                  </td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <div class="text-center mt-3">
+            <a href="/ordenes-compra" class="btn btn-outline-primary">
+              <i class="bi bi-list me-1"></i> Ver Todas
+            </a>
+          </div>
+        <% } else { %>
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i> No hay órdenes de compra recientes.
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Últimos Pagos -->
+  <div class="col-lg-6 mb-4">
+    <div class="card h-100">
+      <div class="card-header bg-info text-white">
+        <h5 class="card-title mb-0">
+          <i class="bi bi-cash-coin me-2"></i> Últimos Pagos Realizados
+        </h5>
+      </div>
+      <div class="card-body">
+        <% if (ultimosPagos.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Número</th>
+                  <th>Proveedor</th>
+                  <th>Monto</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% ultimosPagos.forEach(pago => { %>
+                <tr>
+                  <td><%= pago.numero %></td>
+                  <td><%= pago.proveedor_nombre %></td>
+                  <td><%= pago.caja_nombre === 'peso' ? '$' : 'USD' %> <%= pago.monto.toFixed(2) %></td>
+                  <td>
+                    <a href="/ordenes-pago/<%= pago.id %>" class="btn btn-sm btn-info">
+                      <i class="bi bi-eye"></i> Ver
+                    </a>
+                  </td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <div class="text-center mt-3">
+            <a href="/ordenes-pago" class="btn btn-outline-info">
+              <i class="bi bi-list me-1"></i> Ver Todos
+            </a>
+          </div>
+        <% } else { %>
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i> No hay pagos recientes.
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Acciones Rápidas -->
+<div class="row mt-2">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Acciones Rápidas</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3 col-sm-6 mb-3">
+            <a href="/ordenes-compra/create" class="btn btn-primary btn-lg d-block">
+              <i class="bi bi-plus-circle me-2"></i> Nueva Orden de Compra
+            </a>
+          </div>
+          <div class="col-md-3 col-sm-6 mb-3">
+            <a href="/ordenes-pago/select-proveedor" class="btn btn-success btn-lg d-block">
+              <i class="bi bi-cash me-2"></i> Nuevo Pago
+            </a>
+          </div>
+          <div class="col-md-3 col-sm-6 mb-3">
+            <a href="/ordenes-compra/pendientes" class="btn btn-warning btn-lg d-block">
+              <i class="bi bi-clipboard-data me-2"></i> Reporte Pendientes
+            </a>
+          </div>
+          <div class="col-md-3 col-sm-6 mb-3">
+            <a href="/ordenes-pago/reporte" class="btn btn-info btn-lg d-block">
+              <i class="bi bi-bar-chart me-2"></i> Reporte Pagos
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>
