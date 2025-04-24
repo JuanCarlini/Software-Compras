@@ -12,6 +12,7 @@ const config = {
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'carlini_sistema',
     port: parseInt(process.env.DB_PORT) || 1433,
+    windowsAuth: process.env.DB_WINDOWS_AUTH === 'true', // Para autenticación de Windows
     options: {
       encrypt: process.env.DB_ENCRYPT === 'true', // Para conexiones Azure
       trustServerCertificate: process.env.DB_TRUST_SERVER_CERT === 'true' || true, // Para desarrollo local

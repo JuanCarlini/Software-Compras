@@ -7,9 +7,53 @@ let pool = null;
 // Inicializar el pool de conexiones
 async function initializePool() {
   try {
-    pool = await new sql.ConnectionPool(config.database).connect();
-    console.log('Conexión a SQL Server establecida correctamente');
-    return pool;
+    // Configuración básica
+    const dbConfig = {
+      server: config.database.server,
+      database: config.database.database,
+      options: {
+        trustServerCertificate: true,
+        encrypt: false,
+        enableArithAbort: true,
+        integratedSecurity: true  // Usar autenticación de Windows
+      },
+      connectionTimeout: 30000
+    };
+    
+    console.log('Intentando conectar con configuración principal:', {
+      server: dbConfig.server,
+      database: dbConfig.database
+    });
+    
+    try {
+      // Intentar con la configuración principal
+      pool = await new sql.ConnectionPool(dbConfig).connect();
+      console.log('Conexión a SQL Server establecida correctamente');
+      
+      // Verificar que la conexión funciona
+      const testQuery = await pool.request().query('SELECT @@VERSION as version');
+      console.log(`Versión de SQL Server: ${testQuery.recordset[0].version.split('\n')[0]}`);
+      
+      return pool;
+    } catch (err) {
+      console.log(`Error con configuración principal: ${err.message}`);
+      console.log('Intentando con configuración alternativa...');
+      
+      // Configuración alternativa con nombre de instancia
+      const alternativeConfig = {
+        ...dbConfig,
+        server: `${config.database.server}\\SQLEXPRESS`
+      };
+      
+      console.log('Intentando conectar con:', alternativeConfig.server);
+      pool = await new sql.ConnectionPool(alternativeConfig).connect();
+      console.log('Conexión a SQL Server establecida correctamente con configuración alternativa');
+      
+      const testQuery = await pool.request().query('SELECT @@VERSION as version');
+      console.log(`Versión de SQL Server: ${testQuery.recordset[0].version.split('\n')[0]}`);
+      
+      return pool;
+    }
   } catch (error) {
     console.error('Error al inicializar el pool de conexiones:', error.message);
     throw error;

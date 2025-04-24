@@ -6,7 +6,17 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "setup-db": "node scripts/setup-database.js"
+    "setup-db": "node scripts/setup-database.js",
+    "test-db": "node test-db-connection.js",
+    "basic-test": "node basic-test.js",
+    "check-services": "node check-sql-services.js",
+    "check-port": "node check-sql-port.js",
+    "test-ports": "node test-alternate-ports.js",
+    "test-final": "node test-final.js",
+    "test-all": "node test-all-options.js",
+    "check-sql": "node sql-server-tools.js",
+    "test-new": "node test-new-instance.js",
+    "try-direct": "node try-direct-connection.js"
   },
   "author": "",
   "license": "ISC",
