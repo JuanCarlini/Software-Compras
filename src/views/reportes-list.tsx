@@ -106,14 +106,27 @@ export function ReportesList({ reportes, loading, error, onDelete, onRegenerar }
     window.open(reporte.resultado_url, '_blank')
   }
 
-  const filteredReportes = reportes.filter(reporte => {
-    const matchesSearch = reporte.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         reporte.descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
+  // Primero aplicar filtros básicos
+  const basicFilteredReportes = reportes.filter(reporte => {
     const matchesTipo = filterTipo === "TODOS" || reporte.tipo === filterTipo
     const matchesEstado = filterEstado === "TODOS" || reporte.estado === filterEstado
-    
-    return matchesSearch && matchesTipo && matchesEstado
+    return matchesTipo && matchesEstado
   })
+
+  // Luego aplicar búsqueda con score
+  const filteredReportes = searchWithScore(
+    basicFilteredReportes,
+    searchTerm,
+    ['nombre', 'descripcion', 'tipo', 'formato', 'estado', 'generado_por'],
+    {
+      nombre: 3,        // Mayor peso para nombre
+      tipo: 2,         // Peso medio para tipo
+      descripcion: 2,   // Peso medio para descripción
+      estado: 1,       // Menor peso para estado
+      formato: 1,      // Menor peso para formato
+      generado_por: 1  // Menor peso para generado por
+    }
+  )
 
   const handleDelete = async (id: string) => {
     if (!confirm("¿Estás seguro de que quieres eliminar este reporte?")) return
@@ -169,15 +182,12 @@ export function ReportesList({ reportes, loading, error, onDelete, onRegenerar }
         
         {/* Filtros */}
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Buscar reportes..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <SearchBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Buscar reportes por nombre, tipo, estado..."
+            className="w-80"
+          />
           
           <select
             value={filterTipo}

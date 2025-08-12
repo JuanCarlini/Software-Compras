@@ -3,12 +3,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
 import { Badge } from "@/views/ui/badge"
-import { Input } from "@/views/ui/input"
+import { SearchBar } from "@/views/ui/search-bar"
 import { Eye, Edit, CheckCircle, XCircle, Loader2, Building2, Mail, Phone, MapPin } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { useProveedores } from "@/shared/use-proveedores"
 import { EstadoProveedor } from "@/models"
+import { searchWithScore } from "@/shared/search-utils"
 
 const getEstadoColor = (estado: EstadoProveedor) => {
   switch (estado) {
@@ -28,11 +29,18 @@ export function ProveedorList() {
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
 
-  const filteredProveedores = proveedores.filter(proveedor =>
-    proveedor.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    proveedor.rut.includes(searchTerm) ||
-    proveedor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    proveedor.ciudad.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProveedores = searchWithScore(
+    proveedores,
+    searchTerm,
+    ['nombre', 'rut', 'email', 'ciudad', 'contacto_principal', 'estado'],
+    {
+      nombre: 3,           // Mayor peso para nombre
+      rut: 3,             // Mayor peso para RUT
+      email: 2,           // Peso medio para email
+      contacto_principal: 2, // Peso medio para contacto
+      ciudad: 1,          // Menor peso para ciudad
+      estado: 1           // Menor peso para estado
+    }
   )
 
   const handleActivar = async (id: string) => {
@@ -83,21 +91,25 @@ export function ProveedorList() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Lista de Proveedores ({filteredProveedores.length})</CardTitle>
-          <div className="w-72">
-            <Input
-              placeholder="Buscar por nombre, RUT, email o ciudad..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+          <SearchBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Buscar por nombre, RUT, email, ciudad..."
+            className="w-80"
+          />
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           {filteredProveedores.length === 0 ? (
-            <p className="text-center text-slate-500 py-8">
-              {searchTerm ? "No se encontraron proveedores con ese criterio" : "No hay proveedores registrados"}
-            </p>
+            <div className="text-center py-8">
+              <p className="text-slate-500">
+                {searchTerm 
+                  ? `No se encontraron proveedores que coincidan con "${searchTerm}"`
+                  : "No hay proveedores registrados"
+                }
+              </p>
+            </div>
           ) : (
             filteredProveedores.map((proveedor) => (
               <div 

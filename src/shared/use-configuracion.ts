@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Empresa, UpdateEmpresaData } from "@/models"
 import { ConfiguracionController, ConfiguracionSistema } from "@/controllers"
+import { showSuccessToast, showErrorToast, toastMessages } from "./toast-helpers"
 
 export function useConfiguracion() {
   const [empresa, setEmpresa] = useState<Empresa | null>(null)
@@ -31,8 +32,10 @@ export function useConfiguracion() {
     try {
       const updatedEmpresa = await ConfiguracionController.updateEmpresa(data)
       setEmpresa(updatedEmpresa)
+      showSuccessToast(toastMessages.configuracion.updated, "Información de empresa")
       return updatedEmpresa
     } catch (err) {
+      showErrorToast(toastMessages.configuracion.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
@@ -41,8 +44,10 @@ export function useConfiguracion() {
     try {
       const updatedConfig = await ConfiguracionController.updateConfiguracionSistema(data)
       setConfiguracionSistema(updatedConfig)
+      showSuccessToast(toastMessages.configuracion.updated, "Configuración del sistema")
       return updatedConfig
     } catch (err) {
+      showErrorToast(toastMessages.configuracion.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
@@ -54,24 +59,32 @@ export function useConfiguracion() {
         const updatedEmpresa = { ...empresa, logo_url: logoUrl, updated_at: new Date() }
         setEmpresa(updatedEmpresa)
       }
+      showSuccessToast(toastMessages.configuracion.logoUploaded)
       return logoUrl
     } catch (err) {
+      showErrorToast(toastMessages.configuracion.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
 
   const testNotificacion = async () => {
     try {
-      return await ConfiguracionController.testNotificacion()
+      const result = await ConfiguracionController.testNotificacion()
+      showSuccessToast("Test de notificación exitoso", "Las notificaciones están funcionando correctamente")
+      return result
     } catch (err) {
+      showErrorToast("Error en test de notificación", err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
 
   const exportarConfiguracion = async () => {
     try {
-      return await ConfiguracionController.exportarConfiguracion()
+      const result = await ConfiguracionController.exportarConfiguracion()
+      showSuccessToast(toastMessages.configuracion.exported)
+      return result
     } catch (err) {
+      showErrorToast(toastMessages.configuracion.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
@@ -81,21 +94,29 @@ export function useConfiguracion() {
       const success = await ConfiguracionController.importarConfiguracion(configJson)
       if (success) {
         await fetchConfiguracion() // Recargar datos
+        showSuccessToast(toastMessages.configuracion.imported)
       }
       return success
     } catch (err) {
+      showErrorToast(toastMessages.configuracion.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
+  /*  } catch (err) {
+      throw err
+    }
+  }*/
 
   const resetearConfiguracion = async () => {
     try {
       const success = await ConfiguracionController.resetearConfiguracion()
       if (success) {
         await fetchConfiguracion() // Recargar datos
+        showSuccessToast(toastMessages.configuracion.reset)
       }
       return success
     } catch (err) {
+      showErrorToast(toastMessages.configuracion.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }

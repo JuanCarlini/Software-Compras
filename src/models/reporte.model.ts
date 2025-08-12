@@ -51,3 +51,11 @@ export interface CreateReporteData {
   parametros: ReporteParametros
   formato: FormatoReporte
 }
+
+export interface ReporteEstadisticas {
+  total_reportes: number
+  reportes_este_mes: number
+  reportes_pendientes: number
+  formatos_mas_usados: { formato: FormatoReporte; cantidad: number }[]
+  tipos_mas_generados: { tipo: TipoReporte; cantidad: number }[]
+}

@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
 import { Badge } from "@/views/ui/badge"
+import { SearchBar } from "@/views/ui/search-bar"
 import { Input } from "@/views/ui/input"
 import { Label } from "@/views/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/views/ui/dialog"
@@ -13,6 +14,7 @@ import { useOrdensPago } from "@/shared/use-ordenes-pago"
 import { formatCurrency } from "@/shared/format-utils"
 import { formatDateShort } from "@/shared/date-utils"
 import { EstadoOrdenPago, MetodoPago } from "@/models"
+import { searchWithScore } from "@/shared/search-utils"
 
 const getEstadoColor = (estado: EstadoOrdenPago) => {
   switch (estado) {
@@ -51,6 +53,21 @@ export function OrdenPagoList() {
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [pagoDialog, setPagoDialog] = useState<string | null>(null)
   const [referenciaBancaria, setReferenciaBancaria] = useState("")
+  const [searchTerm, setSearchTerm] = useState("")
+
+  // Filtrar órdenes basado en la búsqueda
+  const filteredOrders = searchWithScore(
+    orders,
+    searchTerm,
+    ['numero', 'proveedor_nombre', 'metodo_pago', 'estado', 'referencia_bancaria'],
+    {
+      numero: 3,              // Mayor peso para número de orden
+      proveedor_nombre: 2,    // Peso medio para proveedor
+      estado: 2,             // Peso medio para estado
+      metodo_pago: 1,        // Menor peso para método de pago
+      referencia_bancaria: 1 // Menor peso para referencia
+    }
+  )
 
   const handleAprobar = async (id: string) => {
     try {
@@ -116,16 +133,29 @@ export function OrdenPagoList() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Lista de Órdenes de Pago ({orders.length})</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>Lista de Órdenes de Pago ({filteredOrders.length})</CardTitle>
+          <SearchBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Buscar por número, proveedor, método..."
+            className="w-80"
+          />
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {orders.length === 0 ? (
-            <p className="text-center text-slate-500 py-8">
-              No hay órdenes de pago registradas
-            </p>
+          {filteredOrders.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-slate-500">
+                {searchTerm 
+                  ? `No se encontraron órdenes que coincidan con "${searchTerm}"`
+                  : "No hay órdenes de pago registradas"
+                }
+              </p>
+            </div>
           ) : (
-            orders.map((orden) => (
+            filteredOrders.map((orden) => (
               <div 
                 key={orden.id}
                 className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"

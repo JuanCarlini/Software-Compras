@@ -3,7 +3,8 @@ import {
   CreateReporteData,
   TipoReporte,
   FormatoReporte,
-  EstadoReporte 
+  EstadoReporte,
+  ReporteEstadisticas
 } from "@/models"
 
 // Datos mock de reportes
@@ -62,32 +63,21 @@ const reportes: Reporte[] = [
   }
 ]
 
-// Estadísticas mock para dashboard de reportes
-export interface EstadisticasReportes {
-  total_reportes: number
-  reportes_completados: number
-  reportes_pendientes: number
-  reportes_error: number
-  tipos_mas_generados: { tipo: TipoReporte; cantidad: number }[]
-  formatos_preferidos: { formato: FormatoReporte; cantidad: number }[]
-}
-
-const estadisticasMock: EstadisticasReportes = {
+const estadisticasMock: ReporteEstadisticas = {
   total_reportes: 25,
-  reportes_completados: 22,
+  reportes_este_mes: 8,
   reportes_pendientes: 2,
-  reportes_error: 1,
+  formatos_mas_usados: [
+    { formato: FormatoReporte.PDF, cantidad: 15 },
+    { formato: FormatoReporte.EXCEL, cantidad: 8 },
+    { formato: FormatoReporte.CSV, cantidad: 2 }
+  ],
   tipos_mas_generados: [
     { tipo: TipoReporte.ORDENES_COMPRA, cantidad: 8 },
     { tipo: TipoReporte.PROVEEDORES, cantidad: 6 },
     { tipo: TipoReporte.FINANCIERO, cantidad: 5 },
     { tipo: TipoReporte.ORDENES_PAGO, cantidad: 4 },
     { tipo: TipoReporte.PRODUCTOS, cantidad: 2 }
-  ],
-  formatos_preferidos: [
-    { formato: FormatoReporte.PDF, cantidad: 15 },
-    { formato: FormatoReporte.EXCEL, cantidad: 8 },
-    { formato: FormatoReporte.CSV, cantidad: 2 }
   ]
 }
 
@@ -102,7 +92,7 @@ export class ReporteController {
     return reportes.find(reporte => reporte.id === id) || null
   }
 
-  static async getEstadisticas(): Promise<EstadisticasReportes> {
+  static async getEstadisticas(): Promise<ReporteEstadisticas> {
     await new Promise(resolve => setTimeout(resolve, 400))
     return estadisticasMock
   }
@@ -149,6 +139,16 @@ export class ReporteController {
     reporte.resultado_url = `/reportes/downloads/${reporte.nombre.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.${reporte.formato.toLowerCase()}`
 
     return reporte
+  }
+
+  static async descargar(id: string, formato: 'pdf' | 'excel'): Promise<string> {
+    await new Promise(resolve => setTimeout(resolve, 800))
+    
+    const reporte = reportes.find(r => r.id === id)
+    if (!reporte) throw new Error("Reporte no encontrado")
+
+    // Simular descarga - en la vida real sería una URL real
+    return `/reportes/downloads/${reporte.nombre.toLowerCase().replace(/\s+/g, '-')}.${formato}`
   }
 
   // Métodos para obtener datos específicos para reportes

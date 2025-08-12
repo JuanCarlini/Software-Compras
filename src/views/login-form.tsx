@@ -6,6 +6,7 @@ import { Button } from "@/views/ui/button"
 import { Input } from "@/views/ui/input"
 import { Label } from "@/views/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
+import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
@@ -15,11 +16,17 @@ export function LoginForm() {
     e.preventDefault()
     setIsLoading(true)
     
-    // Simular autenticación
-    setTimeout(() => {
-      setIsLoading(false)
+    try {
+      // Simular autenticación
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      
+      showSuccessToast("Sesión iniciada correctamente", "Bienvenido al sistema")
       router.push("/dashboard")
-    }, 1000)
+    } catch (error) {
+      showErrorToast("Error al iniciar sesión", "Verifica tus credenciales")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (

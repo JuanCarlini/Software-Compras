@@ -1,20 +1,25 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Reporte, CreateReporteData } from "@/models"
-import { ReporteController, EstadisticasReportes } from "@/controllers"
+import { Reporte, ReporteEstadisticas, CreateReporteData } from "@/models"
+import { ReporteController } from "@/controllers"
+import { showSuccessToast, showErrorToast, toastMessages } from "./toast-helpers"
 
 export function useReportes() {
   const [reportes, setReportes] = useState<Reporte[]>([])
-  const [estadisticas, setEstadisticas] = useState<EstadisticasReportes | null>(null)
+  const [estadisticas, setEstadisticas] = useState<ReporteEstadisticas | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchReportes = async () => {
     try {
       setLoading(true)
-      const data = await ReporteController.getAll()
-      setReportes(data)
+      const [reportesData, estadisticasData] = await Promise.all([
+        ReporteController.getAll(),
+        ReporteController.getEstadisticas()
+      ])
+      setReportes(reportesData)
+      setEstadisticas(estadisticasData)
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido")
@@ -23,21 +28,14 @@ export function useReportes() {
     }
   }
 
-  const fetchEstadisticas = async () => {
+  const createReporte = async (data: CreateReporteData) => {
     try {
-      const data = await ReporteController.getEstadisticas()
-      setEstadisticas(data)
+      const nuevoReporte = await ReporteController.create(data)
+      setReportes(prev => [nuevoReporte, ...prev])
+      showSuccessToast(toastMessages.reporte.created, nuevoReporte.nombre)
+      return nuevoReporte
     } catch (err) {
-      console.error("Error al cargar estadísticas:", err)
-    }
-  }
-
-  const createReporte = async (reporteData: CreateReporteData) => {
-    try {
-      const newReporte = await ReporteController.create(reporteData)
-      setReportes(prev => [newReporte, ...prev])
-      return newReporte
-    } catch (err) {
+      showErrorToast(toastMessages.reporte.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
@@ -46,36 +44,44 @@ export function useReportes() {
     try {
       await ReporteController.delete(id)
       setReportes(prev => prev.filter(reporte => reporte.id !== id))
+      showSuccessToast(toastMessages.reporte.deleted)
     } catch (err) {
+      showErrorToast(toastMessages.reporte.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
 
   const regenerarReporte = async (id: string) => {
     try {
-      const updatedReporte = await ReporteController.regenerar(id)
-      if (updatedReporte) {
+      const reporteActualizado = await ReporteController.regenerar(id)
+      if (reporteActualizado) {
         setReportes(prev => 
-          prev.map(reporte => reporte.id === id ? updatedReporte : reporte)
+          prev.map(reporte => 
+            reporte.id === id ? reporteActualizado : reporte
+          )
         )
+        showSuccessToast(toastMessages.reporte.regenerated, reporteActualizado.nombre)
       }
-      return updatedReporte
+      return reporteActualizado
     } catch (err) {
+      showErrorToast(toastMessages.reporte.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
 
-  const getReporteData = async (tipo: any, parametros: any) => {
+  const descargarReporte = async (id: string, formato: 'pdf' | 'excel') => {
     try {
-      return await ReporteController.getReporteData(tipo, parametros)
+      const url = await ReporteController.descargar(id, formato)
+      showSuccessToast(toastMessages.reporte.downloaded, `Formato: ${formato.toUpperCase()}`)
+      return url
     } catch (err) {
+      showErrorToast(toastMessages.reporte.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
 
   useEffect(() => {
     fetchReportes()
-    fetchEstadisticas()
   }, [])
 
   return {
@@ -87,37 +93,6 @@ export function useReportes() {
     createReporte,
     deleteReporte,
     regenerarReporte,
-    getReporteData
-  }
-}
-
-export function useReporte(id: string) {
-  const [reporte, setReporte] = useState<Reporte | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchReporte = async () => {
-      try {
-        setLoading(true)
-        const data = await ReporteController.getById(id)
-        setReporte(data)
-        setError(null)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (id) {
-      fetchReporte()
-    }
-  }, [id])
-
-  return {
-    reporte,
-    loading,
-    error
+    descargarReporte
   }
 }

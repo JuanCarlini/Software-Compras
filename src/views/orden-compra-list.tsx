@@ -1,14 +1,18 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
 import { Badge } from "@/views/ui/badge"
+import { SearchBar } from "@/views/ui/search-bar"
 import { Eye, CheckCircle, XCircle, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useOrders } from "@/shared/use-orders"
 import { formatCurrency } from "@/shared/format-utils"
 import { formatDateShort } from "@/shared/date-utils"
 import { EstadoOrdenCompra } from "@/models"
+import { SearchStats } from "@/views/ui/search-stats"
+import { searchWithScore } from "@/shared/search-utils"
 
 const getEstadoColor = (estado: EstadoOrdenCompra) => {
   switch (estado) {
@@ -27,6 +31,20 @@ const getEstadoColor = (estado: EstadoOrdenCompra) => {
 
 export function OrdenCompraList() {
   const { orders, loading, error, updateOrder } = useOrders()
+  const [searchTerm, setSearchTerm] = useState("")
+
+  // Filtrar órdenes basado en la búsqueda
+  const filteredOrders = searchWithScore(
+    orders,
+    searchTerm,
+    ['numero', 'proveedor_nombre', 'descripcion', 'estado'],
+    {
+      numero: 3,         // Mayor peso para número de orden
+      proveedor_nombre: 2, // Peso medio para proveedor
+      estado: 2,         // Peso medio para estado
+      descripcion: 1     // Menor peso para descripción
+    }
+  )
 
   const handleAprobar = async (id: string) => {
     try {
@@ -68,16 +86,35 @@ export function OrdenCompraList() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Lista de Órdenes de Compra ({orders.length})</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>Lista de Órdenes de Compra ({filteredOrders.length})</CardTitle>
+          <SearchBar 
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Buscar por número, proveedor, estado..."
+            className="w-80"
+          />
+        </div>
       </CardHeader>
       <CardContent>
+        <SearchStats 
+          totalItems={orders.length}
+          filteredItems={filteredOrders.length}
+          searchTerm={searchTerm}
+          entityName="orden"
+        />
         <div className="space-y-4">
-          {orders.length === 0 ? (
-            <p className="text-center text-slate-500 py-8">
-              No hay órdenes de compra registradas
-            </p>
+          {filteredOrders.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-slate-500">
+                {searchTerm 
+                  ? `No se encontraron órdenes que coincidan con "${searchTerm}"`
+                  : "No hay órdenes de compra registradas"
+                }
+              </p>
+            </div>
           ) : (
-            orders.map((orden) => (
+            filteredOrders.map((orden) => (
               <div 
                 key={orden.id}
                 className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"

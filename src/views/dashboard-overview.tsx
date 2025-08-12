@@ -1,5 +1,9 @@
+"use client"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
+import { Button } from "@/views/ui/button"
 import { ShoppingCart, CreditCard, Building2, TrendingUp } from "lucide-react"
+import { showSuccessToast, showInfoToast, showWarningToast, showErrorToast } from "@/shared/toast-helpers"
 
 const stats = [
   {
@@ -33,8 +37,63 @@ const stats = [
 ]
 
 export function DashboardOverview() {
+  const handleTestNotification = (type: string) => {
+    switch (type) {
+      case 'success':
+        showSuccessToast("¡Operación completada!", "La acción se ejecutó correctamente")
+        break
+      case 'info':
+        showInfoToast("Información del sistema", "Tienes 3 órdenes pendientes de aprobación")
+        break
+      case 'warning':
+        showWarningToast("Atención requerida", "Hay 2 órdenes próximas a vencer en 3 días")
+        break
+      case 'error':
+        showErrorToast("Error en el sistema", "No se pudo conectar con el servidor")
+        break
+    }
+  }
+
   return (
     <div className="space-y-6">
+      {/* Botones de prueba de notificaciones */}
+      <Card>
+        <CardHeader>
+          <CardTitle>🔔 Prueba de Notificaciones</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex space-x-2">
+            <Button 
+              variant="default" 
+              size="sm"
+              onClick={() => handleTestNotification('success')}
+            >
+              ✅ Éxito
+            </Button>
+            <Button 
+              variant="secondary" 
+              size="sm"
+              onClick={() => handleTestNotification('info')}
+            >
+              ℹ️ Info
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => handleTestNotification('warning')}
+            >
+              ⚠️ Alerta
+            </Button>
+            <Button 
+              variant="destructive" 
+              size="sm"
+              onClick={() => handleTestNotification('error')}
+            >
+              ❌ Error
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => {
           const IconComponent = stat.icon

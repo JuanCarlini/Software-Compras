@@ -12,17 +12,17 @@ import {
   XCircle,
   AlertCircle
 } from "lucide-react"
-import { EstadisticasReportes } from "@/controllers"
+import { ReporteEstadisticas } from "@/models"
 
 interface Props {
-  estadisticas: EstadisticasReportes
+  estadisticas: ReporteEstadisticas
 }
 
 export function ReportesDashboard({ estadisticas }: Props) {
   return (
     <div className="space-y-6">
       {/* Estadísticas Principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Reportes</CardTitle>
@@ -38,13 +38,13 @@ export function ReportesDashboard({ estadisticas }: Props) {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completados</CardTitle>
+            <CardTitle className="text-sm font-medium">Este Mes</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{estadisticas.reportes_completados}</div>
+            <div className="text-2xl font-bold text-green-600">{estadisticas.reportes_este_mes}</div>
             <p className="text-xs text-muted-foreground">
-              {Math.round((estadisticas.reportes_completados / estadisticas.total_reportes) * 100)}% del total
+              {Math.round((estadisticas.reportes_este_mes / estadisticas.total_reportes) * 100)}% del total
             </p>
           </CardContent>
         </Card>
@@ -58,19 +58,6 @@ export function ReportesDashboard({ estadisticas }: Props) {
             <div className="text-2xl font-bold text-yellow-600">{estadisticas.reportes_pendientes}</div>
             <p className="text-xs text-muted-foreground">
               En proceso de generación
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Con Error</CardTitle>
-            <XCircle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{estadisticas.reportes_error}</div>
-            <p className="text-xs text-muted-foreground">
-              Requieren atención
             </p>
           </CardContent>
         </Card>
@@ -122,7 +109,7 @@ export function ReportesDashboard({ estadisticas }: Props) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {estadisticas.formatos_preferidos.map((item, index) => {
+              {estadisticas.formatos_mas_usados.map((item, index) => {
                 const percentage = Math.round((item.cantidad / estadisticas.total_reportes) * 100)
                 const colorClasses = {
                   0: "bg-red-100 text-red-800",

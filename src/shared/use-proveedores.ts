@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Proveedor } from "@/models"
 import { ProveedorController } from "@/controllers"
+import { showSuccessToast, showErrorToast, toastMessages } from "./toast-helpers"
 
 export function useProveedores() {
   const [proveedores, setProveedores] = useState<Proveedor[]>([])
@@ -26,8 +27,10 @@ export function useProveedores() {
     try {
       const newProveedor = await ProveedorController.create(proveedorData)
       setProveedores(prev => [...prev, newProveedor])
+      showSuccessToast(toastMessages.proveedor.created, newProveedor.nombre)
       return newProveedor
     } catch (err) {
+      showErrorToast(toastMessages.proveedor.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
@@ -39,9 +42,11 @@ export function useProveedores() {
         setProveedores(prev => 
           prev.map(proveedor => proveedor.id === id ? updatedProveedor : proveedor)
         )
+        showSuccessToast(toastMessages.proveedor.updated, updatedProveedor.nombre)
       }
       return updatedProveedor
     } catch (err) {
+      showErrorToast(toastMessages.proveedor.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
@@ -53,9 +58,11 @@ export function useProveedores() {
         setProveedores(prev => 
           prev.map(proveedor => proveedor.id === id ? updatedProveedor : proveedor)
         )
+        showSuccessToast(toastMessages.proveedor.activated, updatedProveedor.nombre)
       }
       return updatedProveedor
     } catch (err) {
+      showErrorToast(toastMessages.proveedor.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
@@ -67,9 +74,11 @@ export function useProveedores() {
         setProveedores(prev => 
           prev.map(proveedor => proveedor.id === id ? updatedProveedor : proveedor)
         )
+        showSuccessToast(toastMessages.proveedor.deactivated, updatedProveedor.nombre)
       }
       return updatedProveedor
     } catch (err) {
+      showErrorToast(toastMessages.proveedor.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
@@ -78,7 +87,9 @@ export function useProveedores() {
     try {
       await ProveedorController.delete(id)
       setProveedores(prev => prev.filter(proveedor => proveedor.id !== id))
+      showSuccessToast(toastMessages.proveedor.deleted)
     } catch (err) {
+      showErrorToast(toastMessages.proveedor.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }

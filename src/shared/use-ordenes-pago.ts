@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { OrdenPago } from "@/models"
 import { OrdenPagoService } from "@/controllers"
+import { showSuccessToast, showErrorToast, toastMessages } from "./toast-helpers"
 
 export function useOrdensPago() {
   const [orders, setOrders] = useState<OrdenPago[]>([])
@@ -26,8 +27,10 @@ export function useOrdensPago() {
     try {
       const newOrder = await OrdenPagoService.create(orderData)
       setOrders(prev => [...prev, newOrder])
+      showSuccessToast(toastMessages.ordenPago.created, `Orden #${newOrder.numero}`)
       return newOrder
     } catch (err) {
+      showErrorToast(toastMessages.ordenPago.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
@@ -39,9 +42,23 @@ export function useOrdensPago() {
         setOrders(prev => 
           prev.map(order => order.id === id ? updatedOrder : order)
         )
+        
+        // Toast message específico según el estado
+        if (orderData.estado) {
+          if (orderData.estado === 'Aprobada') {
+            showSuccessToast(toastMessages.ordenPago.approved, `Orden #${updatedOrder.numero}`)
+          } else if (orderData.estado === 'Pagada') {
+            showSuccessToast(toastMessages.ordenPago.paid, `Orden #${updatedOrder.numero}`)
+          } else {
+            showSuccessToast(toastMessages.ordenPago.updated, `Orden #${updatedOrder.numero}`)
+          }
+        } else {
+          showSuccessToast(toastMessages.ordenPago.updated, `Orden #${updatedOrder.numero}`)
+        }
       }
       return updatedOrder
     } catch (err) {
+      showErrorToast(toastMessages.ordenPago.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
