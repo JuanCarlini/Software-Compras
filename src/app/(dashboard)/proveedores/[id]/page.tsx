@@ -6,7 +6,7 @@ import { ProveedorDetails } from "@/views/proveedor-details"
 import { Card, CardContent } from "@/views/ui/card"
 import { Loader2 } from "lucide-react"
 import { Proveedor } from "@/models"
-import { ProveedorController } from "@/controllers"
+import { ProveedorService } from "@/controllers"
 
 export default function ProveedorDetailsPage() {
   const params = useParams()
@@ -21,7 +21,7 @@ export default function ProveedorDetailsPage() {
     const fetchProveedor = async () => {
       try {
         setLoading(true)
-        const data = await ProveedorController.getById(proveedorId)
+        const data = await ProveedorService.getById(proveedorId)
         if (!data) {
           setError("Proveedor no encontrado")
           return

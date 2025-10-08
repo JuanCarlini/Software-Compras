@@ -8,7 +8,7 @@ import { Input } from "@/views/ui/input"
 import { Label } from "@/views/ui/label"
 import { Textarea } from "@/views/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/views/ui/select"
-import { ProveedorController } from "@/controllers"
+import { ProveedorService } from "@/controllers"
 import { Proveedor, EstadoProveedor } from "@/models"
 
 export function OrdenCompraForm() {
@@ -22,7 +22,7 @@ export function OrdenCompraForm() {
     const fetchProveedores = async () => {
       try {
         setLoadingProveedores(true)
-        const data = await ProveedorController.getAll()
+        const data = await ProveedorService.getAll()
         // Filtrar solo proveedores activos
         const proveedoresActivos = data.filter(p => p.estado === EstadoProveedor.ACTIVO)
         setProveedores(proveedoresActivos)

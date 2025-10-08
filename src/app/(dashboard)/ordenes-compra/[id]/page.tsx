@@ -4,10 +4,12 @@ import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
 interface Props {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
-export default function OrdenCompraDetailPage({ params }: Props) {
+export default async function OrdenCompraDetailPage({ params }: Props) {
+  const { id } = await params
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-4">
@@ -18,13 +20,11 @@ export default function OrdenCompraDetailPage({ params }: Props) {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">
-            Orden de Compra #{params.id}
-          </h1>
-          <p className="text-slate-600">Detalles de la orden de compra</p>
+          <h1 className="text-3xl font-bold text-slate-900">Detalle de Orden de Compra</h1>
         </div>
       </div>
-      <OrdenCompraDetails id={params.id} />
+      
+      <OrdenCompraDetails ordenId={id} />
     </div>
   )
 }

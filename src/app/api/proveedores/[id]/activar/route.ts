@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { ProveedorController } from "@/controllers"
+import { ProveedorService } from "@/controllers"
 
 interface Params {
-  params: {
-    id: string
-  }
+  params: { id: string }
 }
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
-    const proveedor = await ProveedorController.activar(params.id)
+    const proveedor = await ProveedorService.update(params.id, { estado: 'Activo' })
     
     if (!proveedor) {
       return NextResponse.json(
@@ -20,7 +18,6 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     
     return NextResponse.json(proveedor)
   } catch (error) {
-    console.error("Error activating proveedor:", error)
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

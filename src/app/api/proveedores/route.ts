@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { ProveedorController } from "@/controllers"
+import { ProveedorService } from "@/controllers"
 
 export async function GET() {
   try {
-    const proveedores = await ProveedorController.getAll()
+    const proveedores = await ProveedorService.getAll()
     return NextResponse.json(proveedores)
   } catch (error) {
     console.error("Error fetching proveedores:", error)
@@ -17,7 +17,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
-    const newProveedor = await ProveedorController.create(data)
+    const newProveedor = await ProveedorService.create(data)
     return NextResponse.json(newProveedor, { status: 201 })
   } catch (error) {
     console.error("Error creating proveedor:", error)
@@ -27,3 +27,5 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+

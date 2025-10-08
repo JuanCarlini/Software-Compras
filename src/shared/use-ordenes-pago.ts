@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { OrdenPago } from "@/models"
-import { OrdenPagoController } from "@/controllers"
+import { OrdenPagoService } from "@/controllers"
 import { showSuccessToast, showErrorToast, toastMessages } from "./toast-helpers"
 
 export function useOrdensPago() {
@@ -13,7 +13,7 @@ export function useOrdensPago() {
   const fetchOrders = async () => {
     try {
       setLoading(true)
-      const data = await OrdenPagoController.getAll()
+      const data = await OrdenPagoService.getAll()
       setOrders(data)
       setError(null)
     } catch (err) {
@@ -25,7 +25,7 @@ export function useOrdensPago() {
 
   const createOrder = async (orderData: any) => {
     try {
-      const newOrder = await OrdenPagoController.create(orderData)
+      const newOrder = await OrdenPagoService.create(orderData)
       setOrders(prev => [...prev, newOrder])
       showSuccessToast(toastMessages.ordenPago.created, `Orden #${newOrder.numero}`)
       return newOrder
@@ -37,7 +37,7 @@ export function useOrdensPago() {
 
   const updateOrder = async (id: string, orderData: any) => {
     try {
-      const updatedOrder = await OrdenPagoController.update(id, orderData)
+      const updatedOrder = await OrdenPagoService.update(id, orderData)
       if (updatedOrder) {
         setOrders(prev => 
           prev.map(order => order.id === id ? updatedOrder : order)
@@ -65,7 +65,7 @@ export function useOrdensPago() {
 
   const aprobarOrder = async (id: string) => {
     try {
-      const updatedOrder = await OrdenPagoController.aprobar(id)
+      const updatedOrder = await OrdenPagoService.update(id, { estado: 'Aprobada' })
       if (updatedOrder) {
         setOrders(prev => 
           prev.map(order => order.id === id ? updatedOrder : order)
@@ -79,7 +79,7 @@ export function useOrdensPago() {
 
   const pagarOrder = async (id: string, referencia: string) => {
     try {
-      const updatedOrder = await OrdenPagoController.marcarPagada(id, referencia)
+      const updatedOrder = await OrdenPagoService.marcarComoPagada(id, referencia)
       if (updatedOrder) {
         setOrders(prev => 
           prev.map(order => order.id === id ? updatedOrder : order)
@@ -93,7 +93,7 @@ export function useOrdensPago() {
 
   const rechazarOrder = async (id: string) => {
     try {
-      const updatedOrder = await OrdenPagoController.rechazar(id)
+      const updatedOrder = await OrdenPagoService.update(id, { estado: 'Rechazada' })
       if (updatedOrder) {
         setOrders(prev => 
           prev.map(order => order.id === id ? updatedOrder : order)
@@ -107,7 +107,7 @@ export function useOrdensPago() {
 
   const deleteOrder = async (id: string) => {
     try {
-      await OrdenPagoController.delete(id)
+      await OrdenPagoService.delete(id)
       setOrders(prev => prev.filter(order => order.id !== id))
     } catch (err) {
       throw err

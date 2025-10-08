@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { ProveedorController } from "@/controllers"
+import { ProveedorService } from "@/controllers"
 
 interface Params {
   params: {
@@ -9,7 +9,7 @@ interface Params {
 
 export async function GET(request: NextRequest, { params }: Params) {
   try {
-    const proveedor = await ProveedorController.getById(params.id)
+    const proveedor = await ProveedorService.getById(params.id)
     
     if (!proveedor) {
       return NextResponse.json(
@@ -20,7 +20,6 @@ export async function GET(request: NextRequest, { params }: Params) {
     
     return NextResponse.json(proveedor)
   } catch (error) {
-    console.error("Error fetching proveedor:", error)
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -31,7 +30,7 @@ export async function GET(request: NextRequest, { params }: Params) {
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
     const data = await request.json()
-    const updatedProveedor = await ProveedorController.update(params.id, data)
+    const updatedProveedor = await ProveedorService.update(params.id, data)
     
     if (!updatedProveedor) {
       return NextResponse.json(
@@ -42,7 +41,6 @@ export async function PUT(request: NextRequest, { params }: Params) {
     
     return NextResponse.json(updatedProveedor)
   } catch (error) {
-    console.error("Error updating proveedor:", error)
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -52,7 +50,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    const success = await ProveedorController.delete(params.id)
+    const success = await ProveedorService.delete(params.id)
     
     if (!success) {
       return NextResponse.json(
@@ -61,9 +59,8 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       )
     }
     
-    return NextResponse.json({ message: "Proveedor eliminado exitosamente" })
+    return NextResponse.json({ message: "Proveedor eliminado correctamente" })
   } catch (error) {
-    console.error("Error deleting proveedor:", error)
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

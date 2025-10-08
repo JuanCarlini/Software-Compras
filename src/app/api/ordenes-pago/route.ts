@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { OrdenPagoController } from "@/controllers"
+import { OrdenPagoService } from "@/controllers"
 import { CreateOrdenPagoSchema } from "@/shared/orden-pago-validation"
 
 // GET /api/ordenes-pago - Obtener todas las órdenes de pago
 export async function GET() {
   try {
-    const ordenes = await OrdenPagoController.getAll()
+    const ordenes = await OrdenPagoService.getAll()
     return NextResponse.json(ordenes)
   } catch (error) {
     console.error("Error al obtener órdenes de pago:", error)
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const validatedData = CreateOrdenPagoSchema.parse(body)
     
     // Crear la orden
-    const nuevaOrden = await OrdenPagoController.create(validatedData)
+    const nuevaOrden = await OrdenPagoService.create(validatedData)
     
     return NextResponse.json(nuevaOrden, { status: 201 })
   } catch (error) {

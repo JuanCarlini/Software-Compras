@@ -15,7 +15,7 @@ import { Alert, AlertDescription } from "@/views/ui/alert"
 import { Loader2 } from "lucide-react"
 import { Proveedor, CreateProveedorData, UpdateProveedorData } from "@/models"
 import { showSuccessToast, showErrorToast, toastMessages } from "@/shared/toast-helpers"
-import { ProveedorController } from "@/controllers"
+import { ProveedorService } from "@/controllers"
 
 const proveedorSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
@@ -71,11 +71,11 @@ export function ProveedorForm({ proveedor, isEditing = false }: Props) {
 
       if (isEditing && proveedor) {
         const updateData: UpdateProveedorData = cleanData
-        await ProveedorController.update(proveedor.id, updateData)
+        await ProveedorService.update(proveedor.id, updateData)
         router.push(`/proveedores/${proveedor.id}`)
       } else {
         const createData: CreateProveedorData = cleanData as CreateProveedorData
-        const newProveedor = await ProveedorController.create(createData)
+        const newProveedor = await ProveedorService.create(createData)
         router.push(`/proveedores/${newProveedor.id}`)
       }
     } catch (err) {
