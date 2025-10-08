@@ -1,101 +1,48 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useParams } from "next/navigation"
+import { OrdenPago, EstadoOrdenPago, MetodoPago } from "@/models"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Badge } from "@/views/ui/badge"
 import { Button } from "@/views/ui/button"
-import { Input } from "@/views/ui/input"
-import { Label } from "@/views/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/views/ui/dialog"
-import { CheckCircle, XCircle, DollarSign, Calendar, User, FileText } from "lucide-react"
-import { formatCurrency } from "@/shared/format-utils"
 import { formatDateShort } from "@/shared/date-utils"
-import { OrdenPago, EstadoOrdenPago, MetodoPago } from "@/models"
+import { formatCurrency } from "@/shared/format-utils"
 
-interface Props {
-  id: string
-}
-
-export function OrdenPagoDetails({ id }: Props) {
+export function OrdenPagoDetails() {
+  const params = useParams()
+  const id = params.id as string
   const [orden, setOrden] = useState<OrdenPago | null>(null)
   const [loading, setLoading] = useState(true)
-  const [processingAction, setProcessingAction] = useState(false)
-  const [pagoDialog, setPagoDialog] = useState(false)
-  const [referenciaBancaria, setReferenciaBancaria] = useState("")
 
   useEffect(() => {
-    // Simular carga de datos
-    setTimeout(() => {
-      const mockOrden: OrdenPago = {
-        id,
-        numero: `OP-2025-${id}`,
-        orden_compra_id: "001",
-        proveedor_id: "1",
-        proveedor_nombre: "ABC Corporation",
-        fecha_creacion: new Date("2025-01-16"),
-        fecha_vencimiento: new Date("2025-01-31"),
-        monto: 5250,
-        moneda: "ARS",
-        estado: EstadoOrdenPago.APROBADA,
-        metodo_pago: MetodoPago.TRANSFERENCIA,
-        observaciones: "Pago de orden de compra OC-2025-001 - Materiales de oficina",
-        created_at: new Date("2025-01-16"),
-        updated_at: new Date("2025-01-16")
+    const fetchOrden = async () => {
+      try {
+        const response = await fetch(`/api/ordenes-pago/${id}`)
+        if (!response.ok) throw new Error('Orden no encontrada')
+        const data = await response.json()
+        setOrden(data)
+      } catch (error) {
+        console.error('Error cargando orden:', error)
+        setOrden(null)
+      } finally {
+        setLoading(false)
       }
-      setOrden(mockOrden)
-      setLoading(false)
-    }, 500)
-  }, [id])
-
-  const handleAprobar = async () => {
-    setProcessingAction(true)
-    // Simular API call
-    setTimeout(() => {
-      if (orden) {
-        setOrden({ ...orden, estado: EstadoOrdenPago.APROBADA })
-      }
-      setProcessingAction(false)
-    }, 1000)
-  }
-
-  const handlePagar = async () => {
-    if (!referenciaBancaria.trim()) {
-      alert("La referencia bancaria es requerida")
-      return
     }
-    
-    setProcessingAction(true)
-    // Simular API call
-    setTimeout(() => {
-      if (orden) {
-        setOrden({ 
-          ...orden, 
-          estado: EstadoOrdenPago.PAGADA, 
-          referencia_bancaria: referenciaBancaria 
-        })
-      }
-      setPagoDialog(false)
-      setReferenciaBancaria("")
-      setProcessingAction(false)
-    }, 1000)
-  }
 
-  const handleRechazar = async () => {
-    setProcessingAction(true)
-    // Simular API call
-    setTimeout(() => {
-      if (orden) {
-        setOrden({ ...orden, estado: EstadoOrdenPago.RECHAZADA })
-      }
-      setProcessingAction(false)
-    }, 1000)
-  }
+    // Llamar a la API real
+    fetchOrden()
+  }, [id])
 
   if (loading) {
     return (
       <Card>
         <CardContent className="py-8 text-center">
-          Cargando detalles de la orden de pago...
+          <div className="animate-pulse">
+            <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/3 mx-auto"></div>
+          </div>
+          <p className="mt-4 text-gray-600">Cargando detalles de la orden de pago...</p>
         </CardContent>
       </Card>
     )
@@ -105,12 +52,24 @@ export function OrdenPagoDetails({ id }: Props) {
     return (
       <Card>
         <CardContent className="py-8 text-center">
-          Orden de pago no encontrada
+          <div className="text-gray-400 mb-4">
+            <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v2a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Base de datos no configurada</h3>
+          <p className="text-gray-600 mb-4">
+            Configure la conexión a base de datos para ver los detalles de las órdenes de pago.
+          </p>
+          <Button variant="outline" onClick={() => window.history.back()}>
+            Volver
+          </Button>
         </CardContent>
       </Card>
     )
   }
 
+  // TODO: Implementar funciones cuando se tenga BD real
   const getEstadoColor = (estado: EstadoOrdenPago) => {
     switch (estado) {
       case EstadoOrdenPago.PAGADA:
@@ -128,6 +87,21 @@ export function OrdenPagoDetails({ id }: Props) {
     }
   }
 
+  const getMetodoIcon = (metodo: MetodoPago) => {
+    switch (metodo) {
+      case MetodoPago.TRANSFERENCIA:
+        return "🏦"
+      case MetodoPago.CHEQUE:
+        return "📝"
+      case MetodoPago.EFECTIVO:
+        return "💵"
+      case MetodoPago.TARJETA:
+        return "💳"
+      default:
+        return "💰"
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -140,163 +114,66 @@ export function OrdenPagoDetails({ id }: Props) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-6">
-              <div>
-                <h3 className="font-medium text-gray-900 mb-4 flex items-center">
-                  <FileText className="h-5 w-5 mr-2" />
-                  Información General
-                </h3>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Orden de Compra:</span>
-                    <span className="font-medium">OC-2025-{orden.orden_compra_id}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Fecha Creación:</span>
-                    <span>{formatDateShort(orden.fecha_creacion)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Fecha Vencimiento:</span>
-                    <span className="flex items-center">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      {formatDateShort(orden.fecha_vencimiento)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Método de Pago:</span>
-                    <span>{orden.metodo_pago}</span>
-                  </div>
-                  {orden.referencia_bancaria && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Referencia:</span>
-                      <span className="font-mono text-sm">{orden.referencia_bancaria}</span>
-                    </div>
-                  )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="font-medium text-gray-900 mb-3">Información General</h3>
+              <div className="space-y-2 text-sm">
+                <div><span className="font-medium">Proveedor:</span> {orden.proveedor_nombre}</div>
+                <div><span className="font-medium">Orden de Compra:</span> {orden.orden_compra_id}</div>
+                <div><span className="font-medium">Fecha Creación:</span> {formatDateShort(orden.fecha_creacion)}</div>
+                <div><span className="font-medium">Fecha Vencimiento:</span> {formatDateShort(orden.fecha_vencimiento)}</div>
+                <div>
+                  <span className="font-medium">Método de Pago:</span> 
+                  <span className="ml-2">
+                    {getMetodoIcon(orden.metodo_pago)} {orden.metodo_pago}
+                  </span>
                 </div>
+                {orden.referencia_bancaria && (
+                  <div><span className="font-medium">Referencia:</span> {orden.referencia_bancaria}</div>
+                )}
               </div>
-
-              <div>
-                <h3 className="font-medium text-gray-900 mb-4 flex items-center">
-                  <User className="h-5 w-5 mr-2" />
-                  Proveedor
-                </h3>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="font-medium text-gray-900">{orden.proveedor_nombre}</p>
-                  <p className="text-sm text-gray-600">ID: {orden.proveedor_id}</p>
+            </div>
+            
+            <div>
+              <h3 className="font-medium text-gray-900 mb-3">Monto</h3>
+              <div className="space-y-2">
+                <div className="text-3xl font-bold text-gray-900">
+                  {formatCurrency(orden.monto)}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {orden.moneda}
                 </div>
               </div>
             </div>
+          </div>
 
-            <div className="space-y-6">
-              <div>
-                <h3 className="font-medium text-gray-900 mb-4 flex items-center">
-                  <DollarSign className="h-5 w-5 mr-2" />
-                  Información Financiera
-                </h3>
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <div className="text-center">
-                    <p className="text-sm text-gray-600 mb-1">Monto a Pagar</p>
-                    <p className="text-3xl font-bold text-blue-900">
-                      {formatCurrency(orden.monto)}
-                    </p>
-                    <p className="text-sm text-gray-600">{orden.moneda}</p>
-                  </div>
-                </div>
-              </div>
+          {orden.observaciones && (
+            <div className="mt-6 pt-6 border-t">
+              <h3 className="font-medium text-gray-900 mb-2">Observaciones</h3>
+              <p className="text-sm text-gray-600">{orden.observaciones}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-              {orden.observaciones && (
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-3">Observaciones</h3>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-700">{orden.observaciones}</p>
-                  </div>
-                </div>
-              )}
+      {/* Acciones disponibles según el estado */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Acciones</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-4">
+            <p className="text-gray-600 mb-4">
+              Las acciones estarán disponibles cuando se configure la base de datos.
+            </p>
+            <div className="space-x-2">
+              <Button variant="outline" disabled>Aprobar</Button>
+              <Button variant="outline" disabled>Rechazar</Button>
+              <Button variant="outline" disabled>Marcar como Pagada</Button>
             </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* Acciones */}
-      {(orden.estado === EstadoOrdenPago.PENDIENTE || 
-        orden.estado === EstadoOrdenPago.APROBADA) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Acciones</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4">
-              {orden.estado === EstadoOrdenPago.PENDIENTE && (
-                <Button 
-                  onClick={handleAprobar}
-                  disabled={processingAction}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  {processingAction ? "Procesando..." : "Aprobar Orden"}
-                </Button>
-              )}
-
-              {orden.estado === EstadoOrdenPago.APROBADA && (
-                <Dialog open={pagoDialog} onOpenChange={setPagoDialog}>
-                  <DialogTrigger asChild>
-                    <Button 
-                      disabled={processingAction}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <DollarSign className="h-4 w-4 mr-2" />
-                      Registrar Pago
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Registrar Pago</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="referencia">Referencia Bancaria</Label>
-                        <Input
-                          id="referencia"
-                          value={referenciaBancaria}
-                          onChange={(e) => setReferenciaBancaria(e.target.value)}
-                          placeholder="TRF-20250115-001"
-                        />
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button 
-                          onClick={handlePagar}
-                          disabled={processingAction || !referenciaBancaria.trim()}
-                        >
-                          {processingAction ? "Procesando..." : "Confirmar Pago"}
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          onClick={() => {
-                            setPagoDialog(false)
-                            setReferenciaBancaria("")
-                          }}
-                        >
-                          Cancelar
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )}
-
-              <Button 
-                variant="destructive"
-                onClick={handleRechazar}
-                disabled={processingAction}
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                {processingAction ? "Procesando..." : "Rechazar Orden"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
@@ -8,26 +8,44 @@ import { Input } from "@/views/ui/input"
 import { Label } from "@/views/ui/label"
 import { Textarea } from "@/views/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/views/ui/select"
-import { MetodoPago } from "@/models"
-
-const proveedores = [
-  { id: "1", nombre: "ABC Corporation" },
-  { id: "2", nombre: "XYZ Supplies Ltd" },
-  { id: "3", nombre: "Tech Solutions Inc" },
-  { id: "4", nombre: "Global Materials" }
-]
-
-const ordenesCompra = [
-  { id: "001", numero: "OC-2025-001", proveedor: "ABC Corporation", total: 5250 },
-  { id: "002", numero: "OC-2025-002", proveedor: "XYZ Supplies Ltd", total: 8750 },
-  { id: "003", numero: "OC-2025-003", proveedor: "Tech Solutions Inc", total: 12400 }
-]
+import { MetodoPago, OrdenCompra, Proveedor, EstadoOrdenCompra, EstadoProveedor } from "@/models"
+import { OrdenCompraService, ProveedorController } from "@/controllers"
 
 export function OrdenPagoForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [selectedOrdenCompra, setSelectedOrdenCompra] = useState("")
   const [monto, setMonto] = useState("")
+  const [proveedores, setProveedores] = useState<Proveedor[]>([])
+  const [ordenesCompra, setOrdenesCompra] = useState<OrdenCompra[]>([])
+  const [loadingData, setLoadingData] = useState(true)
   const router = useRouter()
+
+  // Cargar datos al montar el componente
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoadingData(true)
+        const [proveedoresData, ordenesData] = await Promise.all([
+          ProveedorController.getAll(),
+          OrdenCompraService.getAll()
+        ])
+        
+        // Filtrar solo proveedores activos
+        const proveedoresActivos = proveedoresData.filter(p => p.estado === EstadoProveedor.ACTIVO)
+        setProveedores(proveedoresActivos)
+        
+        // Filtrar solo órdenes aprobadas (que pueden generar pago)
+        const ordenesAprobadas = ordenesData.filter(o => o.estado === EstadoOrdenCompra.APROBADA)
+        setOrdenesCompra(ordenesAprobadas)
+      } catch (error) {
+        console.error("Error al cargar datos:", error)
+      } finally {
+        setLoadingData(false)
+      }
+    }
+
+    fetchData()
+  }, [])
 
   const handleOrdenCompraChange = (ordenId: string) => {
     setSelectedOrdenCompra(ordenId)
@@ -57,29 +75,61 @@ export function OrdenPagoForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="orden-compra">Orden de Compra</Label>
-              <Select onValueChange={handleOrdenCompraChange} required>
+              <Select onValueChange={handleOrdenCompraChange} required disabled={loadingData}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona una orden de compra" />
+                  <SelectValue 
+                    placeholder={
+                      loadingData 
+                        ? "Cargando órdenes..." 
+                        : ordenesCompra.length === 0 
+                        ? "No hay órdenes de compra aprobadas" 
+                        : "Selecciona una orden de compra"
+                    } 
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  {ordenesCompra.map((orden) => (
-                    <SelectItem key={orden.id} value={orden.id}>
-                      {orden.numero} - {orden.proveedor} - ${orden.total.toLocaleString()}
+                  {ordenesCompra.length === 0 ? (
+                    <SelectItem value="" disabled>
+                      No hay órdenes de compra aprobadas
                     </SelectItem>
-                  ))}
+                  ) : (
+                    ordenesCompra.map((orden) => (
+                      <SelectItem key={orden.id} value={orden.id}>
+                        {orden.numero} - {orden.proveedor_nombre} - ${orden.total.toLocaleString()}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="proveedor">Proveedor</Label>
-              <Select required>
+              <Select required disabled={loadingData}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un proveedor" />
+                  <SelectValue 
+                    placeholder={
+                      loadingData 
+                        ? "Cargando proveedores..." 
+                        : proveedores.length === 0 
+                        ? "No hay proveedores disponibles" 
+                        : "Selecciona un proveedor"
+                    } 
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  {proveedores.map((proveedor) => (
-                    <SelectItem key={proveedor.id} value={proveedor.id}>
+                  {proveedores.length === 0 ? (
+                    <SelectItem value="" disabled>
+                      No hay proveedores registrados
+                    </SelectItem>
+                  ) : (
+                    proveedores.map((proveedor) => (
+                      <SelectItem key={proveedor.id} value={proveedor.id}>
+                        {proveedor.nombre}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>>
                       {proveedor.nombre}
                     </SelectItem>
                   ))}

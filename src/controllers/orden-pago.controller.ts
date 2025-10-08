@@ -3,83 +3,72 @@ import {
   CreateOrdenPagoData, 
   UpdateOrdenPagoData,
   EstadoOrdenPago,
-  MetodoPago
+  MetodoPago 
 } from "@/models"
+import { NotFoundError, ValidationError, BusinessLogicError } from "@/shared/errors"
 
-// Datos mock de órdenes de pago
-const ordenesPago: OrdenPago[] = [
-  {
-    id: "001",
-    numero: "OP-2025-001",
-    orden_compra_id: "001",
-    proveedor_id: "1",
-    proveedor_nombre: "ABC Corporation",
-    fecha_creacion: new Date("2025-01-16"),
-    fecha_vencimiento: new Date("2025-01-31"),
-    monto: 5250,
-    moneda: "ARS",
-    estado: EstadoOrdenPago.PENDIENTE,
-    metodo_pago: MetodoPago.TRANSFERENCIA,
-    observaciones: "Pago de orden de compra OC-2025-001",
-    created_at: new Date("2025-01-16"),
-    updated_at: new Date("2025-01-16")
-  },
-  {
-    id: "002",
-    numero: "OP-2025-002", 
-    orden_compra_id: "002",
-    proveedor_id: "2",
-    proveedor_nombre: "XYZ Supplies Ltd",
-    fecha_creacion: new Date("2025-01-15"),
-    fecha_vencimiento: new Date("2025-01-30"),
-    monto: 8750,
-    moneda: "ARS",
-    estado: EstadoOrdenPago.APROBADA,
-    metodo_pago: MetodoPago.TRANSFERENCIA,
-    referencia_bancaria: "TRF-20250115-001",
-    observaciones: "Pago urgente - proveedor preferencial",
-    created_at: new Date("2025-01-15"),
-    updated_at: new Date("2025-01-15")
-  },
-  {
-    id: "003",
-    numero: "OP-2025-003",
-    orden_compra_id: "003", 
-    proveedor_id: "3",
-    proveedor_nombre: "Tech Solutions Inc",
-    fecha_creacion: new Date("2025-01-14"),
-    fecha_vencimiento: new Date("2025-01-28"),
-    monto: 12400,
-    moneda: "ARS",
-    estado: EstadoOrdenPago.PAGADA,
-    metodo_pago: MetodoPago.CHEQUE,
-    referencia_bancaria: "CHQ-20250114-001",
-    created_at: new Date("2025-01-14"),
-    updated_at: new Date("2025-01-14")
-  }
-]
+// TODO: Conectar con base de datos real
+// const prisma = new PrismaClient()
 
-export class OrdenPagoService {
+// Almacenamiento temporal en memoria (se perderá al reiniciar)
+// TODO: Reemplazar con conexión a base de datos real
+let ordenesPagoTemporales: OrdenPago[] = []
+let nextId = 1
+
+export class OrdenPagoController {
   static async getAll(): Promise<OrdenPago[]> {
     await new Promise(resolve => setTimeout(resolve, 500))
-    return ordenesPago
+    
+    // TODO: Reemplazar con query real
+    // return await prisma.ordenPago.findMany({
+    //   include: { ordenCompra: true, proveedor: true },
+    //   orderBy: { created_at: 'desc' }
+    // })
+    
+    return ordenesPagoTemporales
   }
 
   static async getById(id: string): Promise<OrdenPago | null> {
     await new Promise(resolve => setTimeout(resolve, 300))
-    return ordenesPago.find(orden => orden.id === id) || null
+    
+    // TODO: Reemplazar con query real
+    // return await prisma.ordenPago.findUnique({
+    //   where: { id },
+    //   include: { ordenCompra: true, proveedor: true }
+    // })
+    
+    return ordenesPagoTemporales.find(op => op.id === id) || null
   }
 
   static async create(data: CreateOrdenPagoData): Promise<OrdenPago> {
     await new Promise(resolve => setTimeout(resolve, 1000))
     
-    const newId = (ordenesPago.length + 1).toString().padStart(3, '0')
-    const newOrden: OrdenPago = {
-      id: newId,
-      numero: `OP-2025-${newId}`,
+    // Validaciones de negocio
+    if (!data.orden_compra_id) {
+      throw new ValidationError("Orden de compra es requerida", "orden_compra_id")
+    }
+
+    if (!data.proveedor_id) {
+      throw new ValidationError("Proveedor es requerido", "proveedor_id")
+    }
+
+    if (data.monto <= 0) {
+      throw new ValidationError("El monto debe ser mayor a 0", "monto")
+    }
+
+    if (data.fecha_vencimiento <= new Date()) {
+      throw new ValidationError("La fecha de vencimiento debe ser futura", "fecha_vencimiento")
+    }
+
+    // TODO: Verificar que la orden de compra existe y está aprobada
+    // (Por ahora omitimos esta validación)
+    
+    const nuevaOrdenPago: OrdenPago = {
+      id: String(nextId++),
+      numero: await this.generateNumero(),
       orden_compra_id: data.orden_compra_id,
       proveedor_id: data.proveedor_id,
-      proveedor_nombre: "Proveedor Ejemplo", // TODO: Obtener del servicio de proveedores
+      proveedor_nombre: `Proveedor ${data.proveedor_id}`, // TODO: obtener nombre real
       fecha_creacion: new Date(),
       fecha_vencimiento: data.fecha_vencimiento,
       monto: data.monto,
@@ -91,32 +80,51 @@ export class OrdenPagoService {
       updated_at: new Date()
     }
     
-    ordenesPago.push(newOrden)
-    return newOrden
+    ordenesPagoTemporales.push(nuevaOrdenPago)
+    return nuevaOrdenPago
   }
 
   static async update(id: string, data: UpdateOrdenPagoData): Promise<OrdenPago | null> {
     await new Promise(resolve => setTimeout(resolve, 800))
     
-    const index = ordenesPago.findIndex(orden => orden.id === id)
-    if (index === -1) return null
+    // Validaciones
+    if (data.monto && data.monto <= 0) {
+      throw new ValidationError("El monto debe ser mayor a 0", "monto")
+    }
+
+    if (data.fecha_vencimiento && data.fecha_vencimiento <= new Date()) {
+      throw new ValidationError("La fecha de vencimiento debe ser futura", "fecha_vencimiento")
+    }
     
-    ordenesPago[index] = {
-      ...ordenesPago[index],
+    const index = ordenesPagoTemporales.findIndex(op => op.id === id)
+    if (index === -1) {
+      throw new NotFoundError("Orden de pago no encontrada")
+    }
+    
+    ordenesPagoTemporales[index] = {
+      ...ordenesPagoTemporales[index],
       ...data,
       updated_at: new Date()
     }
     
-    return ordenesPago[index]
+    return ordenesPagoTemporales[index]
   }
 
   static async delete(id: string): Promise<boolean> {
     await new Promise(resolve => setTimeout(resolve, 500))
     
-    const index = ordenesPago.findIndex(orden => orden.id === id)
-    if (index === -1) return false
+    // Verificar que se puede eliminar (solo si está pendiente)
+    const orden = ordenesPagoTemporales.find(op => op.id === id)
+    if (orden && orden.estado !== EstadoOrdenPago.PENDIENTE) {
+      throw new BusinessLogicError("Solo se pueden eliminar órdenes pendientes")
+    }
     
-    ordenesPago.splice(index, 1)
+    const index = ordenesPagoTemporales.findIndex(op => op.id === id)
+    if (index === -1) {
+      return false
+    }
+    
+    ordenesPagoTemporales.splice(index, 1)
     return true
   }
 
@@ -124,28 +132,71 @@ export class OrdenPagoService {
     return this.update(id, { estado: EstadoOrdenPago.APROBADA })
   }
 
-  static async pagar(id: string, referencia_bancaria: string): Promise<OrdenPago | null> {
-    return this.update(id, { 
-      estado: EstadoOrdenPago.PAGADA, 
-      referencia_bancaria 
-    })
-  }
-
   static async rechazar(id: string): Promise<OrdenPago | null> {
     return this.update(id, { estado: EstadoOrdenPago.RECHAZADA })
   }
 
-  static async getByOrdenCompra(ordenCompraId: string): Promise<OrdenPago[]> {
-    await new Promise(resolve => setTimeout(resolve, 300))
-    return ordenesPago.filter(orden => orden.orden_compra_id === ordenCompraId)
+  static async marcarPagada(id: string, referenciaBancaria: string): Promise<OrdenPago | null> {
+    if (!referenciaBancaria || referenciaBancaria.trim().length === 0) {
+      throw new ValidationError("La referencia bancaria es requerida", "referencia_bancaria")
+    }
+
+    return this.update(id, { 
+      estado: EstadoOrdenPago.PAGADA,
+      referencia_bancaria: referenciaBancaria
+    })
+  }
+
+  static async marcarVencida(id: string): Promise<OrdenPago | null> {
+    return this.update(id, { estado: EstadoOrdenPago.VENCIDA })
+  }
+
+  // Métodos de consulta adicionales
+  static async getByProveedor(proveedorId: string): Promise<OrdenPago[]> {
+    await new Promise(resolve => setTimeout(resolve, 400))
+    
+    return ordenesPagoTemporales.filter(op => op.proveedor_id === proveedorId)
+  }
+
+  static async getByEstado(estado: EstadoOrdenPago): Promise<OrdenPago[]> {
+    await new Promise(resolve => setTimeout(resolve, 400))
+    
+    return ordenesPagoTemporales.filter(op => op.estado === estado)
   }
 
   static async getVencidas(): Promise<OrdenPago[]> {
-    await new Promise(resolve => setTimeout(resolve, 300))
-    const hoy = new Date()
-    return ordenesPago.filter(orden => 
-      orden.fecha_vencimiento < hoy && 
-      orden.estado !== EstadoOrdenPago.PAGADA
+    await new Promise(resolve => setTimeout(resolve, 400))
+    
+    const ahora = new Date()
+    return ordenesPagoTemporales.filter(op => 
+      op.fecha_vencimiento < ahora && 
+      [EstadoOrdenPago.PENDIENTE, EstadoOrdenPago.APROBADA].includes(op.estado)
     )
+  }
+
+  static async getEstadisticas(): Promise<any> {
+    await new Promise(resolve => setTimeout(resolve, 600))
+    
+    const stats = ordenesPagoTemporales.reduce((acc, orden) => {
+      acc[orden.estado] = (acc[orden.estado] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+    
+    const totalMonto = ordenesPagoTemporales.reduce((sum, op) => sum + op.monto, 0)
+    
+    return {
+      total_ordenes: ordenesPagoTemporales.length,
+      monto_total: totalMonto,
+      por_estado: stats
+    }
+  }
+
+  // Método privado para generar número de orden
+  private static async generateNumero(): Promise<string> {
+    const year = new Date().getFullYear()
+    const month = String(new Date().getMonth() + 1).padStart(2, '0')
+    const sequence = nextId
+    
+    return `OP-${year}${month}-${String(sequence).padStart(4, '0')}`
   }
 }

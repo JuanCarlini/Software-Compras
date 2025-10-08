@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
 import { Badge } from "@/views/ui/badge"
 import { Input } from "@/views/ui/input"
+import { SearchBar } from "@/views/ui/search-bar"
 import { 
   Download, 
   Eye, 
@@ -19,6 +20,7 @@ import {
 import Link from "next/link"
 import { useState } from "react"
 import { Reporte, EstadoReporte, TipoReporte, FormatoReporte } from "@/models"
+import { searchWithScore } from "@/shared/search-utils"
 
 interface Props {
   reportes: Reporte[]

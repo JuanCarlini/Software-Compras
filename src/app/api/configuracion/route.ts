@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ConfiguracionController } from "@/controllers"
+import { createErrorResponse, AppError } from "@/shared/errors"
 
 export async function GET() {
   try {
@@ -14,9 +15,11 @@ export async function GET() {
     })
   } catch (error) {
     console.error("Error fetching configuracion:", error)
+    const errorResponse = createErrorResponse(error as Error)
+    
     return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
+      errorResponse,
+      { status: errorResponse.error.statusCode }
     )
   }
 }

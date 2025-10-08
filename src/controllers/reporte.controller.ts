@@ -1,194 +1,246 @@
 import { 
   Reporte, 
-  CreateReporteData,
+  CreateReporteData, 
   TipoReporte,
   FormatoReporte,
   EstadoReporte,
   ReporteEstadisticas
 } from "@/models"
+import { NotFoundError, ValidationError } from "@/shared/errors"
 
-// Datos mock de reportes
-const reportes: Reporte[] = [
-  {
-    id: "1",
-    nombre: "Reporte de Órdenes de Compra - Enero 2025",
-    tipo: TipoReporte.ORDENES_COMPRA,
-    descripcion: "Reporte mensual de todas las órdenes de compra del mes de enero",
-    parametros: {
-      fecha_inicio: new Date("2025-01-01"),
-      fecha_fin: new Date("2025-01-31"),
-      incluir_totales: true
-    },
-    formato: FormatoReporte.PDF,
-    estado: EstadoReporte.COMPLETADO,
-    resultado_url: "/reportes/downloads/ordenes-compra-enero-2025.pdf",
-    fecha_generacion: new Date("2025-01-31T10:30:00"),
-    generado_por: "admin@empresa.com",
-    created_at: new Date("2025-01-31T10:28:00"),
-    updated_at: new Date("2025-01-31T10:30:00")
-  },
-  {
-    id: "2",
-    nombre: "Análisis de Proveedores - Q1 2025",
-    tipo: TipoReporte.PROVEEDORES,
-    descripcion: "Análisis de rendimiento y estadísticas de proveedores del primer trimestre",
-    parametros: {
-      fecha_inicio: new Date("2025-01-01"),
-      fecha_fin: new Date("2025-03-31"),
-      incluir_totales: true
-    },
-    formato: FormatoReporte.EXCEL,
-    estado: EstadoReporte.COMPLETADO,
-    resultado_url: "/reportes/downloads/proveedores-q1-2025.xlsx",
-    fecha_generacion: new Date("2025-02-01T14:15:00"),
-    generado_por: "admin@empresa.com",
-    created_at: new Date("2025-02-01T14:10:00"),
-    updated_at: new Date("2025-02-01T14:15:00")
-  },
-  {
-    id: "3",
-    nombre: "Reporte Financiero - Febrero 2025",
-    tipo: TipoReporte.FINANCIERO,
-    descripcion: "Resumen financiero del mes de febrero",
-    parametros: {
-      fecha_inicio: new Date("2025-02-01"),
-      fecha_fin: new Date("2025-02-28"),
-      incluir_totales: true
-    },
-    formato: FormatoReporte.PDF,
-    estado: EstadoReporte.GENERANDO,
-    generado_por: "admin@empresa.com",
-    created_at: new Date("2025-02-28T16:45:00"),
-    updated_at: new Date("2025-02-28T16:45:00")
-  }
-]
+// TODO: Conectar con base de datos real
+// const prisma = new PrismaClient()
 
-const estadisticasMock: ReporteEstadisticas = {
-  total_reportes: 25,
-  reportes_este_mes: 8,
-  reportes_pendientes: 2,
-  formatos_mas_usados: [
-    { formato: FormatoReporte.PDF, cantidad: 15 },
-    { formato: FormatoReporte.EXCEL, cantidad: 8 },
-    { formato: FormatoReporte.CSV, cantidad: 2 }
-  ],
-  tipos_mas_generados: [
-    { tipo: TipoReporte.ORDENES_COMPRA, cantidad: 8 },
-    { tipo: TipoReporte.PROVEEDORES, cantidad: 6 },
-    { tipo: TipoReporte.FINANCIERO, cantidad: 5 },
-    { tipo: TipoReporte.ORDENES_PAGO, cantidad: 4 },
-    { tipo: TipoReporte.PRODUCTOS, cantidad: 2 }
-  ]
-}
+// Almacenamiento temporal en memoria (se perderá al reiniciar)
+let reportesTemporales: Reporte[] = []
+let nextId = 1
 
 export class ReporteController {
   static async getAll(): Promise<Reporte[]> {
     await new Promise(resolve => setTimeout(resolve, 500))
-    return [...reportes].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    
+    // TODO: Reemplazar con query real
+    // return await prisma.reporte.findMany({
+    //   orderBy: { created_at: 'desc' }
+    // })
+    
+    return reportesTemporales
   }
 
   static async getById(id: string): Promise<Reporte | null> {
     await new Promise(resolve => setTimeout(resolve, 300))
-    return reportes.find(reporte => reporte.id === id) || null
-  }
-
-  static async getEstadisticas(): Promise<ReporteEstadisticas> {
-    await new Promise(resolve => setTimeout(resolve, 400))
-    return estadisticasMock
+    
+    // TODO: Reemplazar con query real
+    // return await prisma.reporte.findUnique({
+    //   where: { id }
+    // })
+    
+    return reportesTemporales.find(r => r.id === id) || null
   }
 
   static async create(data: CreateReporteData): Promise<Reporte> {
-    await new Promise(resolve => setTimeout(resolve, 1500)) // Simular generación
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // Validaciones
+    if (!data.nombre || data.nombre.trim().length === 0) {
+      throw new ValidationError("El nombre del reporte es requerido", "nombre")
+    }
 
-    const newId = (reportes.length + 1).toString()
-    const newReporte: Reporte = {
-      id: newId,
-      ...data,
-      estado: EstadoReporte.COMPLETADO, // En la vida real sería PENDIENTE/GENERANDO
-      resultado_url: `/reportes/downloads/${data.nombre.toLowerCase().replace(/\s+/g, '-')}.${data.formato.toLowerCase()}`,
-      fecha_generacion: new Date(),
-      generado_por: "admin@empresa.com", // En la vida real vendría del usuario autenticado
+    if (!Object.values(TipoReporte).includes(data.tipo)) {
+      throw new ValidationError("Tipo de reporte inválido", "tipo")
+    }
+
+    if (!Object.values(FormatoReporte).includes(data.formato)) {
+      throw new ValidationError("Formato de reporte inválido", "formato")
+    }
+
+    const nuevoReporte: Reporte = {
+      id: String(nextId++),
+      nombre: data.nombre,
+      tipo: data.tipo,
+      descripcion: data.descripcion,
+      parametros: data.parametros,
+      formato: data.formato,
+      estado: EstadoReporte.PENDIENTE,
+      generado_por: 'Usuario Actual', // TODO: obtener usuario real de sesión
       created_at: new Date(),
       updated_at: new Date()
     }
+    
+    reportesTemporales.push(nuevoReporte)
+    
+    // Simular generación del reporte
+    setTimeout(() => {
+      this.marcarCompletado(nuevoReporte.id, `/reportes/${nuevoReporte.id}.${data.formato.toLowerCase()}`)
+    }, 3000)
+    
+    return nuevoReporte
+  }
 
-    reportes.push(newReporte)
-    return newReporte
+  static async regenerar(id: string): Promise<Reporte | null> {
+    await new Promise(resolve => setTimeout(resolve, 800))
+    
+    const index = reportesTemporales.findIndex(r => r.id === id)
+    if (index === -1) {
+      throw new NotFoundError("Reporte no encontrado")
+    }
+    
+    // Actualizar estado a pendiente y limpiar resultados anteriores
+    reportesTemporales[index] = {
+      ...reportesTemporales[index],
+      estado: EstadoReporte.PENDIENTE,
+      resultado_url: undefined,
+      fecha_generacion: undefined,
+      updated_at: new Date()
+    }
+    
+    // Simular regeneración
+    setTimeout(() => {
+      this.marcarCompletado(id, `/reportes/${id}.${reportesTemporales[index].formato.toLowerCase()}`)
+    }, 3000)
+    
+    return reportesTemporales[index]
   }
 
   static async delete(id: string): Promise<boolean> {
     await new Promise(resolve => setTimeout(resolve, 500))
     
-    const index = reportes.findIndex(reporte => reporte.id === id)
-    if (index === -1) return false
+    const index = reportesTemporales.findIndex(r => r.id === id)
+    if (index === -1) {
+      return false
+    }
     
-    reportes.splice(index, 1)
+    reportesTemporales.splice(index, 1)
     return true
   }
 
-  static async regenerar(id: string): Promise<Reporte | null> {
-    await new Promise(resolve => setTimeout(resolve, 1200))
+  static async marcarCompletado(id: string, resultadoUrl: string): Promise<Reporte | null> {
+    await new Promise(resolve => setTimeout(resolve, 300))
     
-    const reporte = reportes.find(r => r.id === id)
-    if (!reporte) return null
-
-    // Simular regeneración
-    reporte.estado = EstadoReporte.COMPLETADO
-    reporte.fecha_generacion = new Date()
-    reporte.updated_at = new Date()
-    reporte.resultado_url = `/reportes/downloads/${reporte.nombre.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.${reporte.formato.toLowerCase()}`
-
-    return reporte
+    const index = reportesTemporales.findIndex(r => r.id === id)
+    if (index === -1) {
+      return null
+    }
+    
+    reportesTemporales[index] = {
+      ...reportesTemporales[index],
+      estado: EstadoReporte.COMPLETADO,
+      resultado_url: resultadoUrl,
+      fecha_generacion: new Date(),
+      updated_at: new Date()
+    }
+    
+    return reportesTemporales[index]
   }
 
-  static async descargar(id: string, formato: 'pdf' | 'excel'): Promise<string> {
-    await new Promise(resolve => setTimeout(resolve, 800))
+  static async marcarError(id: string, error: string): Promise<Reporte | null> {
+    await new Promise(resolve => setTimeout(resolve, 300))
     
-    const reporte = reportes.find(r => r.id === id)
-    if (!reporte) throw new Error("Reporte no encontrado")
-
-    // Simular descarga - en la vida real sería una URL real
-    return `/reportes/downloads/${reporte.nombre.toLowerCase().replace(/\s+/g, '-')}.${formato}`
+    const index = reportesTemporales.findIndex(r => r.id === id)
+    if (index === -1) {
+      return null
+    }
+    
+    reportesTemporales[index] = {
+      ...reportesTemporales[index],
+      estado: EstadoReporte.ERROR,
+      updated_at: new Date()
+    }
+    
+    return reportesTemporales[index]
   }
 
-  // Métodos para obtener datos específicos para reportes
+  // Métodos de consulta
+  static async getByTipo(tipo: TipoReporte): Promise<Reporte[]> {
+    await new Promise(resolve => setTimeout(resolve, 400))
+    
+    return reportesTemporales.filter(r => r.tipo === tipo)
+  }
+
+  static async getByEstado(estado: EstadoReporte): Promise<Reporte[]> {
+    await new Promise(resolve => setTimeout(resolve, 400))
+    
+    return reportesTemporales.filter(r => r.estado === estado)
+  }
+
+  static async getEstadisticas(): Promise<ReporteEstadisticas> {
+    await new Promise(resolve => setTimeout(resolve, 600))
+    
+    const totalReportes = reportesTemporales.length
+    
+    const ahora = new Date()
+    const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1)
+    const reportesEsteMes = reportesTemporales.filter(r => r.created_at >= inicioMes).length
+    
+    const reportesPendientes = reportesTemporales.filter(r => r.estado === EstadoReporte.PENDIENTE).length
+    
+    // Agrupar por formato
+    const formatosCounts = reportesTemporales.reduce((acc, r) => {
+      acc[r.formato] = (acc[r.formato] || 0) + 1
+      return acc
+    }, {} as Record<FormatoReporte, number>)
+    
+    const formatos_mas_usados = Object.entries(formatosCounts).map(([formato, cantidad]) => ({
+      formato: formato as FormatoReporte,
+      cantidad
+    }))
+    
+    // Agrupar por tipo
+    const tiposCounts = reportesTemporales.reduce((acc, r) => {
+      acc[r.tipo] = (acc[r.tipo] || 0) + 1
+      return acc
+    }, {} as Record<TipoReporte, number>)
+    
+    const tipos_mas_generados = Object.entries(tiposCounts).map(([tipo, cantidad]) => ({
+      tipo: tipo as TipoReporte,
+      cantidad
+    }))
+
+    return {
+      total_reportes: totalReportes,
+      reportes_este_mes: reportesEsteMes,
+      reportes_pendientes: reportesPendientes,
+      formatos_mas_usados,
+      tipos_mas_generados
+    }
+  }
+
+  // Método para obtener datos del reporte (para vista previa)
   static async getReporteData(tipo: TipoReporte, parametros: any): Promise<any> {
     await new Promise(resolve => setTimeout(resolve, 800))
     
+    // TODO: Implementar obtención de datos reales según el tipo
+    // Por ahora devolvemos datos de ejemplo basados en los datos temporales
     switch (tipo) {
       case TipoReporte.ORDENES_COMPRA:
+        // Simular datos de órdenes de compra
         return {
-          total_ordenes: 45,
-          monto_total: 125000,
-          promedio_orden: 2777.78,
-          ordenes_por_estado: {
-            pendiente: 12,
-            aprobada: 25,
-            recibida: 8
-          }
+          total_ordenes: 0,
+          monto_total: 0,
+          promedio_orden: 0,
+          por_estado: {}
         }
-      
+        
       case TipoReporte.PROVEEDORES:
+        // Simular datos de proveedores
         return {
-          total_proveedores: 15,
-          proveedores_activos: 12,
-          proveedores_suspendidos: 3,
-          top_proveedores: [
-            { nombre: "ABC Corporation", total_ordenes: 15, monto_total: 45000 },
-            { nombre: "XYZ Supplies Ltd", total_ordenes: 12, monto_total: 38000 }
-          ]
+          total_proveedores: 0,
+          proveedores_activos: 0,
+          proveedores_suspendidos: 0,
+          top_proveedores: []
         }
-      
+        
       case TipoReporte.FINANCIERO:
+        // Simular datos financieros
         return {
-          ingresos_totales: 250000,
-          gastos_totales: 125000,
-          utilidad_neta: 125000,
-          margen_utilidad: 50.0,
-          cuentas_por_pagar: 35000,
-          cuentas_por_cobrar: 85000
+          ingresos_totales: 0,
+          gastos_totales: 0,
+          utilidad_neta: 0,
+          margen_utilidad: 0,
+          cuentas_por_pagar: 0,
+          cuentas_por_cobrar: 0
         }
-      
+        
       default:
         return {}
     }

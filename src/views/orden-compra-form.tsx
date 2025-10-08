@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
@@ -8,17 +8,33 @@ import { Input } from "@/views/ui/input"
 import { Label } from "@/views/ui/label"
 import { Textarea } from "@/views/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/views/ui/select"
-
-const proveedores = [
-  { id: "1", nombre: "ABC Corporation" },
-  { id: "2", nombre: "XYZ Supplies Ltd" },
-  { id: "3", nombre: "Tech Solutions Inc" },
-  { id: "4", nombre: "Global Materials" }
-]
+import { ProveedorController } from "@/controllers"
+import { Proveedor, EstadoProveedor } from "@/models"
 
 export function OrdenCompraForm() {
   const [isLoading, setIsLoading] = useState(false)
+  const [proveedores, setProveedores] = useState<Proveedor[]>([])
+  const [loadingProveedores, setLoadingProveedores] = useState(true)
   const router = useRouter()
+
+  // Cargar proveedores al montar el componente
+  useEffect(() => {
+    const fetchProveedores = async () => {
+      try {
+        setLoadingProveedores(true)
+        const data = await ProveedorController.getAll()
+        // Filtrar solo proveedores activos
+        const proveedoresActivos = data.filter(p => p.estado === EstadoProveedor.ACTIVO)
+        setProveedores(proveedoresActivos)
+      } catch (error) {
+        console.error("Error al cargar proveedores:", error)
+      } finally {
+        setLoadingProveedores(false)
+      }
+    }
+
+    fetchProveedores()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,16 +56,30 @@ export function OrdenCompraForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="proveedor">Proveedor</Label>
-              <Select required>
+              <Select required disabled={loadingProveedores}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un proveedor" />
+                  <SelectValue 
+                    placeholder={
+                      loadingProveedores 
+                        ? "Cargando proveedores..." 
+                        : proveedores.length === 0 
+                        ? "No hay proveedores disponibles" 
+                        : "Selecciona un proveedor"
+                    } 
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  {proveedores.map((proveedor) => (
-                    <SelectItem key={proveedor.id} value={proveedor.id}>
-                      {proveedor.nombre}
+                  {proveedores.length === 0 ? (
+                    <SelectItem value="" disabled>
+                      No hay proveedores registrados
                     </SelectItem>
-                  ))}
+                  ) : (
+                    proveedores.map((proveedor) => (
+                      <SelectItem key={proveedor.id} value={proveedor.id}>
+                        {proveedor.nombre}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>

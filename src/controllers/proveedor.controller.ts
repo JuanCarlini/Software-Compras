@@ -4,89 +4,115 @@ import {
   UpdateProveedorData,
   EstadoProveedor 
 } from "@/models"
+import { NotFoundError, ValidationError, ConflictError } from "@/shared/errors"
 
-// Datos mock de proveedores
-const proveedores: Proveedor[] = [
-  {
-    id: "1",
-    nombre: "ABC Corporation",
-    rut: "12345678-9",
-    email: "contacto@abc.com",
-    telefono: "+54 11 1234-5678",
-    direccion: "Av. Corrientes 1234",
-    ciudad: "Buenos Aires",
-    pais: "Argentina",
-    estado: EstadoProveedor.ACTIVO,
-    contacto_principal: "Juan Pérez",
-    sitio_web: "https://abc.com",
-    created_at: new Date("2024-01-15"),
-    updated_at: new Date("2024-01-15")
-  },
-  {
-    id: "2", 
-    nombre: "XYZ Supplies Ltd",
-    rut: "87654321-0",
-    email: "ventas@xyz.com",
-    telefono: "+54 11 8765-4321",
-    direccion: "San Martín 567",
-    ciudad: "Córdoba", 
-    pais: "Argentina",
-    estado: EstadoProveedor.ACTIVO,
-    contacto_principal: "María García",
-    created_at: new Date("2024-01-10"),
-    updated_at: new Date("2024-01-10")
-  }
-]
+// TODO: Conectar con base de datos real
+// const prisma = new PrismaClient()
+
+// Almacenamiento temporal en memoria (se perderá al reiniciar)
+// TODO: Reemplazar con conexión a base de datos real
+let proveedoresTemporales: Proveedor[] = []
+let nextId = 1
 
 export class ProveedorController {
   static async getAll(): Promise<Proveedor[]> {
     await new Promise(resolve => setTimeout(resolve, 500))
-    return proveedores
+    
+    // TODO: Reemplazar con query real
+    // return await prisma.proveedor.findMany({
+    //   where: { deleted_at: null },
+    //   orderBy: { created_at: 'desc' }
+    // })
+    
+    return proveedoresTemporales
   }
 
   static async getById(id: string): Promise<Proveedor | null> {
     await new Promise(resolve => setTimeout(resolve, 300))
-    return proveedores.find(proveedor => proveedor.id === id) || null
+    
+    // TODO: Reemplazar con query real
+    // return await prisma.proveedor.findUnique({
+    //   where: { id, deleted_at: null }
+    // })
+    
+    return proveedoresTemporales.find(p => p.id === id) || null
   }
 
   static async create(data: CreateProveedorData): Promise<Proveedor> {
     await new Promise(resolve => setTimeout(resolve, 1000))
     
-    const newId = (proveedores.length + 1).toString()
-    const newProveedor: Proveedor = {
-      id: newId,
+    // Validaciones de negocio
+    if (!data.nombre || data.nombre.trim().length < 2) {
+      throw new ValidationError("Nombre debe tener al menos 2 caracteres", "nombre")
+    }
+
+    if (!data.rut || data.rut.length < 8) {
+      throw new ValidationError("RUT debe tener al menos 8 caracteres", "rut")
+    }
+
+    if (!data.email.includes("@")) {
+      throw new ValidationError("Email inválido", "email")
+    }
+
+    // Verificar RUT y email únicos en memoria
+    const existingRut = proveedoresTemporales.find(p => p.rut === data.rut)
+    if (existingRut) {
+      throw new ConflictError("Ya existe un proveedor con ese RUT")
+    }
+
+    const existingEmail = proveedoresTemporales.find(p => p.email === data.email)
+    if (existingEmail) {
+      throw new ConflictError("Ya existe un proveedor con ese email")
+    }
+    
+    // Crear proveedor temporal
+    const nuevoProveedor: Proveedor = {
+      id: String(nextId++),
       ...data,
       estado: EstadoProveedor.ACTIVO,
       created_at: new Date(),
       updated_at: new Date()
     }
     
-    proveedores.push(newProveedor)
-    return newProveedor
+    proveedoresTemporales.push(nuevoProveedor)
+    return nuevoProveedor
   }
 
   static async update(id: string, data: UpdateProveedorData): Promise<Proveedor | null> {
     await new Promise(resolve => setTimeout(resolve, 800))
     
-    const index = proveedores.findIndex(proveedor => proveedor.id === id)
-    if (index === -1) return null
+    // Validaciones
+    if (data.email && !data.email.includes("@")) {
+      throw new ValidationError("Email inválido", "email")
+    }
+
+    if (data.rut && data.rut.length < 8) {
+      throw new ValidationError("RUT debe tener al menos 8 caracteres", "rut")
+    }
     
-    proveedores[index] = {
-      ...proveedores[index],
+    const index = proveedoresTemporales.findIndex(p => p.id === id)
+    if (index === -1) {
+      throw new NotFoundError("Proveedor no encontrado")
+    }
+    
+    proveedoresTemporales[index] = {
+      ...proveedoresTemporales[index],
       ...data,
       updated_at: new Date()
     }
     
-    return proveedores[index]
+    return proveedoresTemporales[index]
   }
 
   static async delete(id: string): Promise<boolean> {
     await new Promise(resolve => setTimeout(resolve, 500))
     
-    const index = proveedores.findIndex(proveedor => proveedor.id === id)
-    if (index === -1) return false
+    const index = proveedoresTemporales.findIndex(p => p.id === id)
+    if (index === -1) {
+      return false
+    }
     
-    proveedores.splice(index, 1)
+    proveedoresTemporales.splice(index, 1)
     return true
   }
 
@@ -96,5 +122,32 @@ export class ProveedorController {
 
   static async suspender(id: string): Promise<Proveedor | null> {
     return this.update(id, { estado: EstadoProveedor.SUSPENDIDO })
+  }
+
+  static async getActivos(): Promise<Proveedor[]> {
+    await new Promise(resolve => setTimeout(resolve, 400))
+    
+    return proveedoresTemporales.filter(p => p.estado === EstadoProveedor.ACTIVO)
+  }
+
+  static async buscarPorRut(rut: string): Promise<Proveedor | null> {
+    await new Promise(resolve => setTimeout(resolve, 300))
+    
+    return proveedoresTemporales.find(p => p.rut === rut) || null
+  }
+
+  static async getEstadisticas(): Promise<any> {
+    await new Promise(resolve => setTimeout(resolve, 600))
+    
+    const activos = proveedoresTemporales.filter(p => p.estado === EstadoProveedor.ACTIVO).length
+    const suspendidos = proveedoresTemporales.filter(p => p.estado === EstadoProveedor.SUSPENDIDO).length
+    const inactivos = proveedoresTemporales.filter(p => p.estado === EstadoProveedor.INACTIVO).length
+    
+    return {
+      total: proveedoresTemporales.length,
+      activos,
+      suspendidos,
+      inactivos
+    }
   }
 }

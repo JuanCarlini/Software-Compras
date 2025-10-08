@@ -7,57 +7,83 @@ import {
   UserRole,
   UserStatus
 } from "@/models"
+import { AuthenticationError, ValidationError } from "@/shared/errors"
 
-// Usuarios mock
-const users: User[] = [
-  {
-    id: "1",
-    email: "admin@gestion.com",
-    nombre: "Admin",
-    apellido: "Sistema",
-    rol: UserRole.ADMIN,
-    estado: UserStatus.ACTIVO,
-    created_at: new Date("2024-01-01"),
-    updated_at: new Date("2024-01-01")
+// TODO: Reemplazar con conexión a base de datos real
+// Credenciales temporales para desarrollo (eliminar al conectar BD)
+const validCredentials = {
+  "admin@gestion.com": {
+    password: "admin123",
+    user: {
+      id: "1",
+      email: "admin@gestion.com",
+      nombre: "Administrador",
+      apellido: "Sistema",
+      rol: UserRole.ADMIN,
+      estado: UserStatus.ACTIVO,
+      created_at: new Date("2024-01-01"),
+      updated_at: new Date("2024-01-01")
+    }
   }
-]
+} as const
+
+// Array de usuarios para otros métodos
+const users: User[] = Object.values(validCredentials).map(cred => cred.user)
 
 export class AuthController {
   static async login(credentials: LoginCredentials): Promise<AuthUser | null> {
     await new Promise(resolve => setTimeout(resolve, 1000))
     
-    // Simulación: cualquier email válido es aceptado
-    if (credentials.email && credentials.password) {
-      const user: AuthUser = {
-        id: "1",
-        email: credentials.email,
-        nombre: "Usuario",
-        rol: UserRole.ADMIN
-      }
-      return user
+    // Validación básica de input
+    if (!credentials.email || !credentials.password) {
+      throw new ValidationError("Email y contraseña son requeridos")
     }
+
+    if (!credentials.email.includes("@")) {
+      throw new ValidationError("Formato de email inválido")
+    }
+
+    // Verificación de credenciales reales
+    const userCredential = validCredentials[credentials.email as keyof typeof validCredentials]
     
-    return null
+    if (!userCredential || userCredential.password !== credentials.password) {
+      throw new AuthenticationError("Credenciales inválidas")
+    }
+
+    // Verificar que el usuario esté activo
+    if (userCredential.user.estado !== UserStatus.ACTIVO) {
+      throw new AuthenticationError("Usuario inactivo")
+    }
+
+    const authUser: AuthUser = {
+      id: userCredential.user.id,
+      email: userCredential.user.email,
+      nombre: userCredential.user.nombre,
+      rol: userCredential.user.rol
+    }
+
+    return authUser
   }
 
   static async getCurrentUser(): Promise<AuthUser | null> {
-    // Simulación: devolver usuario admin por defecto
+    // TODO: Implementar validación de token JWT real
+    // Por ahora devuelve usuario admin por defecto
     return {
       id: "1",
       email: "admin@gestion.com", 
-      nombre: "Admin",
+      nombre: "Administrador",
       rol: UserRole.ADMIN
     }
   }
 
   static async logout(): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 500))
-    // Limpiar sesión
+    // TODO: Invalidar token JWT
   }
 
   static async validateToken(token: string): Promise<boolean> {
     await new Promise(resolve => setTimeout(resolve, 300))
-    // Validar token JWT
+    // TODO: Validar token JWT real
     return token.length > 0
   }
 }

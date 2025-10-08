@@ -109,7 +109,7 @@ export function ProveedorForm({ proveedor, isEditing = false }: Props) {
                 <Input
                   id="nombre"
                   {...form.register("nombre")}
-                  placeholder="ABC Corporation"
+                  placeholder="Nombre de la empresa"
                 />
                 {form.formState.errors.nombre && (
                   <p className="text-sm text-red-600">{form.formState.errors.nombre.message}</p>

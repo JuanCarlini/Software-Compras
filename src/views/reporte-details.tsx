@@ -69,7 +69,7 @@ const getTipoColor = (tipo: TipoReporte) => {
   return colors[tipo] || "bg-gray-100 text-gray-800"
 }
 
-const formatDate = (date: Date) => {
+const formatDate = (date: Date | string) => {
   return new Intl.DateTimeFormat('es-AR', {
     year: 'numeric',
     month: 'long',
@@ -80,11 +80,13 @@ const formatDate = (date: Date) => {
 }
 
 const formatParametros = (parametros: any) => {
+  if (!parametros) return []
+  
   const entries = Object.entries(parametros).filter(([key, value]) => value !== undefined && value !== null)
   
   return entries.map(([key, value]) => {
     let displayKey = key
-    let displayValue = value
+    let displayValue: string = String(value)
 
     // Formatear claves
     switch (key) {
@@ -106,9 +108,11 @@ const formatParametros = (parametros: any) => {
         break
       case 'estado_orden':
         displayKey = 'Estado de Orden'
+        displayValue = String(value)
         break
       default:
         displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+        displayValue = String(value)
     }
 
     return { key: displayKey, value: displayValue }
@@ -480,138 +484,4 @@ export function ReporteDetails({ reporte, onRegenerar, reporteData }: Props) {
     </div>
   )
 }
-              Descargar {reporte.formato}
-            </Button>
-          )}
-          
-          {(reporte.estado === EstadoReporte.ERROR || reporte.estado === EstadoReporte.COMPLETADO) && (
-            <Button 
-              variant="outline"
-              onClick={handleRegenerar}
-              disabled={isRegenerating}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isRegenerating ? 'animate-spin' : ''}`} />
-              Regenerar
-            </Button>
-          )}
-        </div>
-      </div>
 
-      {/* Información del Reporte */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <FileText className="h-5 w-5" />
-            <span>Información del Reporte</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium text-slate-700">Nombre</p>
-              <p className="text-slate-900">{reporte.nombre}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-700">Tipo</p>
-              <p className="text-slate-900">{reporte.tipo}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-700">Formato</p>
-              <p className="text-slate-900">{reporte.formato}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-700">Estado</p>
-              <p className="text-slate-900">{reporte.estado}</p>
-            </div>
-          </div>
-          
-          {reporte.descripcion && (
-            <div>
-              <p className="text-sm font-medium text-slate-700">Descripción</p>
-              <p className="text-slate-700">{reporte.descripcion}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Información del Sistema */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Calendar className="h-5 w-5" />
-            <span>Información del Sistema</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <p className="text-sm font-medium text-slate-700">Fecha de Creación</p>
-            <p className="text-sm text-slate-600">{new Date(reporte.created_at).toLocaleString('es-AR')}</p>
-          </div>
-          
-          {reporte.fecha_generacion && (
-            <>
-              <Separator />
-              <div>
-                <p className="text-sm font-medium text-slate-700">Fecha de Generación</p>
-                <p className="text-sm text-slate-600">{new Date(reporte.fecha_generacion).toLocaleString('es-AR')}</p>
-              </div>
-            </>
-          )}
-          
-          <Separator />
-          
-          <div>
-            <p className="text-sm font-medium text-slate-700">Última Actualización</p>
-            <p className="text-sm text-slate-600">{new Date(reporte.updated_at).toLocaleString('es-AR')}</p>
-          </div>
-          
-          <Separator />
-          
-          <div>
-            <p className="text-sm font-medium text-slate-700">Generado por</p>
-            <div className="flex items-center space-x-2">
-              <User className="h-4 w-4 text-slate-600" />
-              <p className="text-sm text-slate-600">{reporte.generado_por}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Estado del Reporte */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Estado Actual</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center space-y-3">
-            <p className="font-medium">{reporte.estado}</p>
-            
-            {reporte.estado === EstadoReporte.COMPLETADO && (
-              <p className="text-sm text-green-600">
-                El reporte se ha generado exitosamente y está listo para descargar.
-              </p>
-            )}
-            
-            {reporte.estado === EstadoReporte.GENERANDO && (
-              <p className="text-sm text-yellow-600">
-                El reporte se está generando. Esto puede tomar unos minutos.
-              </p>
-            )}
-            
-            {reporte.estado === EstadoReporte.ERROR && (
-              <p className="text-sm text-red-600">
-                Ocurrió un error al generar el reporte. Puedes intentar regenerarlo.
-              </p>
-            )}
-            
-            {reporte.estado === EstadoReporte.PENDIENTE && (
-              <p className="text-sm text-blue-600">
-                El reporte está en cola para ser procesado.
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
