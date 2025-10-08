@@ -1,18 +1,17 @@
 export interface Proveedor {
   id: string
   nombre: string
-  rut: string
-  email: string
-  telefono: string
-  direccion: string
-  ciudad: string
-  pais: string
-  estado: EstadoProveedor
-  contacto_principal: string
-  sitio_web?: string
-  notas?: string
-  created_at: Date
-  updated_at: Date
+  rfc: string | null
+  email: string | null
+  telefono: string | null
+  direccion: string | null
+  ciudad: string | null
+  pais: string | null
+  estado: string
+  sitio_web?: string | null
+  notas?: string | null
+  created_at: string
+  updated_at: string
 }
 
 export enum EstadoProveedor {
@@ -23,17 +22,16 @@ export enum EstadoProveedor {
 
 export interface CreateProveedorData {
   nombre: string
-  rut: string
-  email: string
-  telefono: string
-  direccion: string
-  ciudad: string
-  pais: string
-  contacto_principal: string
-  sitio_web?: string
-  notas?: string
+  rfc?: string | null
+  email?: string | null
+  telefono?: string | null
+  direccion?: string | null
+  ciudad?: string | null
+  pais?: string | null
+  sitio_web?: string | null
+  notas?: string | null
 }
 
 export interface UpdateProveedorData extends Partial<CreateProveedorData> {
-  estado?: EstadoProveedor
+  estado?: string
 }

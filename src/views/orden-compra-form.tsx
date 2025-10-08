@@ -70,7 +70,7 @@ export function OrdenCompraForm() {
                 </SelectTrigger>
                 <SelectContent>
                   {proveedores.length === 0 ? (
-                    <SelectItem value="" disabled>
+                    <SelectItem value="none" disabled>
                       No hay proveedores registrados
                     </SelectItem>
                   ) : (

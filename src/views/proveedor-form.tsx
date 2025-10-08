@@ -19,13 +19,12 @@ import { ProveedorService } from "@/controllers"
 
 const proveedorSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
-  rut: z.string().min(1, "El RUT es requerido"),
+  rfc: z.string().min(1, "El RFC es requerido"),
   email: z.string().email("Email inválido"),
   telefono: z.string().min(1, "El teléfono es requerido"),
   direccion: z.string().min(1, "La dirección es requerida"),
   ciudad: z.string().min(1, "La ciudad es requerida"),
   pais: z.string().min(1, "El país es requerido"),
-  contacto_principal: z.string().min(1, "El contacto principal es requerido"),
   sitio_web: z.string().url("URL inválida").optional().or(z.literal("")),
   notas: z.string().optional()
 })
@@ -46,13 +45,12 @@ export function ProveedorForm({ proveedor, isEditing = false }: Props) {
     resolver: zodResolver(proveedorSchema),
     defaultValues: {
       nombre: proveedor?.nombre || "",
-      rut: proveedor?.rut || "",
+      rfc: proveedor?.rfc || "",
       email: proveedor?.email || "",
       telefono: proveedor?.telefono || "",
       direccion: proveedor?.direccion || "",
       ciudad: proveedor?.ciudad || "",
       pais: proveedor?.pais || "Argentina",
-      contacto_principal: proveedor?.contacto_principal || "",
       sitio_web: proveedor?.sitio_web || "",
       notas: proveedor?.notas || ""
     }
@@ -117,14 +115,14 @@ export function ProveedorForm({ proveedor, isEditing = false }: Props) {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="rut">RUT *</Label>
+                <Label htmlFor="rfc">RFC *</Label>
                 <Input
-                  id="rut"
-                  {...form.register("rut")}
-                  placeholder="12345678-9"
+                  id="rfc"
+                  {...form.register("rfc")}
+                  placeholder="20-12345678-9"
                 />
-                {form.formState.errors.rut && (
-                  <p className="text-sm text-red-600">{form.formState.errors.rut.message}</p>
+                {form.formState.errors.rfc && (
+                  <p className="text-sm text-red-600">{form.formState.errors.rfc.message}</p>
                 )}
               </div>
             </div>
@@ -156,18 +154,6 @@ export function ProveedorForm({ proveedor, isEditing = false }: Props) {
                 />
                 {form.formState.errors.telefono && (
                   <p className="text-sm text-red-600">{form.formState.errors.telefono.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="contacto_principal">Contacto Principal *</Label>
-                <Input
-                  id="contacto_principal"
-                  {...form.register("contacto_principal")}
-                  placeholder="Juan Pérez"
-                />
-                {form.formState.errors.contacto_principal && (
-                  <p className="text-sm text-red-600">{form.formState.errors.contacto_principal.message}</p>
                 )}
               </div>
 
@@ -277,3 +263,14 @@ export function ProveedorForm({ proveedor, isEditing = false }: Props) {
     </Card>
   )
 }
+const proveedorSchema = z.object({
+  nombre: z.string().min(1, "El nombre es requerido"),
+  rfc: z.string().min(1, "El RFC es requerido"),
+  email: z.string().email("Email inválido"),
+  telefono: z.string().min(1, "El teléfono es requerido"),
+  direccion: z.string().min(1, "La dirección es requerida"),
+  ciudad: z.string().min(1, "La ciudad es requerida"),
+  pais: z.string().min(1, "El país es requerido"),
+  sitio_web: z.string().url("URL inválida").optional().or(z.literal("")),
+  notas: z.string().optional()
+})
