@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { OrdenCompraService } from "@/controllers/orden-compra.controller"
-import { OrdenPagoController } from "@/controllers/orden-pago.controller"
-import { ProveedorController } from "@/controllers/proveedor.controller"
+import { OrdenPagoService } from "@/controllers/orden-pago.controller"
+import { ProveedorService } from "@/controllers/proveedor.controller"
 import { OrdenCompra, OrdenPago, Proveedor, EstadoOrdenCompra, EstadoOrdenPago, EstadoProveedor } from "@/models"
 
 export interface DashboardStats {
@@ -46,8 +46,8 @@ export function useDashboard() {
       // Obtener datos en paralelo
       const [ordenesCompra, ordenesPago, proveedores] = await Promise.all([
         OrdenCompraService.getAll(),
-        OrdenPagoController.getAll(),
-        ProveedorController.getAll()
+        OrdenPagoService.getAll(),
+        ProveedorService.getAll()
       ])
 
       // Calcular estadísticas de órdenes de compra

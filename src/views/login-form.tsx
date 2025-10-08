@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/views/ui/button"
 import { Input } from "@/views/ui/input"
 import { Label } from "@/views/ui/label"
@@ -21,9 +22,7 @@ export function LoginForm() {
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       })
 
@@ -32,21 +31,12 @@ export function LoginForm() {
       if (!response.ok) {
         throw new Error(data.error || "Error al iniciar sesión")
       }
-
-      // Guardar token temporalmente (TODO: implementar storage seguro)
-      if (data.token) {
-        localStorage.setItem("auth-token", data.token)
-        localStorage.setItem("user-data", JSON.stringify(data.user))
-      }
       
-      showSuccessToast("Sesión iniciada correctamente", `Bienvenido ${data.user.nombre}`)
+      showSuccessToast("Sesión iniciada", `Bienvenido ${data.user.nombre}`)
       router.push("/dashboard")
+      router.refresh()
     } catch (error) {
-      console.error("Error en login:", error)
-      showErrorToast(
-        "Error al iniciar sesión", 
-        error instanceof Error ? error.message : "Verifica tus credenciales"
-      )
+      showErrorToast("Error", error instanceof Error ? error.message : "Verifica tus credenciales")
     } finally {
       setIsLoading(false)
     }
@@ -56,13 +46,6 @@ export function LoginForm() {
     <Card>
       <CardHeader>
         <CardTitle className="text-center">Iniciar Sesión</CardTitle>
-        <div className="text-center text-sm text-gray-600 mt-2">
-          <p className="font-medium">Credenciales válidas:</p>
-          <div className="mt-1 space-y-1">
-            <p><code className="bg-gray-100 px-1 rounded">admin@gestion.com</code> / <code className="bg-gray-100 px-1 rounded">admin123</code></p>
-            <p><code className="bg-gray-100 px-1 rounded">usuario@gestion.com</code> / <code className="bg-gray-100 px-1 rounded">user123</code></p>
-          </div>
-        </div>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -71,7 +54,6 @@ export function LoginForm() {
             <Input
               id="email"
               type="email"
-              placeholder="usuario@empresa.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -82,19 +64,19 @@ export function LoginForm() {
             <Input
               id="password"
               type="password"
-              placeholder="Ingresa tu contraseña"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={isLoading}
-          >
-            {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? "Iniciando..." : "Iniciar Sesión"}
           </Button>
+          <div className="text-center text-sm">
+            <Link href="/signup" className="text-slate-900 hover:underline">
+              ¿No tienes cuenta? Regístrate
+            </Link>
+          </div>
         </form>
       </CardContent>
     </Card>

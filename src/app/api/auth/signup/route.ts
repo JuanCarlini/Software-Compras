@@ -1,60 +1,55 @@
 import { NextRequest, NextResponse } from "next/server"
-import { UserController } from "@/controllers"
-import { createErrorResponse } from "@/shared/errors"
-import { RegisterSchema } from "@/shared/auth-validation"
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    const { email, password, nombre, apellido, rol } = body
     
-    // Validar datos de entrada con Zod
-    const validationResult = RegisterSchema.safeParse(body)
-    if (!validationResult.success) {
-      const firstError = validationResult.error.errors[0]
+    if (!email || !password || !nombre) {
       return NextResponse.json(
-        { error: firstError.message },
+        { error: "Email, contraseña y nombre son requeridos" },
         { status: 400 }
       )
     }
 
-    const { email, password, nombre, apellido, rol } = validationResult.data
+    const supabase = await createClient()
     
-    // TODO: Verificar que el email no exista (implementar cuando haya BD)
-    // TODO: Hashear la contraseña antes de guardar
-    
-    // Crear el usuario
-    const newUser = await UserController.create({
+    const { data, error } = await supabase.auth.signUp({
       email,
-      nombre,
-      apellido,
-      rol
+      password,
+      options: {
+        data: {
+          nombre,
+          apellido: apellido || '',
+          rol: rol || 'usuario'
+        }
+      }
     })
     
-    // TODO: Generar JWT token real
-    const token = `mock-jwt-${newUser.id}-${Date.now()}`
-    
-    // Retornar usuario creado sin la contraseña
-    const userResponse = {
-      id: newUser.id,
-      email: newUser.email,
-      nombre: newUser.nombre,
-      apellido: newUser.apellido,
-      rol: newUser.rol
+    if (error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
+      )
     }
     
     return NextResponse.json({
-      user: userResponse,
-      token,
+      user: {
+        id: data.user?.id,
+        email: data.user?.email,
+        nombre,
+        apellido,
+        rol: rol || 'usuario'
+      },
       message: "Usuario creado exitosamente"
     }, { status: 201 })
     
   } catch (error) {
-    console.error("Error en signup:", error)
-    const errorResponse = createErrorResponse(error as Error)
-    
+    console.error('Error en signup:', error)
     return NextResponse.json(
-      errorResponse,
-      { status: errorResponse.error.statusCode || 500 }
+      { error: "Error al crear cuenta" },
+      { status: 500 }
     )
   }
 }

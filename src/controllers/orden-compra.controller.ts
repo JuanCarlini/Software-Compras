@@ -1,171 +1,111 @@
-import { 
-  OrdenCompra, 
-  CreateOrdenCompraData, 
-  UpdateOrdenCompraData,
-  EstadoOrdenCompra 
-} from "@/models"
-import { NotFoundError, ValidationError } from "@/shared/errors"
+import { createClient } from '@/lib/supabase/client'
+import type { Database } from '@/lib/supabase/types'
 
-// TODO: Conectar con base de datos real
-// const prisma = new PrismaClient()
+type OrdenCompra = Database['public']['Tables']['ordenes_compra']['Row']
+type OrdenCompraInsert = Database['public']['Tables']['ordenes_compra']['Insert']
+type OrdenCompraUpdate = Database['public']['Tables']['ordenes_compra']['Update']
+type OrdenCompraItem = Database['public']['Tables']['ordenes_compra_items']['Row']
 
-// Almacenamiento temporal en memoria (se perderá al reiniciar)
-// TODO: Reemplazar con conexión a base de datos real
-let ordenesTemporales: OrdenCompra[] = []
-let nextId = 1
+interface OrdenCompraWithItems extends OrdenCompra {
+  items?: OrdenCompraItem[]
+  proveedor_nombre?: string
+}
 
 export class OrdenCompraService {
-  static async getAll(): Promise<OrdenCompra[]> {
-    // Simular delay de API
-    await new Promise(resolve => setTimeout(resolve, 500))
+  static async getAll(): Promise<OrdenCompraWithItems[]> {
+    const supabase = createClient()
     
-    // TODO: Reemplazar con query real
-    // return await prisma.ordenCompra.findMany({
-    //   include: { proveedor: true, items: true }
-    // })
+    const { data: ordenes, error } = await supabase
+      .from('ordenes_compra')
+      .select(`
+        *,
+        proveedores(nombre)
+      `)
+      .order('created_at', { ascending: false })
     
-    return ordenesTemporales
+    if (error) throw error
+    
+    return ordenes.map(orden => ({
+      ...orden,
+      proveedor_nombre: orden.proveedores?.nombre
+    }))
   }
 
-  static async getById(id: string): Promise<OrdenCompra | null> {
-    await new Promise(resolve => setTimeout(resolve, 300))
+  static async getById(id: string): Promise<OrdenCompraWithItems | null> {
+    const supabase = createClient()
     
-    // TODO: Reemplazar con query real
-    // return await prisma.ordenCompra.findUnique({
-    //   where: { id },
-    //   include: { proveedor: true, items: true }
-    // })
+    const { data: orden, error: ordenError } = await supabase
+      .from('ordenes_compra')
+      .select(`
+        *,
+        proveedores(nombre)
+      `)
+      .eq('id', id)
+      .single()
     
-    return ordenesTemporales.find(o => o.id === id) || null
+    if (ordenError || !orden) return null
+    
+    const { data: items } = await supabase
+      .from('ordenes_compra_items')
+      .select('*')
+      .eq('orden_compra_id', id)
+    
+    return {
+      ...orden,
+      proveedor_nombre: orden.proveedores?.nombre,
+      items: items || []
+    }
   }
 
-  static async create(data: CreateOrdenCompraData): Promise<OrdenCompra> {
-    await new Promise(resolve => setTimeout(resolve, 1000))
+  static async create(data: OrdenCompraInsert & { items: Omit<OrdenCompraItem, 'id' | 'orden_compra_id'>[] }): Promise<OrdenCompra> {
+    const supabase = createClient()
     
-    // Validaciones de negocio
-    if (!data.proveedor_id) {
-      throw new ValidationError("Proveedor es requerido", "proveedor_id")
-    }
-
-    if (!data.items || data.items.length === 0) {
-      throw new ValidationError("La orden debe tener al menos un item", "items")
-    }
-
-    if (data.fecha_entrega <= new Date()) {
-      throw new ValidationError("La fecha de entrega debe ser futura", "fecha_entrega")
-    }
-
-    // Calcular totales
-    const subtotal = data.items.reduce((sum, item) => sum + item.subtotal, 0)
-    const impuestos = subtotal * 0.21 // IVA 21%
-    const total = subtotal + impuestos
+    const { items, ...ordenData } = data
     
-    const nuevaOrden: OrdenCompra = {
-      id: String(nextId++),
-      numero: `OC-${new Date().getFullYear()}-${String(nextId).padStart(3, '0')}`,
-      proveedor_id: data.proveedor_id,
-      proveedor_nombre: `Proveedor ${data.proveedor_id}`, // TODO: obtener nombre real
-      fecha_creacion: new Date(),
-      fecha_entrega: data.fecha_entrega,
-      descripcion: data.descripcion,
-      subtotal,
-      impuestos,
-      total,
-      estado: EstadoOrdenCompra.PENDIENTE,
-      items: data.items.map((item, index) => ({
+    const { data: nuevaOrden, error: ordenError } = await supabase
+      .from('ordenes_compra')
+      .insert(ordenData)
+      .select()
+      .single()
+    
+    if (ordenError) throw ordenError
+    
+    if (items && items.length > 0) {
+      const itemsData = items.map(item => ({
         ...item,
-        id: `${nextId}-${index + 1}`,
-        orden_compra_id: String(nextId)
-      })),
-      created_at: new Date(),
-      updated_at: new Date()
+        orden_compra_id: nuevaOrden.id
+      }))
+      
+      await supabase
+        .from('ordenes_compra_items')
+        .insert(itemsData)
     }
     
-    ordenesTemporales.push(nuevaOrden)
     return nuevaOrden
   }
 
-  static async update(id: string, data: UpdateOrdenCompraData): Promise<OrdenCompra | null> {
-    await new Promise(resolve => setTimeout(resolve, 800))
+  static async update(id: string, data: OrdenCompraUpdate): Promise<OrdenCompra | null> {
+    const supabase = createClient()
     
-    // Validaciones
-    if (data.fecha_entrega && data.fecha_entrega <= new Date()) {
-      throw new ValidationError("La fecha de entrega debe ser futura", "fecha_entrega")
-    }
+    const { data: ordenActualizada, error } = await supabase
+      .from('ordenes_compra')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single()
     
-    const index = ordenesTemporales.findIndex(o => o.id === id)
-    if (index === -1) {
-      throw new NotFoundError("Orden no encontrada")
-    }
-    
-    ordenesTemporales[index] = {
-      ...ordenesTemporales[index],
-      ...data,
-      updated_at: new Date()
-    }
-    
-    return ordenesTemporales[index]
+    if (error) return null
+    return ordenActualizada
   }
 
   static async delete(id: string): Promise<boolean> {
-    await new Promise(resolve => setTimeout(resolve, 500))
+    const supabase = createClient()
     
-    const index = ordenesTemporales.findIndex(o => o.id === id)
-    if (index === -1) {
-      return false
-    }
+    const { error } = await supabase
+      .from('ordenes_compra')
+      .delete()
+      .eq('id', id)
     
-    ordenesTemporales.splice(index, 1)
-    return true
-  }
-
-  static async aprobar(id: string): Promise<OrdenCompra | null> {
-    return this.update(id, { estado: EstadoOrdenCompra.APROBADA })
-  }
-
-  static async rechazar(id: string): Promise<OrdenCompra | null> {
-    return this.update(id, { estado: EstadoOrdenCompra.RECHAZADA })
-  }
-
-  static async enviar(id: string): Promise<OrdenCompra | null> {
-    return this.update(id, { estado: EstadoOrdenCompra.ENVIADA })
-  }
-
-  static async marcarRecibida(id: string): Promise<OrdenCompra | null> {
-    return this.update(id, { estado: EstadoOrdenCompra.RECIBIDA })
-  }
-
-  static async cancelar(id: string): Promise<OrdenCompra | null> {
-    return this.update(id, { estado: EstadoOrdenCompra.CANCELADA })
-  }
-
-  // Métodos de consulta adicionales
-  static async getByProveedor(proveedorId: string): Promise<OrdenCompra[]> {
-    await new Promise(resolve => setTimeout(resolve, 400))
-    
-    return ordenesTemporales.filter(o => o.proveedor_id === proveedorId)
-  }
-
-  static async getByEstado(estado: EstadoOrdenCompra): Promise<OrdenCompra[]> {
-    await new Promise(resolve => setTimeout(resolve, 400))
-    
-    return ordenesTemporales.filter(o => o.estado === estado)
-  }
-
-  static async getEstadisticas(): Promise<any> {
-    await new Promise(resolve => setTimeout(resolve, 600))
-    
-    const stats = ordenesTemporales.reduce((acc, orden) => {
-      acc[orden.estado] = (acc[orden.estado] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
-    
-    const totalMonto = ordenesTemporales.reduce((sum, o) => sum + o.total, 0)
-    
-    return {
-      total_ordenes: ordenesTemporales.length,
-      monto_total: totalMonto,
-      por_estado: stats
-    }
+    return !error
   }
 }

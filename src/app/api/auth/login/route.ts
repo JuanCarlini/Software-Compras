@@ -1,56 +1,54 @@
 import { NextRequest, NextResponse } from "next/server"
-import { AuthController } from "@/controllers"
-import { createErrorResponse } from "@/shared/errors"
-import { z } from "zod"
-
-// Schema de validación para login
-const loginSchema = z.object({
-  email: z.string().email("Email inválido"),
-  password: z.string().min(1, "Contraseña requerida")
-})
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    const { email, password } = body
     
-    // Validar datos de entrada
-    const validationResult = loginSchema.safeParse(body)
-    if (!validationResult.success) {
-      const firstError = validationResult.error.errors[0]
+    if (!email || !password) {
       return NextResponse.json(
-        { error: firstError.message },
+        { error: "Email y contraseña son requeridos" },
         { status: 400 }
       )
     }
 
-    const { email, password } = validationResult.data
+    const supabase = await createClient()
     
-    // Intentar autenticación
-    const user = await AuthController.login({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    })
     
-    if (!user) {
+    if (error) {
       return NextResponse.json(
-        { error: "Credenciales inválidas" },
+        { error: error.message },
         { status: 401 }
       )
     }
 
-    // TODO: Generar JWT token real
-    const token = `mock-jwt-${user.id}-${Date.now()}`
+    if (!data.user) {
+      return NextResponse.json(
+        { error: "No se pudo autenticar el usuario" },
+        { status: 401 }
+      )
+    }
     
     return NextResponse.json({
-      user,
-      token,
-      message: "Login exitoso"
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        nombre: data.user.user_metadata?.nombre || 'Usuario',
+        rol: data.user.user_metadata?.rol || 'usuario'
+      },
+      session: data.session
     })
     
   } catch (error) {
-    console.error("Error en login:", error)
-    const errorResponse = createErrorResponse(error as Error)
-    
+    console.error('Error en login:', error)
     return NextResponse.json(
-      errorResponse,
-      { status: errorResponse.error.statusCode }
+      { error: "Error interno del servidor" },
+      { status: 500 }
     )
   }
 }
