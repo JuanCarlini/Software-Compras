@@ -1,37 +1,17 @@
-export interface Proveedor {
-  id: string
-  nombre: string
-  rfc: string | null
-  email: string | null
-  telefono: string | null
-  direccion: string | null
-  ciudad: string | null
-  pais: string | null
-  estado: string
-  sitio_web?: string | null
-  notas?: string | null
-  created_at: string
-  updated_at: string
-}
-
+// como en la base está en minúsculas:
 export enum EstadoProveedor {
-  ACTIVO = "Activo",
-  INACTIVO = "Inactivo",
-  SUSPENDIDO = "Suspendido"
+  ACTIVO = "activo",
+  INACTIVO = "inactivo",
 }
 
-export interface CreateProveedorData {
-  nombre: string
-  rfc?: string | null
-  email?: string | null
-  telefono?: string | null
-  direccion?: string | null
-  ciudad?: string | null
-  pais?: string | null
-  sitio_web?: string | null
-  notas?: string | null
-}
-
-export interface UpdateProveedorData extends Partial<CreateProveedorData> {
-  estado?: string
+export interface Proveedor {
+  id: number;               // bigint
+  nombre: string;
+  cuit: string | null;
+  direccion: string | null;
+  telefono: string | null;
+  email: string | null;
+  estado: EstadoProveedor | null;  // puede venir null pero default es 'activo'
+  created_at: string;       // timestamp
+  // no hay updated_at en la tabla que me pasaste
 }

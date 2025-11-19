@@ -1,47 +1,59 @@
+// src/models/orden-compra.ts
+
+export type OcEstado = "borrador" | "en_aprobacion" | "aprobado" | "rechazado" | "anulado"
+export type MonedaOc = "ARS" | "USD" | "EUR" // ajustá a tu enum
+
 export interface OrdenCompra {
-  id: string
-  numero: string
-  proveedor_id: string
-  proveedor_nombre: string
-  fecha_creacion: Date
-  fecha_entrega: Date
-  descripcion: string
-  subtotal: number
-  impuestos: number
-  total: number
-  estado: EstadoOrdenCompra
-  items: OrdenCompraItem[]
-  created_at: Date
-  updated_at: Date
-}
-
-export interface OrdenCompraItem {
-  id: string
-  orden_compra_id: string
-  producto: string
-  descripcion: string
-  cantidad: number
-  precio_unitario: number
-  subtotal: number
-}
-
-export enum EstadoOrdenCompra {
-  PENDIENTE = "Pendiente",
-  EN_REVISION = "En Revisión", 
-  APROBADA = "Aprobada",
-  RECHAZADA = "Rechazada",
-  ENVIADA = "Enviada",
-  RECIBIDA = "Recibida",
-  CANCELADA = "Cancelada"
+  id: number
+  numero_oc: string
+  proveedor_id: number
+  proyecto_id: number | null
+  fecha_oc: string            // YYYY-MM-DD
+  moneda: MonedaOc
+  total_neto: number
+  total_iva: number
+  total_con_iva: number
+  estado: OcEstado
+  observaciones: string | null
+  created_by: number | null
+  created_at: string
+  updated_at: string
 }
 
 export interface CreateOrdenCompraData {
-  proveedor_id: string
-  fecha_entrega: Date
-  descripcion: string
-  items: Omit<OrdenCompraItem, 'id' | 'orden_compra_id'>[]
+  numero_oc: string
+  proveedor_id: number
+  proyecto_id?: number | null
+  fecha_oc: string           // YYYY-MM-DD
+  moneda?: MonedaOc
+  total_neto: number
+  total_iva: number
+  total_con_iva: number
+  estado?: OcEstado
+  observaciones?: string | null
 }
 
-export interface UpdateOrdenCompraData extends Partial<CreateOrdenCompraData> {
-  estado?: EstadoOrdenCompra
+export interface OrdenCompraLinea {
+  id: number
+  orden_compra_id: number
+  item_codigo: string | null
+  descripcion: string
+  cantidad: number
+  precio_unitario_neto: number
+  iva_porcentaje: number
+  total_neto: number
+  total_con_iva: number
+  estado: string | null
+}
+
+export interface CreateOrdenCompraLinea {
+  orden_compra_id: number
+  item_codigo?: string | null
+  descripcion: string
+  cantidad: number
+  precio_unitario_neto: number
+  iva_porcentaje: number
+  total_neto: number
+  total_con_iva: number
+  estado?: string | null
 }

@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
-import { Badge } from "@/views/ui/badge"
 import { SearchBar } from "@/views/ui/search-bar"
 import { Input } from "@/views/ui/input"
 import { Label } from "@/views/ui/label"
@@ -15,23 +14,7 @@ import { formatCurrency } from "@/shared/format-utils"
 import { formatDateShort } from "@/shared/date-utils"
 import { EstadoOrdenPago, MetodoPago } from "@/models"
 import { searchWithScore } from "@/shared/search-utils"
-
-const getEstadoColor = (estado: EstadoOrdenPago) => {
-  switch (estado) {
-    case EstadoOrdenPago.PAGADA:
-      return "bg-green-100 text-green-800"
-    case EstadoOrdenPago.APROBADA:
-      return "bg-blue-100 text-blue-800"
-    case EstadoOrdenPago.PENDIENTE:
-      return "bg-yellow-100 text-yellow-800"
-    case EstadoOrdenPago.RECHAZADA:
-      return "bg-red-100 text-red-800"
-    case EstadoOrdenPago.VENCIDA:
-      return "bg-orange-100 text-orange-800"
-    default:
-      return "bg-gray-100 text-gray-800"
-  }
-}
+import { StatusBadge } from "@/shared/status-badge"
 
 const getMetodoPagoIcon = (metodo: MetodoPago) => {
   switch (metodo) {
@@ -177,9 +160,7 @@ export function OrdenPagoList() {
                     </div>
                   </div>
                   <div>
-                    <Badge className={getEstadoColor(orden.estado)}>
-                      {orden.estado}
-                    </Badge>
+                    <StatusBadge estado={orden.estado} showIcon />
                     <p className="text-xs text-slate-500 mt-1">
                       Vence: {formatDateShort(orden.fecha_vencimiento)}
                     </p>

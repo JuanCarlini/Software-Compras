@@ -126,15 +126,15 @@ export interface Database {
           id: string
           numero: string
           orden_compra_id: string | null
+          caja_id: string
           proveedor_id: string
-          fecha_creacion: string
-          fecha_vencimiento: string
+          fecha_pago: string
           monto: number
-          moneda: string
-          estado: string
           metodo_pago: string
-          referencia_bancaria: string | null
-          observaciones: string | null
+          referencia: string | null
+          descripcion: string | null
+          estado: string
+          comprobante_url: string | null
           created_at: string
           updated_at: string
         }
@@ -142,30 +142,68 @@ export interface Database {
           id?: string
           numero: string
           orden_compra_id?: string | null
+          caja_id: string
           proveedor_id: string
-          fecha_creacion: string
-          fecha_vencimiento: string
+          fecha_pago: string
           monto: number
-          moneda: string
-          estado?: string
           metodo_pago: string
-          referencia_bancaria?: string | null
-          observaciones?: string | null
+          referencia?: string | null
+          descripcion?: string | null
+          estado?: string
+          comprobante_url?: string | null
           created_at?: string
           updated_at?: string
         }
         Update: {
           numero?: string
           orden_compra_id?: string | null
+          caja_id?: string
           proveedor_id?: string
-          fecha_creacion?: string
-          fecha_vencimiento?: string
+          fecha_pago?: string
           monto?: number
-          moneda?: string
-          estado?: string
           metodo_pago?: string
-          referencia_bancaria?: string | null
-          observaciones?: string | null
+          referencia?: string | null
+          descripcion?: string | null
+          estado?: string
+          comprobante_url?: string | null
+        }
+      }
+      cajas: {
+        Row: {
+          id: string
+          nombre: string
+          tipo: string
+          moneda: string
+          banco: string | null
+          numero_cuenta: string | null
+          saldo_actual: number
+          estado: string
+          notas: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          nombre: string
+          tipo: string
+          moneda?: string
+          banco?: string | null
+          numero_cuenta?: string | null
+          saldo_actual?: number
+          estado?: string
+          notas?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          nombre?: string
+          tipo?: string
+          moneda?: string
+          banco?: string | null
+          numero_cuenta?: string | null
+          saldo_actual?: number
+          estado?: string
+          notas?: string | null
         }
       }
     }

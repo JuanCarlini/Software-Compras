@@ -35,9 +35,9 @@ export function useOrdensPago() {
     }
   }
 
-  const updateOrder = async (id: string, orderData: any) => {
+  const updateOrder = async (id: string | number, orderData: any) => {
     try {
-      const updatedOrder = await OrdenPagoService.update(id, orderData)
+      const updatedOrder = await OrdenPagoService.update(Number(id), orderData)
       if (updatedOrder) {
         setOrders(prev => 
           prev.map(order => order.id === id ? updatedOrder : order)
@@ -45,15 +45,15 @@ export function useOrdensPago() {
         
         // Toast message específico según el estado
         if (orderData.estado) {
-          if (orderData.estado === 'Aprobada') {
-            showSuccessToast(toastMessages.ordenPago.approved, `Orden #${updatedOrder.numero}`)
-          } else if (orderData.estado === 'Pagada') {
-            showSuccessToast(toastMessages.ordenPago.paid, `Orden #${updatedOrder.numero}`)
+          if (orderData.estado === 'aprobado') {
+            showSuccessToast(toastMessages.ordenPago.approved, `Orden #${updatedOrder.numero_op}`)
+          } else if (orderData.estado === 'pagado') {
+            showSuccessToast(toastMessages.ordenPago.paid, `Orden #${updatedOrder.numero_op}`)
           } else {
-            showSuccessToast(toastMessages.ordenPago.updated, `Orden #${updatedOrder.numero}`)
+            showSuccessToast(toastMessages.ordenPago.updated, `Orden #${updatedOrder.numero_op}`)
           }
         } else {
-          showSuccessToast(toastMessages.ordenPago.updated, `Orden #${updatedOrder.numero}`)
+          showSuccessToast(toastMessages.ordenPago.updated, `Orden #${updatedOrder.numero_op}`)
         }
       }
       return updatedOrder
@@ -63,53 +63,65 @@ export function useOrdensPago() {
     }
   }
 
-  const aprobarOrder = async (id: string) => {
+  const aprobarOrder = async (id: string | number) => {
     try {
-      const updatedOrder = await OrdenPagoService.update(id, { estado: 'Aprobada' })
+      const updatedOrder = await OrdenPagoService.update(Number(id), { estado: 'aprobado' })
       if (updatedOrder) {
         setOrders(prev => 
           prev.map(order => order.id === id ? updatedOrder : order)
         )
+        showSuccessToast(toastMessages.ordenPago.approved, `Orden #${updatedOrder.numero_op}`)
       }
       return updatedOrder
     } catch (err) {
+      showErrorToast(toastMessages.ordenPago.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
 
-  const pagarOrder = async (id: string, referencia: string) => {
+  const pagarOrder = async (id: string | number, referencia: string) => {
     try {
-      const updatedOrder = await OrdenPagoService.marcarComoPagada(id, referencia)
+      const updatedOrder = await OrdenPagoService.update(Number(id), { 
+        estado: 'pagado',
+        referencia_pago: referencia,
+        fecha_pago: new Date().toISOString()
+      })
       if (updatedOrder) {
         setOrders(prev => 
           prev.map(order => order.id === id ? updatedOrder : order)
         )
+        showSuccessToast(toastMessages.ordenPago.paid, `Orden #${updatedOrder.numero_op}`)
       }
       return updatedOrder
     } catch (err) {
+      showErrorToast(toastMessages.ordenPago.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
 
-  const rechazarOrder = async (id: string) => {
+  const rechazarOrder = async (id: string | number) => {
     try {
-      const updatedOrder = await OrdenPagoService.update(id, { estado: 'Rechazada' })
+      const updatedOrder = await OrdenPagoService.update(Number(id), { estado: 'rechazado' })
       if (updatedOrder) {
         setOrders(prev => 
           prev.map(order => order.id === id ? updatedOrder : order)
         )
+        showSuccessToast(toastMessages.ordenPago.rejected, `Orden #${updatedOrder.numero_op}`)
       }
       return updatedOrder
     } catch (err) {
+      showErrorToast(toastMessages.ordenPago.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }
 
-  const deleteOrder = async (id: string) => {
+  const deleteOrder = async (id: string | number) => {
     try {
-      await OrdenPagoService.delete(id)
+      await OrdenPagoService.delete(Number(id))
       setOrders(prev => prev.filter(order => order.id !== id))
+      showSuccessToast(toastMessages.ordenPago.deleted)
     } catch (err) {
+      showErrorToast(toastMessages.ordenPago.error, err instanceof Error ? err.message : "Error desconocido")
       throw err
     }
   }

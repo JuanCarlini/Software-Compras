@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
-import { Badge } from "@/views/ui/badge"
 import { SearchBar } from "@/views/ui/search-bar"
 import { Eye, Edit, CheckCircle, XCircle, Loader2, Building2, Mail, Phone, MapPin } from "lucide-react"
 import Link from "next/link"
@@ -10,36 +9,24 @@ import { useState } from "react"
 import { useProveedores } from "@/shared/use-proveedores"
 import { EstadoProveedor } from "@/models"
 import { searchWithScore } from "@/shared/search-utils"
-
-const getEstadoColor = (estado: EstadoProveedor) => {
-  switch (estado) {
-    case EstadoProveedor.ACTIVO:
-      return "bg-green-100 text-green-800"
-    case EstadoProveedor.INACTIVO:
-      return "bg-gray-100 text-gray-800"
-    case EstadoProveedor.SUSPENDIDO:
-      return "bg-red-100 text-red-800"
-    default:
-      return "bg-gray-100 text-gray-800"
-  }
-}
+import { StatusBadge } from "@/shared/status-badge"
 
 export function ProveedorList() {
   const { proveedores, loading, error, activarProveedor, suspenderProveedor } = useProveedores()
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
 
+  // buscamos solo por los campos que realmente existen en el formulario/base
   const filteredProveedores = searchWithScore(
     proveedores,
     searchTerm,
-    ['nombre', 'rut', 'email', 'ciudad', 'contacto_principal', 'estado'],
+    ["nombre", "cuit", "email", "telefono", "direccion"],
     {
-      nombre: 3,           // Mayor peso para nombre
-      rut: 3,             // Mayor peso para RUT
-      email: 2,           // Peso medio para email
-      contacto_principal: 2, // Peso medio para contacto
-      ciudad: 1,          // Menor peso para ciudad
-      estado: 1           // Menor peso para estado
+      nombre: 3,
+      cuit: 3,
+      email: 2,
+      telefono: 1,
+      direccion: 1,
     }
   )
 
@@ -94,7 +81,7 @@ export function ProveedorList() {
           <SearchBar
             value={searchTerm}
             onChange={setSearchTerm}
-            placeholder="Buscar por nombre, RUT, email, ciudad..."
+            placeholder="Buscar por nombre, CUIT, email..."
             className="w-80"
           />
         </div>
@@ -104,86 +91,80 @@ export function ProveedorList() {
           {filteredProveedores.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-slate-500">
-                {searchTerm 
+                {searchTerm
                   ? `No se encontraron proveedores que coincidan con "${searchTerm}"`
-                  : "No hay proveedores registrados"
-                }
+                  : "No hay proveedores registrados"}
               </p>
             </div>
           ) : (
             filteredProveedores.map((proveedor) => (
-              <div 
+              <div
                 key={proveedor.id}
                 className="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors"
               >
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-4">
+                  {/* columnas */}
                   <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Información Principal */}
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         <Building2 className="h-4 w-4 text-slate-600" />
-                        <h3 className="font-medium text-slate-900">{proveedor.nombre}</h3>
+                        <h3 className="font-medium text-slate-900">
+                          {proveedor.nombre || "—"}
+                        </h3>
                       </div>
-                      <p className="text-sm text-slate-600">RUT: {proveedor.rut}</p>
-                      <Badge className={getEstadoColor(proveedor.estado)}>
-                        {proveedor.estado}
-                      </Badge>
+                      <p className="text-sm text-slate-600">
+                        CUIT: {proveedor.cuit || "—"}
+                      </p>
+                      {proveedor.estado && (
+                        <StatusBadge estado={proveedor.estado} showIcon />
+                      )}
                     </div>
 
                     {/* Información de Contacto */}
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
                         <Mail className="h-4 w-4 text-slate-600" />
-                        <span className="text-sm text-slate-700">{proveedor.email}</span>
+                        <span className="text-sm text-slate-700">
+                          {proveedor.email || "Sin email"}
+                        </span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Phone className="h-4 w-4 text-slate-600" />
-                        <span className="text-sm text-slate-700">{proveedor.telefono}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4 text-slate-600" />
-                        <span className="text-sm text-slate-700">{proveedor.ciudad}, {proveedor.pais}</span>
+                        <span className="text-sm text-slate-700">
+                          {proveedor.telefono || "Sin teléfono"}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Información Adicional */}
+                    {/* Ubicación / Dirección */}
                     <div className="space-y-2">
-                      <p className="text-sm text-slate-600">
-                        <span className="font-medium">Contacto:</span> {proveedor.contacto_principal}
-                      </p>
-                      <p className="text-sm text-slate-600">
-                        <span className="font-medium">Dirección:</span> {proveedor.direccion}
-                      </p>
-                      {proveedor.sitio_web && (
-                        <a 
-                          href={proveedor.sitio_web} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-sm text-blue-600 hover:underline"
-                        >
-                          Sitio Web
-                        </a>
-                      )}
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="h-4 w-4 text-slate-600" />
+                        <span className="text-sm text-slate-700">
+                          {proveedor.direccion || "Sin dirección"}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
                   {/* Acciones */}
-                  <div className="flex items-center space-x-2 ml-4">
+                  <div className="flex items-center space-x-2">
                     <Button variant="outline" size="sm" asChild>
                       <Link href={`/proveedores/${proveedor.id}`}>
                         <Eye className="h-4 w-4" />
                       </Link>
                     </Button>
-                    
+
                     <Button variant="outline" size="sm" asChild>
                       <Link href={`/proveedores/${proveedor.id}/editar`}>
                         <Edit className="h-4 w-4" />
                       </Link>
                     </Button>
-                    
+
                     {proveedor.estado === EstadoProveedor.ACTIVO ? (
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => handleSuspender(proveedor.id)}
                         disabled={processingId === proveedor.id}
@@ -191,8 +172,8 @@ export function ProveedorList() {
                         <XCircle className="h-4 w-4 text-red-600" />
                       </Button>
                     ) : (
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => handleActivar(proveedor.id)}
                         disabled={processingId === proveedor.id}

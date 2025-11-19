@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from '@/lib/supabase/server'
+import { AuthService } from '@/lib/auth/auth.service'
+import { setAuthCookie } from '@/lib/auth/auth.cookies'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, password, nombre, apellido, rol } = body
+    const { email, password, nombre, rolId } = body
     
+    // Validar campos requeridos
     if (!email || !password || !nombre) {
       return NextResponse.json(
         { error: "Email, contraseña y nombre son requeridos" },
@@ -13,42 +15,52 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
-    
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          nombre,
-          apellido: apellido || '',
-          rol: rol || 'usuario'
-        }
-      }
-    })
-    
-    if (error) {
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
       return NextResponse.json(
-        { error: error.message },
+        { error: "Formato de email inválido" },
         { status: 400 }
       )
     }
+
+    // Validar longitud de contraseña
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: "La contraseña debe tener al menos 6 caracteres" },
+        { status: 400 }
+      )
+    }
+
+    // Intentar registro (por defecto rol_id = 2 si no se especifica)
+    const result = await AuthService.signup(
+      email, 
+      password, 
+      nombre, 
+      rolId || 2
+    )
     
+    if (!result) {
+      return NextResponse.json(
+        { error: "Error al crear la cuenta. El email puede estar ya registrado." },
+        { status: 400 }
+      )
+    }
+
+    // Establecer cookie de autenticación
+    await setAuthCookie(result.token)
+
+    // Retornar usuario
     return NextResponse.json({
-      user: {
-        id: data.user?.id,
-        email: data.user?.email,
-        nombre,
-        apellido,
-        rol: rol || 'usuario'
-      },
-      message: "Usuario creado exitosamente"
+      user: result.user,
+      message: "Cuenta creada exitosamente"
     }, { status: 201 })
     
   } catch (error) {
     console.error('Error en signup:', error)
+    const errorMessage = error instanceof Error ? error.message : "Error al crear cuenta"
     return NextResponse.json(
-      { error: "Error al crear cuenta" },
+      { error: errorMessage },
       { status: 500 }
     )
   }

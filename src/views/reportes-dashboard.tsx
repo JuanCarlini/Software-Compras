@@ -9,29 +9,62 @@ import {
   TrendingUp, 
   Clock, 
   CheckCircle,
-  XCircle,
-  AlertCircle
+  AlertCircle,
+  Loader2,
+  DollarSign,
+  Users,
+  ShoppingCart
 } from "lucide-react"
-import { ReporteEstadisticas } from "@/models"
+import { useReportes } from "@/shared/use-reportes"
+import { formatCurrency } from "@/shared/format-utils"
 
-interface Props {
-  estadisticas: ReporteEstadisticas
-}
+export function ReportesDashboard() {
+  const { estadisticas, loading, error } = useReportes()
 
-export function ReportesDashboard({ estadisticas }: Props) {
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Cargando estadísticas...</span>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="text-center py-8">
+          <p className="text-red-600">Error: {error}</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!estadisticas) {
+    return (
+      <Card>
+        <CardContent className="text-center py-8">
+          <p className="text-slate-500">No hay datos disponibles</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Estadísticas Principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Reportes</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Órdenes</CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{estadisticas.total_reportes}</div>
+            <div className="text-2xl font-bold">{estadisticas.total_ordenes_compra}</div>
             <p className="text-xs text-muted-foreground">
-              Reportes generados en total
+              Órdenes de compra registradas
             </p>
           </CardContent>
         </Card>
@@ -42,136 +75,161 @@ export function ReportesDashboard({ estadisticas }: Props) {
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{estadisticas.reportes_este_mes}</div>
+            <div className="text-2xl font-bold text-green-600">{estadisticas.ordenes_este_mes}</div>
             <p className="text-xs text-muted-foreground">
-              {Math.round((estadisticas.reportes_este_mes / estadisticas.total_reportes) * 100)}% del total
+              {estadisticas.total_ordenes_compra > 0 
+                ? `${Math.round((estadisticas.ordenes_este_mes / estadisticas.total_ordenes_compra) * 100)}% del total`
+                : 'Sin órdenes'
+              }
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pendientes</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
+            <CardTitle className="text-sm font-medium">Monto Total</CardTitle>
+            <DollarSign className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{estadisticas.reportes_pendientes}</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {formatCurrency(estadisticas.monto_total_ordenes)}
+            </div>
             <p className="text-xs text-muted-foreground">
-              En proceso de generación
+              En órdenes de compra
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Proveedores</CardTitle>
+            <Users className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{estadisticas.total_proveedores}</div>
+            <p className="text-xs text-muted-foreground">
+              {estadisticas.proveedores_activos} activos
             </p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Tipos y formatos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Tipos de Reportes Más Generados */}
+        {/* Órdenes por Estado */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <BarChart3 className="h-5 w-5" />
-              <span>Tipos Más Generados</span>
+              <span>Órdenes por Estado</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {estadisticas.tipos_mas_generados.map((item, index) => (
-                <div key={item.tipo} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-medium text-blue-800">
-                      {index + 1}
+            {estadisticas.ordenes_por_estado.length === 0 ? (
+              <p className="text-center text-slate-500 py-4">No hay datos disponibles</p>
+            ) : (
+              <div className="space-y-4">
+                {estadisticas.ordenes_por_estado.map((item, index) => (
+                  <div key={item.estado} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-medium text-blue-800">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-900 capitalize">{item.estado}</p>
+                        <p className="text-sm text-slate-600">{item.cantidad} órdenes</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-slate-900">{item.tipo}</p>
-                      <p className="text-sm text-slate-600">{item.cantidad} reportes</p>
+                    <div className="w-24 bg-slate-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full" 
+                        style={{ 
+                          width: `${(item.cantidad / estadisticas.total_ordenes_compra) * 100}%` 
+                        }}
+                      />
                     </div>
                   </div>
-                  <div className="w-24 bg-slate-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full" 
-                      style={{ 
-                        width: `${(item.cantidad / estadisticas.tipos_mas_generados[0].cantidad) * 100}%` 
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Formatos Preferidos */}
+        {/* Top Proveedores */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <TrendingUp className="h-5 w-5" />
-              <span>Formatos Preferidos</span>
+              <span>Top Proveedores</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {estadisticas.formatos_mas_usados.map((item, index) => {
-                const percentage = Math.round((item.cantidad / estadisticas.total_reportes) * 100)
-                const colorClasses = {
-                  0: "bg-red-100 text-red-800",
-                  1: "bg-green-100 text-green-800", 
-                  2: "bg-blue-100 text-blue-800"
-                }
-                
-                return (
-                  <div key={item.formato} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Badge className={colorClasses[index as keyof typeof colorClasses]}>
-                        {item.formato}
-                      </Badge>
-                      <span className="font-medium">{item.cantidad} reportes</span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">{percentage}%</p>
-                      <div className="w-16 bg-slate-200 rounded-full h-1.5 mt-1">
-                        <div 
-                          className="bg-slate-600 h-1.5 rounded-full" 
-                          style={{ width: `${percentage}%` }}
-                        />
+            {estadisticas.top_proveedores.length === 0 ? (
+              <p className="text-center text-slate-500 py-4">No hay datos disponibles</p>
+            ) : (
+              <div className="space-y-4">
+                {estadisticas.top_proveedores.map((item, index) => {
+                  const colorClasses = [
+                    "bg-yellow-100 text-yellow-800",
+                    "bg-gray-100 text-gray-800", 
+                    "bg-orange-100 text-orange-800",
+                    "bg-blue-100 text-blue-800",
+                    "bg-green-100 text-green-800"
+                  ]
+                  
+                  return (
+                    <div key={item.id} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Badge className={colorClasses[index]}>
+                          #{index + 1}
+                        </Badge>
+                        <div>
+                          <p className="font-medium">{item.nombre}</p>
+                          <p className="text-sm text-slate-600">{item.total_ordenes} órdenes</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{formatCurrency(item.monto_total)}</p>
                       </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Acciones Rápidas */}
+      {/* Tendencia Mensual */}
       <Card>
         <CardHeader>
-          <CardTitle>Acciones Rápidas</CardTitle>
+          <CardTitle>Tendencia de Órdenes (Últimos 6 Meses)</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button className="h-auto p-4 flex flex-col items-center space-y-2">
-              <FileText className="h-8 w-8" />
-              <div className="text-center">
-                <p className="font-medium">Nuevo Reporte</p>
-                <p className="text-xs text-muted-foreground">Generar reporte personalizado</p>
+          <div className="space-y-3">
+            {estadisticas.ordenes_por_mes.map((item) => (
+              <div key={item.mes} className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium capitalize">{item.mes}</span>
+                    <div className="text-right">
+                      <span className="text-sm font-medium">{item.cantidad} órdenes</span>
+                      <span className="text-xs text-slate-500 ml-2">
+                        {formatCurrency(item.monto)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="w-full bg-slate-200 rounded-full h-2">
+                    <div 
+                      className="bg-green-600 h-2 rounded-full transition-all" 
+                      style={{ 
+                        width: `${Math.min((item.cantidad / Math.max(...estadisticas.ordenes_por_mes.map(m => m.cantidad))) * 100, 100)}%` 
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
-            </Button>
-
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2">
-              <BarChart3 className="h-8 w-8" />
-              <div className="text-center">
-                <p className="font-medium">Dashboard Financiero</p>
-                <p className="text-xs text-muted-foreground">Ver métricas en tiempo real</p>
-              </div>
-            </Button>
-
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center space-y-2">
-              <AlertCircle className="h-8 w-8" />
-              <div className="text-center">
-                <p className="font-medium">Reportes Programados</p>
-                <p className="text-xs text-muted-foreground">Configurar automatización</p>
-              </div>
-            </Button>
+            ))}
           </div>
         </CardContent>
       </Card>

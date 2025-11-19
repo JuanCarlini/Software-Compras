@@ -3,62 +3,54 @@
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
-import { Badge } from "@/views/ui/badge"
 import { SearchBar } from "@/views/ui/search-bar"
 import { Eye, CheckCircle, XCircle, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useOrders } from "@/shared/use-orders"
 import { formatCurrency } from "@/shared/format-utils"
-import { formatDateShort } from "@/shared/date-utils"
-import { EstadoOrdenCompra } from "@/models"
 import { SearchStats } from "@/views/ui/search-stats"
 import { searchWithScore } from "@/shared/search-utils"
-
-const getEstadoColor = (estado: EstadoOrdenCompra) => {
-  switch (estado) {
-    case EstadoOrdenCompra.APROBADA:
-      return "bg-green-100 text-green-800"
-    case EstadoOrdenCompra.PENDIENTE:
-      return "bg-yellow-100 text-yellow-800"
-    case EstadoOrdenCompra.EN_REVISION:
-      return "bg-blue-100 text-blue-800"
-    case EstadoOrdenCompra.RECHAZADA:
-      return "bg-red-100 text-red-800"
-    default:
-      return "bg-gray-100 text-gray-800"
-  }
-}
+import { showErrorToast } from "@/shared/toast-helpers"
+import { StatusBadge } from "@/shared/status-badge"
 
 export function OrdenCompraList() {
   const { orders, loading, error, updateOrder } = useOrders()
   const [searchTerm, setSearchTerm] = useState("")
+  const [updatingId, setUpdatingId] = useState<number | null>(null)
 
-  // Filtrar órdenes basado en la búsqueda
+  // ⚠️ ahora buscamos por los campos que realmente tenemos
   const filteredOrders = searchWithScore(
     orders,
     searchTerm,
-    ['numero', 'proveedor_nombre', 'descripcion', 'estado'],
+    ["numero_oc", "estado", "observaciones"],
     {
-      numero: 3,         // Mayor peso para número de orden
-      proveedor_nombre: 2, // Peso medio para proveedor
-      estado: 2,         // Peso medio para estado
-      descripcion: 1     // Menor peso para descripción
+      numero_oc: 3,
+      estado: 2,
+      observaciones: 1,
     }
   )
 
-  const handleAprobar = async (id: string) => {
+  const handleAprobar = async (id: number | string) => {
     try {
-      await updateOrder(id, { estado: EstadoOrdenCompra.APROBADA })
+      setUpdatingId(Number(id))
+      await updateOrder(id, { estado: "aprobado" })
     } catch (error) {
       console.error("Error al aprobar orden:", error)
+      showErrorToast("Error al aprobar", error instanceof Error ? error.message : "Error desconocido")
+    } finally {
+      setUpdatingId(null)
     }
   }
 
-  const handleRechazar = async (id: string) => {
+  const handleAnular = async (id: number | string) => {
     try {
-      await updateOrder(id, { estado: EstadoOrdenCompra.RECHAZADA })
+      setUpdatingId(Number(id))
+      await updateOrder(id, { estado: "anulado" })
     } catch (error) {
-      console.error("Error al rechazar orden:", error)
+      console.error("Error al anular orden:", error)
+      showErrorToast("Error al anular", error instanceof Error ? error.message : "Error desconocido")
+    } finally {
+      setUpdatingId(null)
     }
   }
 
@@ -87,74 +79,107 @@ export function OrdenCompraList() {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Lista de Órdenes de Compra ({filteredOrders.length})</CardTitle>
-          <SearchBar 
+          <CardTitle>Órdenes de Compra ({filteredOrders.length})</CardTitle>
+          <SearchBar
             value={searchTerm}
             onChange={setSearchTerm}
-            placeholder="Buscar por número, proveedor, estado..."
+            placeholder="Buscar por número, estado u observación..."
             className="w-80"
           />
         </div>
       </CardHeader>
       <CardContent>
-        <SearchStats 
+        <SearchStats
           totalItems={orders.length}
           filteredItems={filteredOrders.length}
           searchTerm={searchTerm}
           entityName="orden"
         />
+
         <div className="space-y-4">
           {filteredOrders.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-slate-500">
-                {searchTerm 
+                {searchTerm
                   ? `No se encontraron órdenes que coincidan con "${searchTerm}"`
-                  : "No hay órdenes de compra registradas"
-                }
+                  : "No hay órdenes de compra registradas"}
               </p>
             </div>
           ) : (
-            filteredOrders.map((orden) => (
-              <div 
+            filteredOrders.map((orden: any) => (
+              <div
                 key={orden.id}
                 className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
               >
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                  {/* columna 1: número y fecha */}
                   <div>
-                    <p className="font-medium text-slate-900">Orden #{orden.numero}</p>
-                    <p className="text-sm text-slate-500">{formatDateShort(orden.fecha_creacion)}</p>
+                    <p className="font-medium text-slate-900">
+                      {orden.numero_oc ? `OC #${orden.numero_oc}` : `OC ID ${orden.id}`}
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      {/* en la tabla la fecha es fecha_oc (date), no fecha_creacion */}
+                      {orden.fecha_oc
+                        ? new Date(orden.fecha_oc).toLocaleDateString("es-AR")
+                        : ""}
+                    </p>
                   </div>
+
+                  {/* columna 2: proveedor (solo tenemos id) */}
                   <div>
-                    <p className="text-sm text-slate-900">{orden.proveedor_nombre}</p>
-                    <p className="text-sm text-slate-500">{orden.items.length} items</p>
+                    <p className="text-sm text-slate-900">
+                      {orden.proveedor_nombre ||
+                        (orden.proveedor_id ? `Proveedor #${orden.proveedor_id}` : "Sin proveedor")}
+                    </p>
+                    {orden.observaciones && (
+                      <p className="text-sm text-slate-500 line-clamp-1">
+                        {orden.observaciones}
+                      </p>
+                    )}
                   </div>
+
+                  {/* columna 3: totales y estado */}
                   <div>
-                    <p className="font-medium text-slate-900">{formatCurrency(orden.total)}</p>
-                    <Badge className={getEstadoColor(orden.estado)}>
-                      {orden.estado}
-                    </Badge>
+                    <p className="font-medium text-slate-900">
+                      {formatCurrency(orden.total_con_iva ?? orden.total_neto ?? 0)}
+                    </p>
+                    <StatusBadge estado={orden.estado} showIcon />
                   </div>
+
+                  {/* columna 4: acciones */}
                   <div className="flex items-center space-x-2">
                     <Button variant="outline" size="sm" asChild>
                       <Link href={`/ordenes-compra/${orden.id}`}>
                         <Eye className="h-4 w-4" />
                       </Link>
                     </Button>
-                    {orden.estado === EstadoOrdenCompra.PENDIENTE && (
+
+                    {/* solo si está en borrador la dejamos aprobar/anular */}
+                    {orden.estado === "borrador" && (
                       <>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleAprobar(orden.id)}
+                          disabled={updatingId === orden.id}
                         >
-                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          {updatingId === orden.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          )}
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
-                          onClick={() => handleRechazar(orden.id)}
+                          onClick={() => handleAnular(orden.id)}
+                          disabled={updatingId === orden.id}
                         >
-                          <XCircle className="h-4 w-4 text-red-600" />
+                          {updatingId === orden.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-red-600" />
+                          )}
                         </Button>
                       </>
                     )}

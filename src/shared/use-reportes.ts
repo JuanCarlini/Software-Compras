@@ -1,98 +1,162 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Reporte, ReporteEstadisticas, CreateReporteData } from "@/models"
-import { ReporteController } from "@/controllers"
-import { showSuccessToast, showErrorToast, toastMessages } from "./toast-helpers"
+import { createClient } from "@/lib/supabase/client"
+
+export interface ReporteEstadisticas {
+  total_ordenes_compra: number
+  ordenes_este_mes: number
+  monto_total_ordenes: number
+  total_proveedores: number
+  proveedores_activos: number
+  ordenes_por_estado: Array<{ estado: string; cantidad: number }>
+  top_proveedores: Array<{ 
+    id: number
+    nombre: string
+    total_ordenes: number
+    monto_total: number 
+  }>
+  ordenes_por_mes: Array<{
+    mes: string
+    cantidad: number
+    monto: number
+  }>
+}
 
 export function useReportes() {
-  const [reportes, setReportes] = useState<Reporte[]>([])
   const [estadisticas, setEstadisticas] = useState<ReporteEstadisticas | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchReportes = async () => {
+  const fetchEstadisticas = async () => {
     try {
       setLoading(true)
-      const [reportesData, estadisticasData] = await Promise.all([
-        ReporteController.getAll(),
-        ReporteController.getEstadisticas()
-      ])
-      setReportes(reportesData)
-      setEstadisticas(estadisticasData)
+      const supabase = createClient()
+
+      // Consultar órdenes de compra
+      const { data: ordenes, error: ordenesError } = await supabase
+        .from('gu_ordenesdecompra')
+        .select(`
+          id,
+          numero_oc,
+          fecha_oc,
+          total_con_iva,
+          estado,
+          proveedor_id,
+          created_at
+        `)
+
+      if (ordenesError) throw ordenesError
+
+      // Consultar proveedores
+      const { data: proveedores, error: proveedoresError } = await supabase
+        .from('gu_proveedores')
+        .select('id, nombre, estado')
+
+      if (proveedoresError) throw proveedoresError
+
+      // Calcular estadísticas
+      const totalOrdenes = ordenes?.length || 0
+      const montoTotal = ordenes?.reduce((sum, o) => sum + (o.total_con_iva || 0), 0) || 0
+      
+      // Órdenes de este mes
+      const ahora = new Date()
+      const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1)
+      const ordenesEsteMes = ordenes?.filter(o => 
+        new Date(o.created_at) >= inicioMes
+      ).length || 0
+
+      // Órdenes por estado
+      const ordenesPorEstado = ordenes?.reduce((acc, o) => {
+        const estado = o.estado || 'sin_estado'
+        const existing = acc.find(item => item.estado === estado)
+        if (existing) {
+          existing.cantidad++
+        } else {
+          acc.push({ estado, cantidad: 1 })
+        }
+        return acc
+      }, [] as Array<{ estado: string; cantidad: number }>) || []
+
+      // Top proveedores por monto total
+      const proveedoresMapa = new Map<number, {
+        id: number
+        nombre: string
+        total_ordenes: number
+        monto_total: number
+      }>()
+
+      ordenes?.forEach(orden => {
+        const provId = orden.proveedor_id
+        const prov = proveedores?.find(p => p.id === provId)
+        
+        if (prov) {
+          if (!proveedoresMapa.has(provId)) {
+            proveedoresMapa.set(provId, {
+              id: provId,
+              nombre: prov.nombre,
+              total_ordenes: 0,
+              monto_total: 0
+            })
+          }
+          
+          const item = proveedoresMapa.get(provId)!
+          item.total_ordenes++
+          item.monto_total += orden.total_con_iva || 0
+        }
+      })
+
+      const topProveedores = Array.from(proveedoresMapa.values())
+        .sort((a, b) => b.monto_total - a.monto_total)
+        .slice(0, 5)
+
+      // Órdenes por mes (últimos 6 meses)
+      const ordenesPorMes: Array<{ mes: string; cantidad: number; monto: number }> = []
+      for (let i = 5; i >= 0; i--) {
+        const fecha = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1)
+        const mesNombre = fecha.toLocaleDateString('es-AR', { month: 'short', year: 'numeric' })
+        
+        const ordenesDelMes = ordenes?.filter(o => {
+          const fechaOrden = new Date(o.created_at)
+          return fechaOrden.getMonth() === fecha.getMonth() && 
+                 fechaOrden.getFullYear() === fecha.getFullYear()
+        }) || []
+
+        ordenesPorMes.push({
+          mes: mesNombre,
+          cantidad: ordenesDelMes.length,
+          monto: ordenesDelMes.reduce((sum, o) => sum + (o.total_con_iva || 0), 0)
+        })
+      }
+
+      setEstadisticas({
+        total_ordenes_compra: totalOrdenes,
+        ordenes_este_mes: ordenesEsteMes,
+        monto_total_ordenes: montoTotal,
+        total_proveedores: proveedores?.length || 0,
+        proveedores_activos: proveedores?.filter(p => p.estado === 'activo').length || 0,
+        ordenes_por_estado: ordenesPorEstado,
+        top_proveedores: topProveedores,
+        ordenes_por_mes: ordenesPorMes
+      })
+      
       setError(null)
     } catch (err) {
+      console.error("Error fetching estadísticas:", err)
       setError(err instanceof Error ? err.message : "Error desconocido")
     } finally {
       setLoading(false)
     }
   }
 
-  const createReporte = async (data: CreateReporteData) => {
-    try {
-      const nuevoReporte = await ReporteController.create(data)
-      setReportes(prev => [nuevoReporte, ...prev])
-      showSuccessToast(toastMessages.reporte.created, nuevoReporte.nombre)
-      return nuevoReporte
-    } catch (err) {
-      showErrorToast(toastMessages.reporte.error, err instanceof Error ? err.message : "Error desconocido")
-      throw err
-    }
-  }
-
-  const deleteReporte = async (id: string) => {
-    try {
-      await ReporteController.delete(id)
-      setReportes(prev => prev.filter(reporte => reporte.id !== id))
-      showSuccessToast(toastMessages.reporte.deleted)
-    } catch (err) {
-      showErrorToast(toastMessages.reporte.error, err instanceof Error ? err.message : "Error desconocido")
-      throw err
-    }
-  }
-
-  const regenerarReporte = async (id: string) => {
-    try {
-      const reporteActualizado = await ReporteController.regenerar(id)
-      if (reporteActualizado) {
-        setReportes(prev => 
-          prev.map(reporte => 
-            reporte.id === id ? reporteActualizado : reporte
-          )
-        )
-        showSuccessToast(toastMessages.reporte.regenerated, reporteActualizado.nombre)
-      }
-      return reporteActualizado
-    } catch (err) {
-      showErrorToast(toastMessages.reporte.error, err instanceof Error ? err.message : "Error desconocido")
-      throw err
-    }
-  }
-
-  const descargarReporte = async (id: string, formato: 'pdf' | 'excel') => {
-    try {
-      const url = await ReporteController.descargar(id, formato)
-      showSuccessToast(toastMessages.reporte.downloaded, `Formato: ${formato.toUpperCase()}`)
-      return url
-    } catch (err) {
-      showErrorToast(toastMessages.reporte.error, err instanceof Error ? err.message : "Error desconocido")
-      throw err
-    }
-  }
-
   useEffect(() => {
-    fetchReportes()
+    fetchEstadisticas()
   }, [])
 
   return {
-    reportes,
     estadisticas,
     loading,
     error,
-    refreshReportes: fetchReportes,
-    createReporte,
-    deleteReporte,
-    regenerarReporte,
-    descargarReporte
+    refresh: fetchEstadisticas
   }
 }

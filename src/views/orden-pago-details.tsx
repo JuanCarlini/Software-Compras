@@ -1,67 +1,132 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams } from "next/navigation"
-import { OrdenPago, EstadoOrdenPago, MetodoPago } from "@/models"
+import { useParams, useRouter } from "next/navigation"
+import { OrdenPago, EstadoOrdenPago } from "@/models"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
-import { Badge } from "@/views/ui/badge"
 import { Button } from "@/views/ui/button"
+import { Separator } from "@/views/ui/separator"
 import { formatDateShort } from "@/shared/date-utils"
 import { formatCurrency } from "@/shared/format-utils"
+import { StatusBadge } from "@/shared/status-badge"
+import { OrdenPagoService, ProveedorService } from "@/controllers"
+import { 
+  Loader2, 
+  ArrowLeft, 
+  CheckCircle, 
+  XCircle, 
+  DollarSign,
+  Calendar,
+  User,
+  FileText
+} from "lucide-react"
 
 export function OrdenPagoDetails() {
   const params = useParams()
+  const router = useRouter()
   const id = params.id as string
   const [orden, setOrden] = useState<OrdenPago | null>(null)
+  const [proveedor, setProveedor] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [processing, setProcessing] = useState(false)
 
   useEffect(() => {
     const fetchOrden = async () => {
       try {
-        const response = await fetch(`/api/ordenes-pago/${id}`)
-        if (!response.ok) throw new Error('Orden no encontrada')
-        const data = await response.json()
-        setOrden(data)
+        setLoading(true)
+        const data = await OrdenPagoService.getById(Number(id))
+        if (!data) {
+          setError("Orden no encontrada")
+          setOrden(null)
+        } else {
+          setOrden(data)
+          
+          // Cargar proveedor
+          if (data.proveedor_id) {
+            const prov = await ProveedorService.getById(data.proveedor_id)
+            setProveedor(prov)
+          }
+          
+          setError(null)
+        }
       } catch (error) {
         console.error('Error cargando orden:', error)
+        setError("Error al cargar la orden")
         setOrden(null)
       } finally {
         setLoading(false)
       }
     }
 
-    // Llamar a la API real
-    fetchOrden()
+    if (id) {
+      fetchOrden()
+    }
   }, [id])
+
+  const handleAprobar = async () => {
+    if (!orden) return
+    setProcessing(true)
+    try {
+      const updated = await OrdenPagoService.update(Number(id), { estado: 'aprobado' })
+      if (updated) {
+        setOrden(updated)
+      }
+    } catch (error) {
+      console.error("Error al aprobar:", error)
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const handleRechazar = async () => {
+    if (!orden) return
+    setProcessing(true)
+    try {
+      const updated = await OrdenPagoService.update(Number(id), { estado: 'rechazado' })
+      if (updated) {
+        setOrden(updated)
+      }
+    } catch (error) {
+      console.error("Error al rechazar:", error)
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  const handleMarcarPagada = async () => {
+    if (!orden) return
+    setProcessing(true)
+    try {
+      const updated = await OrdenPagoService.update(Number(id), { estado: 'pagado' })
+      if (updated) {
+        setOrden(updated)
+      }
+    } catch (error) {
+      console.error("Error al marcar como pagada:", error)
+    } finally {
+      setProcessing(false)
+    }
+  }
 
   if (loading) {
     return (
       <Card>
         <CardContent className="py-8 text-center">
-          <div className="animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/3 mx-auto"></div>
-          </div>
-          <p className="mt-4 text-gray-600">Cargando detalles de la orden de pago...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Cargando detalles de la orden de pago...</p>
         </CardContent>
       </Card>
     )
   }
 
-  if (!orden) {
+  if (error || !orden) {
     return (
       <Card>
         <CardContent className="py-8 text-center">
-          <div className="text-gray-400 mb-4">
-            <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v2a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Base de datos no configurada</h3>
-          <p className="text-gray-600 mb-4">
-            Configure la conexión a base de datos para ver los detalles de las órdenes de pago.
-          </p>
-          <Button variant="outline" onClick={() => window.history.back()}>
+          <p className="text-red-600">{error || "Orden no encontrada"}</p>
+          <Button className="mt-4" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
             Volver
           </Button>
         </CardContent>
@@ -69,111 +134,181 @@ export function OrdenPagoDetails() {
     )
   }
 
-  // TODO: Implementar funciones cuando se tenga BD real
-  const getEstadoColor = (estado: EstadoOrdenPago) => {
-    switch (estado) {
-      case EstadoOrdenPago.PAGADA:
-        return "bg-green-100 text-green-800"
-      case EstadoOrdenPago.APROBADA:
-        return "bg-blue-100 text-blue-800"
-      case EstadoOrdenPago.PENDIENTE:
-        return "bg-yellow-100 text-yellow-800"
-      case EstadoOrdenPago.RECHAZADA:
-        return "bg-red-100 text-red-800"
-      case EstadoOrdenPago.VENCIDA:
-        return "bg-orange-100 text-orange-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
-
-  const getMetodoIcon = (metodo: MetodoPago) => {
-    switch (metodo) {
-      case MetodoPago.TRANSFERENCIA:
-        return "🏦"
-      case MetodoPago.CHEQUE:
-        return "📝"
-      case MetodoPago.EFECTIVO:
-        return "💵"
-      case MetodoPago.TARJETA:
-        return "💳"
-      default:
-        return "💰"
-    }
-  }
-
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <Button variant="outline" size="sm" onClick={() => router.back()}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Volver
+        </Button>
+        <div className="flex items-center gap-3">
+          <StatusBadge estado={orden.estado} showIcon />
+        </div>
+      </div>
+
+      {/* Información Principal */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Orden de Pago {orden.numero}</CardTitle>
-            <Badge className={getEstadoColor(orden.estado)}>
-              {orden.estado}
-            </Badge>
+            <div>
+              <CardTitle className="text-2xl">Orden de Pago</CardTitle>
+              <p className="text-lg font-mono text-slate-600 mt-1">{orden.numero_op}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-slate-600">Monto Total</p>
+              <p className="text-3xl font-bold text-slate-900">
+                {formatCurrency(orden.total_pago)}
+              </p>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-medium text-gray-900 mb-3">Información General</h3>
-              <div className="space-y-2 text-sm">
-                <div><span className="font-medium">Proveedor:</span> {orden.proveedor_nombre}</div>
-                <div><span className="font-medium">Orden de Compra:</span> {orden.orden_compra_id}</div>
-                <div><span className="font-medium">Fecha Creación:</span> {formatDateShort(orden.fecha_creacion)}</div>
-                <div><span className="font-medium">Fecha Vencimiento:</span> {formatDateShort(orden.fecha_vencimiento)}</div>
-                <div>
-                  <span className="font-medium">Método de Pago:</span> 
-                  <span className="ml-2">
-                    {getMetodoIcon(orden.metodo_pago)} {orden.metodo_pago}
-                  </span>
+        
+        <Separator />
+        
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Columna Izquierda */}
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-medium text-slate-500 mb-3 flex items-center">
+                  <User className="h-4 w-4 mr-2" />
+                  Información del Proveedor
+                </h3>
+                <div className="space-y-2 pl-6">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Proveedor:</span>
+                    <span className="font-medium">{proveedor?.nombre || `ID: ${orden.proveedor_id}`}</span>
+                  </div>
+                  {proveedor?.cuit && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">CUIT:</span>
+                      <span className="font-medium">{proveedor.cuit}</span>
+                    </div>
+                  )}
                 </div>
-                {orden.referencia_bancaria && (
-                  <div><span className="font-medium">Referencia:</span> {orden.referencia_bancaria}</div>
+              </div>
+
+              <Separator />
+
+              <div>
+                <h3 className="text-sm font-medium text-slate-500 mb-3 flex items-center">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Fechas
+                </h3>
+                <div className="space-y-2 pl-6">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Fecha de Orden:</span>
+                    <span className="font-medium">{formatDateShort(orden.fecha_op)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Creado:</span>
+                    <span className="font-medium">{formatDateShort(orden.created_at)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Columna Derecha */}
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-medium text-slate-500 mb-3 flex items-center">
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Detalles del Pago
+                </h3>
+                <div className="space-y-2 pl-6">
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Total a Pagar:</span>
+                    <span className="text-xl font-bold text-green-600">
+                      {formatCurrency(orden.total_pago)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Estado:</span>
+                    <StatusBadge estado={orden.estado} showIcon />
+                  </div>
+                </div>
+              </div>
+
+              {orden.observaciones && (
+                <>
+                  <Separator />
+                  <div>
+                    <h3 className="text-sm font-medium text-slate-500 mb-3 flex items-center">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Observaciones
+                    </h3>
+                    <p className="text-sm text-slate-700 pl-6 bg-slate-50 p-3 rounded-md">
+                      {orden.observaciones}
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Acciones */}
+      {orden.estado === EstadoOrdenPago.PENDIENTE && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Acciones Disponibles</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-3">
+              <Button
+                onClick={handleAprobar}
+                disabled={processing}
+                className="flex-1"
+              >
+                {processing ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 mr-2" />
                 )}
-              </div>
+                Aprobar Orden
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleRechazar}
+                disabled={processing}
+                className="flex-1"
+              >
+                {processing ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <XCircle className="h-4 w-4 mr-2" />
+                )}
+                Rechazar Orden
+              </Button>
             </div>
-            
-            <div>
-              <h3 className="font-medium text-gray-900 mb-3">Monto</h3>
-              <div className="space-y-2">
-                <div className="text-3xl font-bold text-gray-900">
-                  {formatCurrency(orden.monto)}
-                </div>
-                <div className="text-sm text-gray-600">
-                  {orden.moneda}
-                </div>
-              </div>
-            </div>
-          </div>
+          </CardContent>
+        </Card>
+      )}
 
-          {orden.observaciones && (
-            <div className="mt-6 pt-6 border-t">
-              <h3 className="font-medium text-gray-900 mb-2">Observaciones</h3>
-              <p className="text-sm text-gray-600">{orden.observaciones}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Acciones disponibles según el estado */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Acciones</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-4">
-            <p className="text-gray-600 mb-4">
-              Las acciones estarán disponibles cuando se configure la base de datos.
-            </p>
-            <div className="space-x-2">
-              <Button variant="outline" disabled>Aprobar</Button>
-              <Button variant="outline" disabled>Rechazar</Button>
-              <Button variant="outline" disabled>Marcar como Pagada</Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {orden.estado === EstadoOrdenPago.APROBADO && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Marcar como Pagada</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={handleMarcarPagada}
+              disabled={processing}
+              className="w-full"
+              size="lg"
+            >
+              {processing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <DollarSign className="h-4 w-4 mr-2" />
+              )}
+              Confirmar Pago Realizado
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

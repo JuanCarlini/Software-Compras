@@ -7,6 +7,8 @@ export const ROUTES = {
   // Dashboard Routes  
   DASHBOARD: "/dashboard",
   ORDENES_COMPRA: "/ordenes-compra",
+  CERTIFICACIONES: "/certificaciones",
+  FACTURAS: "/facturas",
   ORDENES_PAGO: "/ordenes-pago",
   PROVEEDORES: "/proveedores",
   REPORTES: "/reportes",
@@ -15,7 +17,9 @@ export const ROUTES = {
   // API Routes
   API: {
     AUTH: "/api/auth",
-    ORDENES_COMPRA: "/api/ordenes-compra", 
+    ORDENES_COMPRA: "/api/ordenes-compra",
+    CERTIFICACIONES: "/api/certificaciones",
+    FACTURAS: "/api/facturas",
     ORDENES_PAGO: "/api/ordenes-pago",
     PROVEEDORES: "/api/proveedores",
     REPORTES: "/api/reportes"
@@ -33,6 +37,16 @@ export const NAVIGATION_ITEMS = [
     title: "Órdenes de Compra", 
     url: ROUTES.ORDENES_COMPRA,
     icon: "ShoppingCart"
+  },
+  {
+    title: "Certificaciones",
+    url: ROUTES.CERTIFICACIONES,
+    icon: "FileCheck"
+  },
+  {
+    title: "Facturas",
+    url: ROUTES.FACTURAS,
+    icon: "Receipt"
   },
   {
     title: "Órdenes de Pago",

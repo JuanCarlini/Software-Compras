@@ -1,6 +1,6 @@
 "use client"
 
-import { BarChart3, Building2, CreditCard, Settings, ShoppingCart, Home } from "lucide-react"
+import { BarChart3, Building2, CreditCard, Settings, ShoppingCart, Home, FileCheck, Receipt } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -27,6 +27,16 @@ const menuItems = [
     icon: ShoppingCart,
   },
   {
+    title: "Certificaciones",
+    url: "/certificaciones",
+    icon: FileCheck,
+  },
+  {
+    title: "Facturas",
+    url: "/facturas",
+    icon: Receipt,
+  },
+  {
     title: "Órdenes de Pago",
     url: "/ordenes-pago",
     icon: CreditCard,
@@ -43,7 +53,7 @@ const menuItems = [
   },
   {
     title: "Configuración",
-    url: "/configuracion",
+    url: "/configuración",
     icon: Settings,
   },
 ]

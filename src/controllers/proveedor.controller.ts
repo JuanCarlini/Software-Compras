@@ -1,66 +1,67 @@
-import { createClient } from '@/lib/supabase/client'
-import type { Database } from '@/lib/supabase/types'
-
-type Proveedor = Database['public']['Tables']['proveedores']['Row']
-type ProveedorInsert = Database['public']['Tables']['proveedores']['Insert']
-type ProveedorUpdate = Database['public']['Tables']['proveedores']['Update']
+import { createClient } from "@/lib/supabase/client"
+import { Proveedor, EstadoProveedor } from "@/models"
 
 export class ProveedorService {
   static async getAll(): Promise<Proveedor[]> {
     const supabase = createClient()
     const { data, error } = await supabase
-      .from('proveedores')
-      .select('*')
-      .order('created_at', { ascending: false })
-    
+      .from("gu_proveedores")
+      .select("*")
+      .order("created_at", { ascending: false })
+
     if (error) throw error
-    return data || []
+
+    // normalizo estado a 'activo' si viene null
+    return (data || []).map((p: any) => ({
+      ...p,
+      estado: p.estado ?? EstadoProveedor.ACTIVO,
+    }))
   }
 
-  static async getById(id: string): Promise<Proveedor | null> {
+  static async getById(id: number): Promise<Proveedor | null> {
     const supabase = createClient()
     const { data, error } = await supabase
-      .from('proveedores')
-      .select('*')
-      .eq('id', id)
+      .from("gu_proveedores")
+      .select("*")
+      .eq("id", id)
       .single()
-    
+
     if (error) return null
-    return data
+
+    return {
+      ...data,
+      estado: data.estado ?? EstadoProveedor.ACTIVO,
+    } as Proveedor
   }
 
-  static async create(proveedor: ProveedorInsert): Promise<Proveedor> {
+  static async create(proveedor: Partial<Proveedor>): Promise<Proveedor> {
     const supabase = createClient()
     const { data, error } = await supabase
-      .from('proveedores')
+      .from("gu_proveedores")
       .insert(proveedor)
       .select()
       .single()
-    
+
     if (error) throw error
-    return data
+    return data as Proveedor
   }
 
-  static async update(id: string, proveedor: ProveedorUpdate): Promise<Proveedor | null> {
+  static async update(id: number, proveedor: Partial<Proveedor>): Promise<Proveedor | null> {
     const supabase = createClient()
     const { data, error } = await supabase
-      .from('proveedores')
+      .from("gu_proveedores")
       .update(proveedor)
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single()
-    
+
     if (error) return null
-    return data
+    return data as Proveedor
   }
 
-  static async delete(id: string): Promise<boolean> {
+  static async delete(id: number): Promise<boolean> {
     const supabase = createClient()
-    const { error } = await supabase
-      .from('proveedores')
-      .delete()
-      .eq('id', id)
-    
+    const { error } = await supabase.from("gu_proveedores").delete().eq("id", id)
     return !error
   }
 }

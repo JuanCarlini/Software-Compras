@@ -35,7 +35,7 @@ export function useOrders() {
     }
   }
 
-  const updateOrder = async (id: string, orderData: any) => {
+  const updateOrder = async (id: string | number, orderData: any) => {
     try {
       const updatedOrder = await OrdenCompraService.update(id, orderData)
       if (updatedOrder) {
@@ -45,15 +45,15 @@ export function useOrders() {
         
         // Toast message específico según el estado
         if (orderData.estado) {
-          if (orderData.estado === 'Aprobada') {
-            showSuccessToast(toastMessages.ordenCompra.approved, `Orden #${updatedOrder.numero}`)
-          } else if (orderData.estado === 'Rechazada') {
-            showSuccessToast(toastMessages.ordenCompra.rejected, `Orden #${updatedOrder.numero}`)
+          if (orderData.estado === 'aprobado') {
+            showSuccessToast(toastMessages.ordenCompra.approved, `Orden #${updatedOrder.numero_oc}`)
+          } else if (orderData.estado === 'anulado' || orderData.estado === 'rechazado') {
+            showSuccessToast(toastMessages.ordenCompra.rejected, `Orden #${updatedOrder.numero_oc}`)
           } else {
-            showSuccessToast(toastMessages.ordenCompra.updated, `Orden #${updatedOrder.numero}`)
+            showSuccessToast(toastMessages.ordenCompra.updated, `Orden #${updatedOrder.numero_oc}`)
           }
         } else {
-          showSuccessToast(toastMessages.ordenCompra.updated, `Orden #${updatedOrder.numero}`)
+          showSuccessToast(toastMessages.ordenCompra.updated, `Orden #${updatedOrder.numero_oc}`)
         }
       }
       return updatedOrder
@@ -63,7 +63,7 @@ export function useOrders() {
     }
   }
 
-  const deleteOrder = async (id: string) => {
+  const deleteOrder = async (id: string | number) => {
     try {
       await OrdenCompraService.delete(id)
       setOrders(prev => prev.filter(order => order.id !== id))

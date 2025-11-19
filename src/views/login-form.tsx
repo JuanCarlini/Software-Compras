@@ -33,8 +33,12 @@ export function LoginForm() {
       }
       
       showSuccessToast("Sesión iniciada", `Bienvenido ${data.user.nombre}`)
-      router.push("/dashboard")
-      router.refresh()
+      
+      // Esperar un momento para que la cookie se establezca
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Usar window.location para forzar recarga completa
+      window.location.href = "/dashboard"
     } catch (error) {
       showErrorToast("Error", error instanceof Error ? error.message : "Verifica tus credenciales")
     } finally {

@@ -6,13 +6,10 @@ import { CreateOrdenCompraSchema } from "@/shared/orden-compra-validation"
 export async function GET() {
   try {
     const ordenes = await OrdenCompraService.getAll()
-    return NextResponse.json(ordenes)
+    return NextResponse.json(ordenes || [])
   } catch (error) {
     console.error("Error al obtener órdenes:", error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return NextResponse.json([], { status: 200 })
   }
 }
 

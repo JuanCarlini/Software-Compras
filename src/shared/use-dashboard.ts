@@ -1,10 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { OrdenCompraService } from "@/controllers/orden-compra.controller"
-import { OrdenPagoService } from "@/controllers/orden-pago.controller"
-import { ProveedorService } from "@/controllers/proveedor.controller"
-import { OrdenCompra, OrdenPago, Proveedor, EstadoOrdenCompra, EstadoOrdenPago, EstadoProveedor } from "@/models"
 
 export interface DashboardStats {
   ordenesCompra: {
@@ -43,18 +39,22 @@ export function useDashboard() {
     try {
       setLoading(true)
       
-      // Obtener datos en paralelo
-      const [ordenesCompra, ordenesPago, proveedores] = await Promise.all([
-        OrdenCompraService.getAll(),
-        OrdenPagoService.getAll(),
-        ProveedorService.getAll()
+      // Obtener datos en paralelo usando fetch
+      const [ocRes, opRes, provRes] = await Promise.all([
+        fetch('/api/ordenes-compra'),
+        fetch('/api/ordenes-pago'),
+        fetch('/api/proveedores')
       ])
+
+      const ordenesCompra = ocRes.ok ? await ocRes.json() : []
+      const ordenesPago = opRes.ok ? await opRes.json() : []
+      const proveedores = provRes.ok ? await provRes.json() : []
 
       // Calcular estadísticas de órdenes de compra
       const ordenesCompraStats = {
         total: ordenesCompra.length,
-        pendientes: ordenesCompra.filter(o => o.estado === EstadoOrdenCompra.PENDIENTE).length,
-        aprobadas: ordenesCompra.filter(o => o.estado === EstadoOrdenCompra.APROBADA).length,
+        pendientes: ordenesCompra.filter(o => o.estado === 'borrador' || o.estado === 'en_aprobacion').length,
+        aprobadas: ordenesCompra.filter(o => o.estado === 'aprobado').length,
         recientes: ordenesCompra.filter(o => {
           const unaSemanaAtras = new Date()
           unaSemanaAtras.setDate(unaSemanaAtras.getDate() - 7)
@@ -65,23 +65,24 @@ export function useDashboard() {
       // Calcular estadísticas de órdenes de pago
       const ordenesPagoStats = {
         total: ordenesPago.length,
-        pendientes: ordenesPago.filter(o => o.estado === EstadoOrdenPago.PENDIENTE).length,
-        aprobadas: ordenesPago.filter(o => o.estado === EstadoOrdenPago.APROBADA).length,
+        pendientes: ordenesPago.filter(o => o.estado === 'pendiente').length,
+        aprobadas: ordenesPago.filter(o => o.estado === 'aprobado').length,
         vencidas: ordenesPago.filter(o => {
+          if (!o.fecha_op) return false
           const hoy = new Date()
-          return new Date(o.fecha_vencimiento) < hoy && 
-                 [EstadoOrdenPago.PENDIENTE, EstadoOrdenPago.APROBADA].includes(o.estado)
+          return new Date(o.fecha_op) < hoy && o.estado === 'pendiente'
         }).length,
         montoTotal: ordenesPago
-          .filter(o => o.estado === EstadoOrdenPago.PAGADA)
-          .reduce((sum, o) => sum + o.monto, 0)
+          .filter(o => o.estado === 'pagado')
+          .reduce((sum, o) => sum + (o.total_pago || 0), 0)
       }
 
       // Calcular estadísticas de proveedores
       const proveedoresStats = {
         total: proveedores.length,
-        activos: proveedores.filter(p => p.estado === EstadoProveedor.ACTIVO).length,
+        activos: proveedores.filter(p => p.estado === 'activo').length,
         nuevos: proveedores.filter(p => {
+          if (!p.created_at) return false
           const unMesAtras = new Date()
           unMesAtras.setMonth(unMesAtras.getMonth() - 1)
           return new Date(p.created_at) >= unMesAtras
@@ -97,9 +98,9 @@ export function useDashboard() {
         .slice(0, 5)
         .forEach(orden => {
           actividadReciente.push({
-            id: orden.id,
+            id: String(orden.id),
             tipo: 'orden_compra',
-            descripcion: `Nueva orden de compra ${orden.numero}`,
+            descripcion: `Nueva orden de compra ${orden.numero_oc}`,
             fecha: new Date(orden.created_at),
             estado: orden.estado
           })
@@ -111,9 +112,9 @@ export function useDashboard() {
         .slice(0, 5)
         .forEach(orden => {
           actividadReciente.push({
-            id: orden.id,
+            id: String(orden.id),
             tipo: 'orden_pago',
-            descripcion: `Orden de pago ${orden.numero} - ${orden.proveedor_nombre}`,
+            descripcion: `Orden de pago ${orden.numero_op} - ${orden.proveedor_nombre || 'Sin proveedor'}`,
             fecha: new Date(orden.created_at),
             estado: orden.estado
           })
@@ -125,7 +126,7 @@ export function useDashboard() {
         .slice(0, 3)
         .forEach(proveedor => {
           actividadReciente.push({
-            id: proveedor.id,
+            id: String(proveedor.id),
             tipo: 'proveedor',
             descripcion: `Nuevo proveedor: ${proveedor.nombre}`,
             fecha: new Date(proveedor.created_at),
