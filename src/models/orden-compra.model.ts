@@ -36,6 +36,7 @@ export interface CreateOrdenCompraData {
 export interface OrdenCompraLinea {
   id: number
   orden_compra_id: number
+  item_id?: number | null          // NUEVO: FK a gu_items
   item_codigo: string | null
   descripcion: string
   cantidad: number
@@ -48,6 +49,7 @@ export interface OrdenCompraLinea {
 
 export interface CreateOrdenCompraLinea {
   orden_compra_id: number
+  item_id?: number | null          // NUEVO: FK a gu_items
   item_codigo?: string | null
   descripcion: string
   cantidad: number
@@ -56,4 +58,25 @@ export interface CreateOrdenCompraLinea {
   total_neto: number
   total_con_iva: number
   estado?: string | null
+}
+
+// Interface extendida con información del item del catálogo
+export interface OrdenCompraLineaConItem extends OrdenCompraLinea {
+  item?: {
+    id: number
+    nombre: string
+    descripcion?: string | null
+    precio_sugerido?: number | null
+    unidad_medida?: string | null
+    categoria?: string | null
+  } | null
+}
+
+// Helper type para crear líneas con items del catálogo
+export interface CreateLineaFromItem {
+  item_id: number
+  cantidad: number
+  precio_unitario_neto?: number    // Si no se provee, se usa precio_sugerido del item
+  iva_porcentaje?: number           // Default 21
+  descripcion?: string              // Opcional: para complementar info del item
 }

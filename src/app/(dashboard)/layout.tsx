@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/views/ui/sidebar"
 import { AppSidebar } from "@/views/app-sidebar"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { UserMenu } from "@/components/user-menu"
 
 export default function DashboardLayout({
   children,
@@ -15,7 +16,7 @@ export default function DashboardLayout({
           <SidebarTrigger />
           <div className="flex items-center space-x-4">
             <ThemeToggle />
-            <span className="text-sm text-muted-foreground">Usuario: Admin</span>
+            <UserMenu userName="Admin" />
           </div>
         </header>
         <div className="flex-1 p-6">

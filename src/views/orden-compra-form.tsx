@@ -11,12 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/views/ui/alert"
 import { Loader2, Plus, Trash2, ShoppingCart } from "lucide-react"
 import { ProveedorService, OrdenCompraService } from "@/controllers"
-import { Proveedor } from "@/models"
+import { Proveedor, Item } from "@/models"
 import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
 import { formatCurrency } from "@/shared/format-utils"
+import { ItemSelector } from "@/components/items"
 
 interface ItemOrden {
   id: string
+  item_id?: number | null  // NUEVO: ID del item del catálogo
   producto: string
   descripcion: string
   cantidad: number
@@ -44,11 +46,13 @@ export function OrdenCompraForm() {
   // items solo para el front, después los convertimos al formato de la tabla de líneas
   const [items, setItems] = useState<ItemOrden[]>([])
   const [nuevoItem, setNuevoItem] = useState({
+    item_id: null as number | null,  // NUEVO: ID del item seleccionado
     producto: "",
     descripcion: "",
     cantidad: "1",
     precio_unitario: "",
   })
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null)  // NUEVO: Item completo
 
   // ===== helpers de totales =====
 
@@ -125,6 +129,7 @@ export function OrdenCompraForm() {
 
     const item: ItemOrden = {
       id: `temp-${Date.now()}`,
+      item_id: nuevoItem.item_id,  // NUEVO: Guardar el item_id
       producto: nuevoItem.producto,
       descripcion: nuevoItem.descripcion,
       cantidad,
@@ -134,12 +139,15 @@ export function OrdenCompraForm() {
 
     setItems((prev) => [...prev, item])
 
+    // Reset form
     setNuevoItem({
+      item_id: null,  // NUEVO
       producto: "",
       descripcion: "",
       cantidad: "1",
       precio_unitario: "",
     })
+    setSelectedItem(null)  // NUEVO
 
     setError(null)
   }
@@ -197,6 +205,7 @@ export function OrdenCompraForm() {
 
         return {
           orden_compra_id: oc.id,
+          item_id: item.item_id || null,  // NUEVO: Incluir item_id si existe
           item_codigo: item.producto || null,
           // la columna descripcion es NOT NULL en la tabla, así que le mando algo sí o sí
           descripcion: item.descripcion || item.producto,
@@ -332,13 +341,33 @@ export function OrdenCompraForm() {
             <div className="bg-slate-50 p-4 rounded-lg mb-4">
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div className="md:col-span-2 space-y-2">
-                  <Label>Producto *</Label>
-                  <Input
-                    value={nuevoItem.producto}
-                    onChange={(e) => handleNuevoItemChange("producto", e.target.value)}
+                  <Label>Producto / Servicio *</Label>
+                  <ItemSelector
+                    value={nuevoItem.item_id}
+                    onChange={(itemId, item) => {
+                      setSelectedItem(item)
+                      setNuevoItem((prev) => ({
+                        ...prev,
+                        item_id: itemId,
+                        producto: item?.nombre || "",
+                      }))
+                    }}
+                    onPriceAutoFill={(price) => {
+                      if (price) {
+                        setNuevoItem((prev) => ({
+                          ...prev,
+                          precio_unitario: price.toString(),
+                        }))
+                      }
+                    }}
                     disabled={isLoading}
-                    placeholder="Nombre del producto"
+                    placeholder="Buscar o crear item..."
                   />
+                  {selectedItem && selectedItem.descripcion && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {selectedItem.descripcion}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Cantidad *</Label>
@@ -359,7 +388,13 @@ export function OrdenCompraForm() {
                     value={nuevoItem.precio_unitario}
                     onChange={(e) => handleNuevoItemChange("precio_unitario", e.target.value)}
                     disabled={isLoading}
+                    placeholder="0.00"
                   />
+                  {selectedItem?.precio_sugerido && (
+                    <p className="text-xs text-muted-foreground">
+                      Precio sugerido: ${selectedItem.precio_sugerido.toFixed(2)}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-end">
                   <Button type="button" onClick={agregarItem} disabled={isLoading} className="w-full">
