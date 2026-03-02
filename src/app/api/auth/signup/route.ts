@@ -5,8 +5,8 @@ import { setAuthCookie } from '@/lib/auth/auth.cookies'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, password, nombre, rolId } = body
-    
+    const { email, password, nombre, apellido } = body
+
     // Validar campos requeridos
     if (!email || !password || !nombre) {
       return NextResponse.json(
@@ -32,14 +32,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Intentar registro (por defecto rol_id = 2 si no se especifica)
+    // Concatenar nombre y apellido si existe
+    const nombreCompleto = apellido ? `${nombre} ${apellido}` : nombre
+
+    // Intentar registro con rol_id = 2 (usuario) por defecto
     const result = await AuthService.signup(
-      email, 
-      password, 
-      nombre, 
-      rolId || 2
+      email,
+      password,
+      nombreCompleto,
+      2 // Siempre rol "usuario" por defecto
     )
-    
+
     if (!result) {
       return NextResponse.json(
         { error: "Error al crear la cuenta. El email puede estar ya registrado." },
@@ -50,9 +53,14 @@ export async function POST(request: NextRequest) {
     // Establecer cookie de autenticación
     await setAuthCookie(result.token)
 
-    // Retornar usuario
+    // Retornar usuario con formato correcto para el frontend
     return NextResponse.json({
-      user: result.user,
+      user: {
+        id: result.user.id.toString(),
+        email: result.user.email,
+        nombre: result.user.nombre,
+        rol: result.user.rol_nombre?.toLowerCase() || 'usuario'
+      },
       message: "Cuenta creada exitosamente"
     }, { status: 201 })
     

@@ -4,15 +4,16 @@ import { UpdateItemSchema } from "@/shared/item-validation"
 import { z } from "zod"
 
 interface Params {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 // GET /api/items/[id] - Obtener un item por ID
 export async function GET(request: NextRequest, { params }: Params) {
   try {
-    const itemId = parseInt(params.id)
+    const { id } = await params
+    const itemId = parseInt(id)
     
     if (isNaN(itemId)) {
       return NextResponse.json(
@@ -43,7 +44,8 @@ export async function GET(request: NextRequest, { params }: Params) {
 // PUT /api/items/[id] - Actualizar un item
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
-    const itemId = parseInt(params.id)
+    const { id } = await params
+    const itemId = parseInt(id)
     
     if (isNaN(itemId)) {
       return NextResponse.json(
@@ -88,7 +90,8 @@ export async function PUT(request: NextRequest, { params }: Params) {
 // DELETE /api/items/[id] - Soft delete de un item
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    const itemId = parseInt(params.id)
+    const { id } = await params
+    const itemId = parseInt(id)
     
     if (isNaN(itemId)) {
       return NextResponse.json(

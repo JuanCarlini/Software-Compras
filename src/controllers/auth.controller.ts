@@ -32,18 +32,13 @@ export class AuthController {
   }
 
   static async getCurrentUser(): Promise<AuthUser | null> {
-    const supabase = createClient()
-    
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (!user) return null
-    
-    return {
-      id: user.id,
-      email: user.email!,
-      nombre: user.user_metadata?.nombre || 'Usuario',
-      rol: user.user_metadata?.rol || 'usuario'
-    }
+    // Nota: Este método ahora usa el sistema JWT en lugar de Supabase Auth
+    // Para obtener el usuario actual desde el servidor, importar desde auth.cookies
+    // Este método está deprecado y solo se mantiene por compatibilidad
+
+    // Si se llama desde el cliente, retornar null
+    // El cliente debe usar useAuth() desde auth-context
+    return null
   }
 
   static async logout(): Promise<void> {

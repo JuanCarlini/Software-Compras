@@ -8,6 +8,8 @@ import { Button } from "@/views/ui/button"
 import { Badge } from "@/views/ui/badge"
 import { ArrowLeft, FileText, Calendar, Building2, User, Check, X } from "lucide-react"
 import { showErrorToast, showSuccessToast } from "@/shared/toast-helpers"
+import { useAuth } from "@/shared/auth-context"
+import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,12 +27,17 @@ interface Props {
 
 export function CertificacionDetail({ params }: Props) {
   const { id } = use(params)
+  const { user } = useAuth()
   const [cert, setCert] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [showApproveDialog, setShowApproveDialog] = useState(false)
   const [showRejectDialog, setShowRejectDialog] = useState(false)
   const router = useRouter()
+
+  // Verificar permisos
+  const userRole = user ? stringToUserRole(user.rol) : null
+  const canModify = userRole ? canAnularDocumento(userRole) : false
 
   useEffect(() => {
     const fetchCertificacion = async () => {
@@ -105,7 +112,7 @@ export function CertificacionDetail({ params }: Props) {
         </Button>
         
         <div className="flex gap-2">
-          {puedeAprobar && (
+          {canModify && puedeAprobar && (
             <Button
               onClick={() => setShowApproveDialog(true)}
               disabled={updating}
@@ -115,8 +122,8 @@ export function CertificacionDetail({ params }: Props) {
               Aprobar
             </Button>
           )}
-          
-          {puedeRechazar && (
+
+          {canModify && puedeRechazar && (
             <Button
               onClick={() => setShowRejectDialog(true)}
               disabled={updating}

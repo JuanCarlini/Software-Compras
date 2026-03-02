@@ -17,6 +17,8 @@ import Link from "next/link"
 import { Proveedor, EstadoProveedor } from "@/models"
 import { useState } from "react"
 import { StatusBadge } from "@/shared/status-badge"
+import { useAuth } from "@/shared/auth-context"
+import { canModificarProveedor, stringToUserRole } from "@/shared/permissions"
 
 interface Props {
   proveedor: Proveedor
@@ -39,7 +41,11 @@ const formatDate = (date?: string | Date | null) => {
 }
 
 export function ProveedorDetails({ proveedor, onActivar, onSuspender }: Props) {
+  const { user } = useAuth()
   const [isProcessing, setIsProcessing] = useState(false)
+
+  // Verificar si el usuario puede modificar proveedores
+  const canModificar = user ? canModificarProveedor(stringToUserRole(user.rol)) : false
 
   const handleActivar = async () => {
     if (!onActivar) return
@@ -94,24 +100,28 @@ export function ProveedorDetails({ proveedor, onActivar, onSuspender }: Props) {
             </Link>
           </Button>
 
-          {proveedor.estado === EstadoProveedor.ACTIVO ? (
-            <Button
-              variant="outline"
-              onClick={handleSuspender}
-              disabled={isProcessing}
-            >
-              <XCircle className="h-4 w-4 mr-2 text-red-600" />
-              Suspender
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              onClick={handleActivar}
-              disabled={isProcessing}
-            >
-              <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-              Activar
-            </Button>
+          {canModificar && (
+            <>
+              {proveedor.estado === EstadoProveedor.ACTIVO ? (
+                <Button
+                  variant="outline"
+                  onClick={handleSuspender}
+                  disabled={isProcessing}
+                >
+                  <XCircle className="h-4 w-4 mr-2 text-red-600" />
+                  Suspender
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={handleActivar}
+                  disabled={isProcessing}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                  Activar
+                </Button>
+              )}
+            </>
           )}
         </div>
       </div>

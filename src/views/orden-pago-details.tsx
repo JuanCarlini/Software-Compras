@@ -10,11 +10,13 @@ import { formatDateShort } from "@/shared/date-utils"
 import { formatCurrency } from "@/shared/format-utils"
 import { StatusBadge } from "@/shared/status-badge"
 import { OrdenPagoService, ProveedorService } from "@/controllers"
-import { 
-  Loader2, 
-  ArrowLeft, 
-  CheckCircle, 
-  XCircle, 
+import { useAuth } from "@/shared/auth-context"
+import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
+import {
+  Loader2,
+  ArrowLeft,
+  CheckCircle,
+  XCircle,
   DollarSign,
   Calendar,
   User,
@@ -25,11 +27,16 @@ export function OrdenPagoDetails() {
   const params = useParams()
   const router = useRouter()
   const id = params.id as string
+  const { user } = useAuth()
   const [orden, setOrden] = useState<OrdenPago | null>(null)
   const [proveedor, setProveedor] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [processing, setProcessing] = useState(false)
+
+  // Verificar permisos
+  const userRole = user ? stringToUserRole(user.rol) : null
+  const canModify = userRole ? canAnularDocumento(userRole) : false
 
   useEffect(() => {
     const fetchOrden = async () => {
@@ -249,8 +256,8 @@ export function OrdenPagoDetails() {
         </CardContent>
       </Card>
 
-      {/* Acciones */}
-      {orden.estado === EstadoOrdenPago.PENDIENTE && (
+      {/* Acciones - Solo para usuarios con permisos */}
+      {canModify && orden.estado === EstadoOrdenPago.PENDIENTE && (
         <Card>
           <CardHeader>
             <CardTitle>Acciones Disponibles</CardTitle>
@@ -287,7 +294,7 @@ export function OrdenPagoDetails() {
         </Card>
       )}
 
-      {orden.estado === EstadoOrdenPago.APROBADO && (
+      {canModify && orden.estado === EstadoOrdenPago.APROBADO && (
         <Card>
           <CardHeader>
             <CardTitle>Marcar como Pagada</CardTitle>

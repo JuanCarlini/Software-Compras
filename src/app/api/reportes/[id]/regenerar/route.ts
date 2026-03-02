@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { ReporteController } from "@/controllers"
 
 interface Params {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function POST(request: NextRequest, { params }: Params) {
   try {
-    const reporte = await ReporteController.regenerar(params.id)
+    const { id } = await params
+    const reporte = await ReporteController.regenerar(id)
     
     if (!reporte) {
       return NextResponse.json(

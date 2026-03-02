@@ -15,6 +15,8 @@ import { formatDateShort } from "@/shared/date-utils"
 import { EstadoOrdenPago, MetodoPago } from "@/models"
 import { searchWithScore } from "@/shared/search-utils"
 import { StatusBadge } from "@/shared/status-badge"
+import { useAuth } from "@/shared/auth-context"
+import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 
 const getMetodoPagoIcon = (metodo: MetodoPago) => {
   switch (metodo) {
@@ -33,10 +35,15 @@ const getMetodoPagoIcon = (metodo: MetodoPago) => {
 
 export function OrdenPagoList() {
   const { orders, loading, error, aprobarOrder, pagarOrder, rechazarOrder } = useOrdensPago()
+  const { user } = useAuth()
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [pagoDialog, setPagoDialog] = useState<string | null>(null)
   const [referenciaBancaria, setReferenciaBancaria] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
+
+  // Verificar permisos
+  const userRole = user ? stringToUserRole(user.rol) : null
+  const canModify = userRole ? canAnularDocumento(userRole) : false
 
   // Filtrar órdenes basado en la búsqueda
   const filteredOrders = searchWithScore(
@@ -172,9 +179,9 @@ export function OrdenPagoList() {
                       </Link>
                     </Button>
                     
-                    {orden.estado === EstadoOrdenPago.PENDIENTE && (
-                      <Button 
-                        variant="outline" 
+                    {canModify && orden.estado === EstadoOrdenPago.PENDIENTE && (
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => handleAprobar(orden.id)}
                         disabled={processingId === orden.id}
@@ -182,8 +189,8 @@ export function OrdenPagoList() {
                         <CheckCircle className="h-4 w-4 text-blue-600" />
                       </Button>
                     )}
-                    
-                    {orden.estado === EstadoOrdenPago.APROBADA && (
+
+                    {canModify && orden.estado === EstadoOrdenPago.APROBADO && (
                       <Dialog 
                         open={pagoDialog === orden.id} 
                         onOpenChange={(open) => {
@@ -240,10 +247,10 @@ export function OrdenPagoList() {
                       </Dialog>
                     )}
                     
-                    {(orden.estado === EstadoOrdenPago.PENDIENTE || 
-                      orden.estado === EstadoOrdenPago.APROBADA) && (
-                      <Button 
-                        variant="outline" 
+                    {canModify && (orden.estado === EstadoOrdenPago.PENDIENTE ||
+                      orden.estado === EstadoOrdenPago.APROBADO) && (
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => handleRechazar(orden.id)}
                         disabled={processingId === orden.id}

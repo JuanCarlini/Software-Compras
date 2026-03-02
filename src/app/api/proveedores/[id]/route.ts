@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { ProveedorService } from "@/controllers"
 
 interface Params {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function GET(request: NextRequest, { params }: Params) {
   try {
-    const proveedor = await ProveedorService.getById(params.id)
+    const { id } = await params
+    const proveedor = await ProveedorService.getById(id)
     
     if (!proveedor) {
       return NextResponse.json(
@@ -29,8 +30,9 @@ export async function GET(request: NextRequest, { params }: Params) {
 
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
+    const { id } = await params
     const data = await request.json()
-    const updatedProveedor = await ProveedorService.update(params.id, data)
+    const updatedProveedor = await ProveedorService.update(id, data)
     
     if (!updatedProveedor) {
       return NextResponse.json(
@@ -50,7 +52,8 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    const success = await ProveedorService.delete(params.id)
+    const { id } = await params
+    const success = await ProveedorService.delete(id)
     
     if (!success) {
       return NextResponse.json(

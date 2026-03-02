@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { OrdenCompraService } from "@/controllers"
 import { UpdateOrdenCompraSchema, OrdenCompraParamsSchema } from "@/shared/orden-compra-validation"
+import { requireAuth } from "@/shared/permissions-server"
+import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
+import { UserRole } from "@/models"
 
 // GET /api/ordenes-compra/[id] - Obtener una orden específica
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = OrdenCompraParamsSchema.parse(params)
+    const resolvedParams = await params
+    const { id } = OrdenCompraParamsSchema.parse(resolvedParams)
     
     const orden = await OrdenCompraService.getById(id)
     
@@ -32,36 +36,50 @@ export async function GET(
 // PUT /api/ordenes-compra/[id] - Actualizar una orden
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = OrdenCompraParamsSchema.parse(params)
+    // Verificar autenticación
+    const { error: authError, user } = await requireAuth()
+    if (authError) return authError
+
+    const resolvedParams = await params
+    const { id } = OrdenCompraParamsSchema.parse(resolvedParams)
     const body = await request.json()
-    
+
     // Validar datos de entrada
     const validatedData = UpdateOrdenCompraSchema.parse(body)
-    
+
+    // Si se intenta anular, verificar permisos
+    const userRole = stringToUserRole(user!.rol)
+    if (validatedData.estado === "anulado" && !canAnularDocumento(userRole)) {
+      return NextResponse.json(
+        { error: "No tienes permisos para anular órdenes de compra" },
+        { status: 403 }
+      )
+    }
+
     // Actualizar la orden
     const ordenActualizada = await OrdenCompraService.update(id, validatedData)
-    
+
     if (!ordenActualizada) {
       return NextResponse.json(
         { error: "Orden de compra no encontrada" },
         { status: 404 }
       )
     }
-    
+
     return NextResponse.json(ordenActualizada)
   } catch (error) {
     console.error("Error al actualizar orden:", error)
-    
+
     if (error instanceof Error && error.name === "ZodError") {
       return NextResponse.json(
         { error: "Datos inválidos", details: error.message },
         { status: 400 }
       )
     }
-    
+
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -72,10 +90,11 @@ export async function PUT(
 // DELETE /api/ordenes-compra/[id] - Eliminar una orden
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = OrdenCompraParamsSchema.parse(params)
+    const resolvedParams = await params
+    const { id } = OrdenCompraParamsSchema.parse(resolvedParams)
     
     const eliminada = await OrdenCompraService.delete(id)
     

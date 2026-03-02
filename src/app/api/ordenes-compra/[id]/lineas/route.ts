@@ -3,15 +3,16 @@ import { OrdenCompraService } from "@/controllers"
 import { z } from "zod"
 
 interface Params {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 // GET /api/ordenes-compra/[id]/lineas - Obtener líneas con información de items
 export async function GET(request: NextRequest, { params }: Params) {
   try {
-    const ordenId = parseInt(params.id)
+    const { id } = await params
+    const ordenId = parseInt(id)
     
     if (isNaN(ordenId)) {
       return NextResponse.json(
@@ -42,7 +43,8 @@ const CreateLineaFromItemSchema = z.object({
 // POST /api/ordenes-compra/[id]/lineas - Crear línea desde item del catálogo
 export async function POST(request: NextRequest, { params }: Params) {
   try {
-    const ordenId = parseInt(params.id)
+    const { id } = await params
+    const ordenId = parseInt(id)
     
     if (isNaN(ordenId)) {
       return NextResponse.json(

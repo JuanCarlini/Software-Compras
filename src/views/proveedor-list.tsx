@@ -10,11 +10,18 @@ import { useProveedores } from "@/shared/use-proveedores"
 import { EstadoProveedor } from "@/models"
 import { searchWithScore } from "@/shared/search-utils"
 import { StatusBadge } from "@/shared/status-badge"
+import { useAuth } from "@/shared/auth-context"
+import { canModificarProveedor, stringToUserRole } from "@/shared/permissions"
 
 export function ProveedorList() {
   const { proveedores, loading, error, activarProveedor, suspenderProveedor } = useProveedores()
+  const { user } = useAuth()
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
+
+  // Verificar permisos
+  const userRole = user ? stringToUserRole(user.rol) : null
+  const canModify = userRole ? canModificarProveedor(userRole) : false
 
   // buscamos solo por los campos que realmente existen en el formulario/base
   const filteredProveedores = searchWithScore(
@@ -162,7 +169,7 @@ export function ProveedorList() {
                       </Link>
                     </Button>
 
-                    {proveedor.estado === EstadoProveedor.ACTIVO ? (
+                    {canModify && (proveedor.estado === EstadoProveedor.ACTIVO ? (
                       <Button
                         variant="outline"
                         size="sm"
@@ -180,7 +187,7 @@ export function ProveedorList() {
                       >
                         <CheckCircle className="h-4 w-4 text-green-600" />
                       </Button>
-                    )}
+                    ))}
                   </div>
                 </div>
               </div>

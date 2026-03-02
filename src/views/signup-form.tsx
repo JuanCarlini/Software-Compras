@@ -7,7 +7,6 @@ import { Button } from "@/views/ui/button"
 import { Input } from "@/views/ui/input"
 import { Label } from "@/views/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/views/ui/select"
 import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
 import { UserRole } from "@/models"
 
@@ -129,24 +128,6 @@ export function SignupForm() {
               onChange={(e) => handleChange("email", e.target.value)}
               required
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="rol">Rol</Label>
-            <Select 
-              value={formData.rol} 
-              onValueChange={(value) => handleChange("rol", value)}
-            >
-              <SelectTrigger id="rol">
-                <SelectValue placeholder="Selecciona un rol" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={UserRole.USUARIO}>Usuario</SelectItem>
-                <SelectItem value={UserRole.SUPERVISOR}>Supervisor</SelectItem>
-                <SelectItem value={UserRole.READONLY}>Solo Lectura</SelectItem>
-                <SelectItem value={UserRole.ADMIN}>Administrador</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="space-y-2">

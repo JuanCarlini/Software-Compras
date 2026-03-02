@@ -1,11 +1,12 @@
 "use client"
 
-import { BarChart3, Building2, CreditCard, Settings, ShoppingCart, Home, FileCheck, Receipt } from "lucide-react"
+import { BarChart3, Building2, CreditCard, Settings, ShoppingCart, Home, FileCheck, Receipt, Shield, LogOut } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -14,6 +15,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/views/ui/sidebar"
+import { useAuth } from "@/shared/auth-context"
+import { isAdmin, stringToUserRole } from "@/shared/permissions"
+import { Button } from "@/views/ui/button"
 
 const menuItems = [
   {
@@ -60,6 +64,21 @@ const menuItems = [
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+  const { user } = useAuth()
+
+  // Verificar si el usuario es admin
+  const userRole = user ? stringToUserRole(user.rol) : null
+  const userIsAdmin = userRole ? isAdmin(userRole) : false
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      router.push('/login')
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error)
+    }
+  }
 
   return (
     <Sidebar className="border-slate-200">
@@ -85,8 +104,8 @@ export function AppSidebar() {
                 const isActive = pathname === item.url
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
-                      asChild 
+                    <SidebarMenuButton
+                      asChild
                       className={`text-slate-700 hover:bg-slate-100 hover:text-slate-900 ${
                         isActive ? "bg-slate-100 text-slate-900 font-medium" : ""
                       }`}
@@ -102,7 +121,53 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Sección de Administración - Solo para admins */}
+        {userIsAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-red-600 font-medium">
+              Administración
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    className={`text-slate-700 hover:bg-red-50 hover:text-red-700 ${
+                      pathname === "/admin/usuarios" ? "bg-red-50 text-red-700 font-medium" : ""
+                    }`}
+                  >
+                    <Link href="/admin/usuarios">
+                      <Shield className="h-4 w-4" />
+                      <span>Gestión de Usuarios</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
+
+      <SidebarFooter className="border-t border-slate-200 p-4">
+        <div className="space-y-2">
+          {user && (
+            <div className="px-2 py-1 text-xs text-slate-600">
+              <p className="font-medium text-slate-900">{user.nombre}</p>
+              <p>{user.email}</p>
+              <p className="text-slate-500">Rol: {user.rol}</p>
+            </div>
+          )}
+          <Button
+            variant="outline"
+            className="w-full justify-start"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Cerrar Sesión
+          </Button>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   )
 }

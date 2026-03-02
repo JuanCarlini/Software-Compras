@@ -12,11 +12,18 @@ import { SearchStats } from "@/views/ui/search-stats"
 import { searchWithScore } from "@/shared/search-utils"
 import { showErrorToast } from "@/shared/toast-helpers"
 import { StatusBadge } from "@/shared/status-badge"
+import { useAuth } from "@/shared/auth-context"
+import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 
 export function OrdenCompraList() {
   const { orders, loading, error, updateOrder } = useOrders()
+  const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
   const [updatingId, setUpdatingId] = useState<number | null>(null)
+
+  // Verificar si el usuario puede anular documentos
+  const userRole = user ? stringToUserRole(user.rol) : null
+  const canAnular = userRole ? canAnularDocumento(userRole) : false
 
   // ⚠️ ahora buscamos por los campos que realmente tenemos
   const filteredOrders = searchWithScore(
@@ -154,8 +161,8 @@ export function OrdenCompraList() {
                       </Link>
                     </Button>
 
-                    {/* solo si está en borrador la dejamos aprobar/anular */}
-                    {orden.estado === "borrador" && (
+                    {/* solo si está en borrador y el usuario tiene permisos */}
+                    {canAnular && orden.estado === "borrador" && (
                       <>
                         <Button
                           variant="outline"

@@ -1,27 +1,28 @@
 import { NextRequest, NextResponse } from "next/server"
-import { FacturaService } from "@/controllers/factura.controller"
+import { OrdenPagoService } from "@/controllers"
 import { requireAuth } from "@/shared/permissions-server"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 import { UserRole } from "@/models"
 
+// GET /api/ordenes-pago/[id] - Obtener una orden de pago específica
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
-    const factura = await FacturaService.getById(parseInt(id))
-    
-    if (!factura) {
+    const orden = await OrdenPagoService.getById(parseInt(id))
+
+    if (!orden) {
       return NextResponse.json(
-        { error: "Factura no encontrada" },
+        { error: "Orden de pago no encontrada" },
         { status: 404 }
       )
     }
-    
-    return NextResponse.json(factura)
+
+    return NextResponse.json(orden)
   } catch (error) {
-    console.error("Error fetching factura:", error)
+    console.error("Error al obtener orden de pago:", error)
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -29,6 +30,7 @@ export async function GET(
   }
 }
 
+// PUT /api/ordenes-pago/[id] - Actualizar una orden de pago
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -41,27 +43,27 @@ export async function PUT(
     const { id } = await params
     const data = await request.json()
 
-    // Si se intenta anular, verificar permisos
+    // Si se intenta aprobar, rechazar o pagar, verificar permisos
     const userRole = stringToUserRole(user!.rol)
-    if (data.estado === "anulado" && !canAnularDocumento(userRole)) {
+    if ((data.estado === "rechazado" || data.estado === "aprobado" || data.estado === "pagado") && !canAnularDocumento(userRole)) {
       return NextResponse.json(
-        { error: "No tienes permisos para anular facturas" },
+        { error: "No tienes permisos para aprobar, rechazar o marcar como pagadas las órdenes de pago" },
         { status: 403 }
       )
     }
 
-    const factura = await FacturaService.update(parseInt(id), data)
+    const orden = await OrdenPagoService.update(parseInt(id), data)
 
-    if (!factura) {
+    if (!orden) {
       return NextResponse.json(
-        { error: "Error al actualizar factura" },
+        { error: "Error al actualizar orden de pago" },
         { status: 400 }
       )
     }
 
-    return NextResponse.json(factura)
+    return NextResponse.json(orden)
   } catch (error) {
-    console.error("Error updating factura:", error)
+    console.error("Error al actualizar orden de pago:", error)
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -69,24 +71,25 @@ export async function PUT(
   }
 }
 
+// DELETE /api/ordenes-pago/[id] - Eliminar una orden de pago
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params
-    const success = await FacturaService.delete(parseInt(id))
-    
+    const success = await OrdenPagoService.delete(parseInt(id))
+
     if (!success) {
       return NextResponse.json(
-        { error: "Error al eliminar factura" },
+        { error: "Error al eliminar orden de pago" },
         { status: 400 }
       )
     }
-    
+
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error deleting factura:", error)
+    console.error("Error al eliminar orden de pago:", error)
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

@@ -2,15 +2,16 @@ import { NextRequest, NextResponse } from "next/server"
 import { ItemService } from "@/controllers"
 
 interface Params {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 // POST /api/items/[id]/reactivate - Reactivar un item inactivo
 export async function POST(request: NextRequest, { params }: Params) {
   try {
-    const itemId = parseInt(params.id)
+    const { id } = await params
+    const itemId = parseInt(id)
     
     if (isNaN(itemId)) {
       return NextResponse.json(

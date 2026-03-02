@@ -6,8 +6,20 @@ import { use } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
 import { Badge } from "@/views/ui/badge"
-import { ArrowLeft, Building2, Calendar, FileCheck } from "lucide-react"
-import { showErrorToast } from "@/shared/toast-helpers"
+import { ArrowLeft, Building2, Calendar, FileCheck, Check, X } from "lucide-react"
+import { showErrorToast, showSuccessToast } from "@/shared/toast-helpers"
+import { useAuth } from "@/shared/auth-context"
+import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/views/ui/alert-dialog"
 
 interface Props {
   params: Promise<{ id: string }>
@@ -15,9 +27,17 @@ interface Props {
 
 export function FacturaDetail({ params }: Props) {
   const { id } = use(params)
+  const { user } = useAuth()
   const [factura, setFactura] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [updating, setUpdating] = useState(false)
+  const [showApproveDialog, setShowApproveDialog] = useState(false)
+  const [showRejectDialog, setShowRejectDialog] = useState(false)
   const router = useRouter()
+
+  // Verificar permisos
+  const userRole = user ? stringToUserRole(user.rol) : null
+  const canModify = userRole ? canAnularDocumento(userRole) : false
 
   useEffect(() => {
     const fetchFactura = async () => {
@@ -36,6 +56,38 @@ export function FacturaDetail({ params }: Props) {
     fetchFactura()
   }, [id])
 
+  const cambiarEstado = async (nuevoEstado: string) => {
+    setUpdating(true)
+    try {
+      const response = await fetch(`/api/facturas/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Error al actualizar factura")
+      }
+
+      const updated = await response.json()
+      setFactura(updated)
+      showSuccessToast(
+        "Éxito",
+        `Factura ${nuevoEstado === "aprobado" ? "aprobada" : "rechazada"} correctamente`
+      )
+    } catch (error) {
+      showErrorToast(
+        "Error",
+        error instanceof Error ? error.message : "Error al actualizar factura"
+      )
+    } finally {
+      setUpdating(false)
+      setShowApproveDialog(false)
+      setShowRejectDialog(false)
+    }
+  }
+
   const getEstadoBadge = (estado: string) => {
     const variants: Record<string, { variant: any; label: string }> = {
       borrador: { variant: "secondary", label: "Borrador" },
@@ -53,11 +105,32 @@ export function FacturaDetail({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={() => router.push("/facturas")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Volver
         </Button>
+
+        {canModify && factura.estado === "borrador" && (
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setShowApproveDialog(true)}
+              disabled={updating}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Aprobar
+            </Button>
+            <Button
+              onClick={() => setShowRejectDialog(true)}
+              disabled={updating}
+              variant="destructive"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Rechazar
+            </Button>
+          </div>
+        )}
       </div>
 
       <Card>
@@ -229,6 +302,46 @@ export function FacturaDetail({ params }: Props) {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Aprobar factura</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que deseas aprobar esta factura? Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => cambiarEstado("aprobado")}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Aprobar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Rechazar factura</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que deseas rechazar esta factura? Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => cambiarEstado("rechazado")}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Rechazar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

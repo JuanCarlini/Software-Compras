@@ -3,9 +3,9 @@ import { OrdenCompraService } from "@/controllers"
 import { z } from "zod"
 
 interface Params {
-  params: {
+  params: Promise<{
     lineaId: string
-  }
+  }>
 }
 
 // Schema de validación para actualizar línea
@@ -20,9 +20,10 @@ const UpdateLineaSchema = z.object({
 // PUT /api/ordenes-compra/lineas/[lineaId] - Actualizar una línea
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
-    const lineaId = parseInt(params.lineaId)
-    
-    if (isNaN(lineaId)) {
+    const { lineaId } = await params
+    const lineaIdNum = parseInt(lineaId)
+
+    if (isNaN(lineaIdNum)) {
       return NextResponse.json(
         { error: "ID de línea inválido" },
         { status: 400 }
@@ -30,12 +31,12 @@ export async function PUT(request: NextRequest, { params }: Params) {
     }
 
     const body = await request.json()
-    
+
     // Validar datos
     const validatedData = UpdateLineaSchema.parse(body)
-    
+
     // Actualizar línea (los totales se recalculan automáticamente)
-    const lineaActualizada = await OrdenCompraService.updateLine(lineaId, validatedData)
+    const lineaActualizada = await OrdenCompraService.updateLine(lineaIdNum, validatedData)
     
     if (!lineaActualizada) {
       return NextResponse.json(
@@ -65,16 +66,17 @@ export async function PUT(request: NextRequest, { params }: Params) {
 // DELETE /api/ordenes-compra/lineas/[lineaId] - Eliminar una línea
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    const lineaId = parseInt(params.lineaId)
-    
-    if (isNaN(lineaId)) {
+    const { lineaId } = await params
+    const lineaIdNum = parseInt(lineaId)
+
+    if (isNaN(lineaIdNum)) {
       return NextResponse.json(
         { error: "ID de línea inválido" },
         { status: 400 }
       )
     }
 
-    const success = await OrdenCompraService.deleteLine(lineaId)
+    const success = await OrdenCompraService.deleteLine(lineaIdNum)
     
     if (!success) {
       return NextResponse.json(

@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { ReporteController } from "@/controllers"
 
 interface Params {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function GET(request: NextRequest, { params }: Params) {
   try {
-    const reporte = await ReporteController.getById(params.id)
+    const { id } = await params
+    const reporte = await ReporteController.getById(id)
     
     if (!reporte) {
       return NextResponse.json(
@@ -30,7 +31,8 @@ export async function GET(request: NextRequest, { params }: Params) {
 
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    const success = await ReporteController.delete(params.id)
+    const { id } = await params
+    const success = await ReporteController.delete(id)
     
     if (!success) {
       return NextResponse.json(

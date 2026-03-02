@@ -12,7 +12,15 @@ export async function GET() {
       )
     }
 
-    return NextResponse.json({ user })
+    // Mapear el usuario al formato esperado por el frontend
+    return NextResponse.json({
+      user: {
+        id: user.id.toString(),
+        email: user.email,
+        nombre: user.nombre,
+        rol: user.rol_nombre?.toLowerCase() || 'usuario'
+      }
+    })
     
   } catch (error) {
     console.error('Error al obtener usuario:', error)
