@@ -44,7 +44,7 @@ export class OrdenPagoService {
       .limit(1)
       .single()
     
-    let nuevoNumero = 'OP-2025-001'
+    let nuevoNumero = `OP-${new Date().getFullYear()}-001`
     if (ultimaOP?.numero_op) {
       const match = ultimaOP.numero_op.match(/OP-(\d{4})-(\d{3})/)
       if (match) {

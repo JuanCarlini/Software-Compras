@@ -12,11 +12,25 @@ import { Alert, AlertDescription } from "@/views/ui/alert"
 import { Loader2, Plus, Trash2, AlertCircle } from "lucide-react"
 import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
 
+// Línea de OC aprobada con saldo certificable (ver CertificacionService.getLineasOCDisponibles)
+interface LineaOCDisponible {
+  id: number
+  descripcion: string
+  cantidad: number
+  precio_unitario_neto: number
+  iva_porcentaje: number
+  numero_oc: string
+  orden_compra_id: number
+  cantidad_certificada: number
+  cantidad_disponible: number
+}
+
 export function CertificacionForm() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [proyectos, setProyectos] = useState<any[]>([])
   const [proveedores, setProveedores] = useState<any[]>([])
+  const [lineasOC, setLineasOC] = useState<LineaOCDisponible[]>([])
 
   // campos que realmente existen en gu_certificaciones
   const [formData, setFormData] = useState({
@@ -28,8 +42,10 @@ export function CertificacionForm() {
   })
 
   // líneas que se guardan en gu_lineasdecertificacion
+  // linea_oc_id: null = línea libre; con valor = certifica contra esa línea de OC (regla del 100%)
   const [lineas, setLineas] = useState<
     Array<{
+      linea_oc_id: number | null
       descripcion: string
       cantidad: number
       precio_unitario: number
@@ -37,12 +53,50 @@ export function CertificacionForm() {
     }>
   >([
     {
+      linea_oc_id: null,
       descripcion: "",
       cantidad: 1,
       precio_unitario: 0,
       iva_porcentaje: 21,
     },
   ])
+
+  // al cambiar el proveedor, cargar sus líneas de OC aprobadas con saldo
+  // y desvincular las líneas ya cargadas (pertenecían a otro proveedor)
+  useEffect(() => {
+    if (!formData.proveedor_id) {
+      setLineasOC([])
+      return
+    }
+    setLineas((prev) => prev.map((l) => ({ ...l, linea_oc_id: null })))
+    fetch(`/api/certificaciones/lineas-oc-disponibles?proveedorId=${formData.proveedor_id}`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setLineasOC)
+      .catch(() => setLineasOC([]))
+  }, [formData.proveedor_id])
+
+  const vincularLineaOC = (index: number, valor: string) => {
+    if (valor === "libre") {
+      setLineas((prev) => prev.map((l, i) => (i === index ? { ...l, linea_oc_id: null } : l)))
+      return
+    }
+    const lineaOC = lineasOC.find((l) => l.id === Number(valor))
+    if (!lineaOC) return
+    setLineas((prev) =>
+      prev.map((l, i) =>
+        i === index
+          ? {
+              ...l,
+              linea_oc_id: lineaOC.id,
+              descripcion: l.descripcion || lineaOC.descripcion,
+              precio_unitario: lineaOC.precio_unitario_neto,
+              iva_porcentaje: lineaOC.iva_porcentaje,
+              cantidad: Math.min(l.cantidad || 1, lineaOC.cantidad_disponible),
+            }
+          : l,
+      ),
+    )
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,7 +119,7 @@ export function CertificacionForm() {
   const agregarLinea = () => {
     setLineas((prev) => [
       ...prev,
-      { descripcion: "", cantidad: 1, precio_unitario: 0, iva_porcentaje: 21 },
+      { linea_oc_id: null, descripcion: "", cantidad: 1, precio_unitario: 0, iva_porcentaje: 21 },
     ])
   }
 
@@ -113,6 +167,25 @@ export function CertificacionForm() {
       return
     }
 
+    // pre-validación de la regla del 100% (la garantía real es el trigger en la DB):
+    // suma por línea de OC dentro del formulario vs saldo disponible
+    const porLineaOC = new Map<number, number>()
+    for (const l of lineasValidas) {
+      if (l.linea_oc_id != null) {
+        porLineaOC.set(l.linea_oc_id, (porLineaOC.get(l.linea_oc_id) || 0) + l.cantidad)
+      }
+    }
+    for (const [lineaOcId, cantidadTotal] of porLineaOC) {
+      const lineaOC = lineasOC.find((l) => l.id === lineaOcId)
+      if (lineaOC && cantidadTotal > lineaOC.cantidad_disponible) {
+        showErrorToast(
+          "Se supera el 100% de la línea de OC",
+          `${lineaOC.numero_oc} · ${lineaOC.descripcion}: disponible ${lineaOC.cantidad_disponible}, se intentó certificar ${cantidadTotal}`,
+        )
+        return
+      }
+    }
+
     setLoading(true)
     try {
       const { total_neto, total_con_iva } = calcularTotales()
@@ -122,6 +195,7 @@ export function CertificacionForm() {
         const neto = l.cantidad * l.precio_unitario
         const totalConIva = neto + neto * (l.iva_porcentaje / 100)
         return {
+          linea_oc_id: l.linea_oc_id,
           descripcion: l.descripcion,
           cantidad: l.cantidad,
           precio_unitario: l.precio_unitario,
@@ -270,8 +344,34 @@ export function CertificacionForm() {
             </AlertDescription>
           </Alert>
 
-          {lineas.map((linea, index) => (
-            <div key={index} className="grid grid-cols-12 gap-3 border rounded-lg p-4">
+          {lineas.map((linea, index) => {
+            const lineaOCVinculada = linea.linea_oc_id != null
+              ? lineasOC.find((l) => l.id === linea.linea_oc_id)
+              : undefined
+            return (
+            <div key={index} className="space-y-3 border rounded-lg p-4">
+              {formData.proveedor_id && (
+                <div>
+                  <Label>Línea de OC</Label>
+                  <Select
+                    value={linea.linea_oc_id != null ? String(linea.linea_oc_id) : "libre"}
+                    onValueChange={(v) => vincularLineaOC(index, v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="libre">Línea libre (sin OC)</SelectItem>
+                      {lineasOC.map((l) => (
+                        <SelectItem key={l.id} value={String(l.id)} disabled={l.cantidad_disponible <= 0 && l.id !== linea.linea_oc_id}>
+                          {l.numero_oc} · {l.descripcion} (disponible {l.cantidad_disponible} de {l.cantidad})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="grid grid-cols-12 gap-3">
               <div className="col-span-5">
                 <Label>Descripción *</Label>
                 <Input
@@ -286,10 +386,16 @@ export function CertificacionForm() {
                 <Input
                   type="number"
                   min={0}
+                  max={lineaOCVinculada ? lineaOCVinculada.cantidad_disponible : undefined}
                   step="0.01"
                   value={linea.cantidad}
                   onChange={(e) => actualizarLinea(index, "cantidad", e.target.value)}
                 />
+                {lineaOCVinculada && (
+                  <p className={`text-xs mt-1 ${linea.cantidad > lineaOCVinculada.cantidad_disponible ? "text-red-600" : "text-slate-500"}`}>
+                    Disponible: {lineaOCVinculada.cantidad_disponible}
+                  </p>
+                )}
               </div>
               <div className="col-span-2">
                 <Label>Precio unitario *</Label>
@@ -321,8 +427,10 @@ export function CertificacionForm() {
                   <Trash2 className="w-4 h-4 text-red-500" />
                 </Button>
               </div>
+              </div>
             </div>
-          ))}
+            )
+          })}
 
           {/* Totales */}
           <div className="border-t pt-4 flex justify-end gap-8">

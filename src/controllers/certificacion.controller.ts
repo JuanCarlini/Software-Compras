@@ -47,7 +47,7 @@ export class CertificacionService {
 
     const { data: lineas } = await supabase
       .from(TABLE_CERT_LINEAS)
-      .select("*")
+      .select("*, gu_lineasdeordenesdecompra(id, descripcion, cantidad, gu_ordenesdecompra(id, numero_oc))")
       .eq("certificacion_id", id)
       .order("id", { ascending: true })
 
@@ -75,7 +75,7 @@ export class CertificacionService {
       .limit(1)
       .single()
     
-    let nuevoNumero = 'CERT-2025-001'
+    let nuevoNumero = `CERT-${new Date().getFullYear()}-001`
     if (ultimaCert?.numero_cert) {
       const match = ultimaCert.numero_cert.match(/CERT-(\d{4})-(\d{3})/)
       if (match) {
@@ -113,7 +113,12 @@ export class CertificacionService {
         .from(TABLE_CERT_LINEAS)
         .insert(lineasData)
 
-      if (lineasError) throw lineasError
+      if (lineasError) {
+        // compensación: sin transacciones en el cliente, borramos la cabecera
+        // para no dejar una certificación huérfana si el trigger rechazó las líneas
+        await supabase.from(TABLE_CERT).delete().eq("id", nuevaCert.id)
+        throw lineasError
+      }
     }
 
     return nuevaCert
@@ -136,6 +141,58 @@ export class CertificacionService {
     const supabase = createClient()
     const { error } = await supabase.from(TABLE_CERT).delete().eq("id", id)
     return !error
+  }
+
+  /**
+   * Líneas de OCs aprobadas del proveedor con su saldo certificable.
+   * La regla del 100% la garantiza el trigger check_certificacion_max_100 en la DB;
+   * esto alimenta el formulario para que el usuario vea el disponible antes de enviar.
+   */
+  static async getLineasOCDisponibles(proveedorId: number) {
+    const supabase = createClient()
+
+    const { data: lineasOC, error } = await supabase
+      .from("gu_lineasdeordenesdecompra")
+      .select("id, descripcion, cantidad, precio_unitario_neto, iva_porcentaje, gu_ordenesdecompra!inner(id, numero_oc, estado, proveedor_id)")
+      .eq("gu_ordenesdecompra.proveedor_id", proveedorId)
+      .eq("gu_ordenesdecompra.estado", "aprobado")
+      .order("id", { ascending: true })
+
+    if (error) throw error
+    if (!lineasOC || lineasOC.length === 0) return []
+
+    // Certificado acumulado por línea de OC (excluye rechazadas)
+    const ids = lineasOC.map((l: any) => l.id)
+    const { data: certificado, error: certError } = await supabase
+      .from(TABLE_CERT_LINEAS)
+      .select("linea_oc_id, cantidad, estado")
+      .in("linea_oc_id", ids)
+      .neq("estado", "rechazado")
+
+    if (certError) throw certError
+
+    const certificadoPorLinea = new Map<number, number>()
+    for (const c of certificado || []) {
+      certificadoPorLinea.set(
+        c.linea_oc_id,
+        (certificadoPorLinea.get(c.linea_oc_id) || 0) + Number(c.cantidad)
+      )
+    }
+
+    return lineasOC.map((l: any) => {
+      const cantidadCertificada = certificadoPorLinea.get(l.id) || 0
+      return {
+        id: l.id,
+        descripcion: l.descripcion,
+        cantidad: Number(l.cantidad),
+        precio_unitario_neto: Number(l.precio_unitario_neto),
+        iva_porcentaje: Number(l.iva_porcentaje),
+        numero_oc: l.gu_ordenesdecompra?.numero_oc,
+        orden_compra_id: l.gu_ordenesdecompra?.id,
+        cantidad_certificada: cantidadCertificada,
+        cantidad_disponible: Number(l.cantidad) - cantidadCertificada,
+      }
+    })
   }
 
   static async getByProyecto(proyectoId: number) {

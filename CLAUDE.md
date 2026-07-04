@@ -56,7 +56,7 @@ PK `BIGINT GENERATED ALWAYS AS IDENTITY` en todas las `gu_*` (**no UUID** — la
 Tablas en `schema.sql`: `gu_roles`, `gu_usuario`, `gu_proveedores`, `gu_proyectos`, `gu_ordenesdecompra`, `gu_lineasdeordenesdecompra`, `gu_certificaciones`, `gu_lineasdecertificacion`, `gu_facturas`, `gu_lineasdefactura`, `gu_facturas_certificaciones` (N:M con UNIQUE factura+cert), `gu_ordenesdepago`, `gu_lineasdeordenesdepago` (FK `factura_id` — acá se traza OP→Factura), `gu_lineasdeordenesdepagocaja` (cajas), `gu_auditoria`, `gu_audit_log`.
 
 - `gu_items` + `item_id` en líneas de OC viven en `migration_items.sql` / `migration_items_lineas_oc.sql` — **no están en schema.sql** (schema.sql está incompleto respecto a la DB real).
-- ⚠️ `gu_lineasdecertificacion` **no tiene FK a líneas de OC ni a OC**: certificación solo vincula proyecto + proveedor. La cadena de trazabilidad OC→Cert no existe a nivel de datos.
+- `gu_lineasdecertificacion.linea_oc_id` (desde 2026-07-04, `migration_cert_oc_trazabilidad.sql`): FK nullable a `gu_lineasdeordenesdecompra` — traza OC→Cert por línea; NULL = línea libre. El trigger `check_certificacion_max_100` impide certificar más del 100% de una línea de OC (excluye rechazadas, lock `FOR UPDATE`).
 - `moneda_enum (ARS/USD/EUR)` solo se usa en `gu_ordenesdecompra`; `gu_ordenesdepago` **no** tiene columna moneda.
 - Enums: `oc_estado` (borrador/en_aprobacion/aprobado/rechazado/anulado), `cert_estado` (borrador/aprobado/rechazado), `factura_estado`, `op_estado`, `forma_pago_enum` (transferencia/cheque/efectivo/retencion).
 
@@ -73,7 +73,7 @@ Tablas en `schema.sql`: `gu_roles`, `gu_usuario`, `gu_proveedores`, `gu_proyecto
 | Módulo | Estado |
 |---|---|
 | Órdenes de compra | Completo: CRUD + líneas + IVA + items, rutas y vistas |
-| Certificaciones | CRUD + numeración `CERT-YYYY-NNN` (max+1 sin lock → race condition posible). **Sin validación 100%** en ninguna capa |
+| Certificaciones | CRUD + numeración `CERT-YYYY-NNN` (max+1 sin lock → race condition posible). **Trazabilidad a líneas de OC + regla 100%** (trigger DB + saldo en form) desde 2026-07-04 |
 | Facturas | CRUD + puente `gu_facturas_certificaciones` + flujo proveedor→certs aprobadas. Enum correcto |
 | Órdenes de pago | CRUD + líneas con FK a factura + cajas + formas de pago. Sin columna moneda propia |
 | Proveedores | CRUD + activar/suspender con chequeo de permisos |
@@ -87,7 +87,7 @@ Tablas en `schema.sql`: `gu_roles`, `gu_usuario`, `gu_proveedores`, `gu_proyecto
 1. `docs/AUTH_SETUP.md` y `docs/DOCUMENTACION_PROYECTO.md` describen Supabase Auth + `perfiles_usuario` + UUID → **obsoleto** (real: JWT custom + `gu_usuario` BIGINT). Actualizar solo con OK de Juan Andrés.
 2. ~~`@supabase/ssr` faltante en package.json → build roto~~ **RESUELTO 2026-07-02**: agregado `@supabase/ssr` ^0.12.0, gestor unificado en npm, build verde. El cliente Supabase quedó **sin el genérico `Database`** (el `types.ts` viejo describía un schema inexistente y se eliminó); upgrade path: `supabase gen types typescript` y reponer el genérico.
 3. **La carpeta no es repo git** (`.git` ausente) pese al repo declarado `github.com/JuanCarlini/Gestion-Uno`. Sin historial local como fuente de memoria.
-4. Regla del 100% en certificaciones: declarada, no implementada, y sin FK cert↔OC en el schema que la haga posible.
+4. ~~Regla del 100% en certificaciones: declarada, no implementada, sin FK cert↔OC~~ **RESUELTO 2026-07-04**: `gu_lineasdecertificacion.linea_oc_id` (FK nullable a líneas de OC; NULL = línea libre) + trigger `check_certificacion_max_100` en la DB (con `FOR UPDATE` para concurrencia) + pre-validación en form con saldo visible. Migración: `supabase/migration_cert_oc_trazabilidad.sql`.
 5. ~~Roles: seed capitalizado vs código en minúsculas; mapeo id↔rol contradictorio~~ **RESUELTO 2026-07-02 en la DB nueva**: roles sembrados en minúsculas — 1=admin, 2=usuario (default de signup), 3=supervisor, 4=readonly. `supabase/seed.sql` y `scripts/cleanup-roles.sql` del repo siguen desactualizados respecto a esto.
 6. `package.json`: `"git": "^0.1.5"` **removido 2026-07-02** (basura, sin imports). `tunnelmole` y `multer` siguen en dependencies sin imports en `src/` — candidatos a remover con OK de Juan Andrés. `npm audit` reporta 16 vulnerabilidades (1 crítica) pendientes de revisar.
 7. La tesis/prompt describen middleware con control de permisos por ruta — no implementado (solo presencia de cookie).
@@ -127,6 +127,8 @@ Tablas en `schema.sql`: `gu_roles`, `gu_usuario`, `gu_proveedores`, `gu_proyecto
 **Reglas duras transversales**: cambios de schema, borrados de datos y pushes a git se confirman con Juan Andrés antes de ejecutar. No agregar scope excluido. Decisiones de arquitectura → mencionar si valen para los anexos.
 
 ## Changelog de sesiones
+
+- **2026-07-04** — **Git + trazabilidad Cert↔OC con regla del 100%**. (1) `git init` (rama main) + commit baseline `0d4155f`; `.claude/settings.local.json` ignorado; sin remote todavía. (2) Migración `cert_oc_trazabilidad`: `linea_oc_id` nullable en líneas de certificación + trigger `check_certificacion_max_100` (regla en capa de datos, lock `FOR UPDATE`, mensaje en español). (3) `CertificacionService.getLineasOCDisponibles` + ruta `GET /api/certificaciones/lineas-oc-disponibles?proveedorId=` + form con selector de línea de OC (prefill, saldo visible, pre-validación) + detalle muestra OC vinculada + compensación anti-huérfanas en `create` + POST devuelve 422 con el mensaje del trigger. (4) Fix numeración: año hardcodeado 2025 → año corriente (cert y OP). **Verificado E2E**: disponible 100 → cert 60 (201) → disponible 40 → exceso 50 rechazado (422); trigger probado también con 100% justo. Queda de demo OC-2026-001 + CERT-2025-001 en la DB. **Decisión de arquitectura (candidata a anexo tesis)**: la regla del 100% vive en un trigger de Postgres, no en la app — con la UI hablando directo a Supabase (discrepancia #11), cualquier validación solo en app/API es bypasseable; la capa de datos es el único punto de control garantizado.
 
 - **2026-07-02 (a)** — Fase 0 (reconocimiento completo del repo) + creación de este archivo. Sin cambios de código. Hallazgos clave: @supabase/ssr faltante en package.json (build roto en instalación limpia), sin validación 100% ni FK cert↔OC, auth solo en 8 rutas API, roles inconsistentes seed↔código, Configuración y Reportes son mocks, cero tests, carpeta sin git.
 - **2026-07-02 (c)** — **Recuperación de la base de datos**. El proyecto Supabase original (`qudxsciydyynimvpbgfm`) llevaba >90 días pausado: irrecuperable vía dashboard y API (probado). Se creó **"Gestion Uno v2"** (`ahhpzfoausrpfkumtzzx`, us-east-2, $0/mes) vía MCP de Supabase; se aplicaron `schema.sql` + migraciones de items como 3 migraciones versionadas; seed con roles corregidos (1=admin, 2=usuario, 3=supervisor, 4=readonly — resuelve discrepancia #5), admin `admin@gestionuno.com`/`admin123`, proveedores y proyectos de ejemplo; `.env`/`.env.local` apuntados al proyecto nuevo. **Verificado en runtime**: login 200 con rol admin + GET /api/proveedores 200 con datos. Los datos viejos, si hicieran falta, se bajan con "Download backups" del dashboard del proyecto viejo.

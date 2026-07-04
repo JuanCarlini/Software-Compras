@@ -19,8 +19,13 @@ export async function POST(request: NextRequest) {
     const data = await request.json()
     const nuevaCert = await CertificacionService.create(data)
     return NextResponse.json(nuevaCert, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating certificacion:", error)
+    // El trigger de la DB (regla del 100%) lanza mensajes en español aptos para el usuario
+    const message: string = error?.message || ""
+    if (message.includes("100%")) {
+      return NextResponse.json({ error: message }, { status: 422 })
+    }
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

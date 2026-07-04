@@ -224,6 +224,13 @@ export function CertificacionDetail({ params }: Props) {
                 <div className="grid grid-cols-12 gap-4">
                   <div className="col-span-5">
                     <div className="font-semibold">{linea.descripcion}</div>
+                    {linea.gu_lineasdeordenesdecompra?.gu_ordenesdecompra?.numero_oc ? (
+                      <div className="text-xs text-slate-500 mt-1">
+                        OC {linea.gu_lineasdeordenesdecompra.gu_ordenesdecompra.numero_oc} · {linea.gu_lineasdeordenesdecompra.descripcion}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-slate-400 mt-1">Línea libre (sin OC)</div>
+                    )}
                   </div>
                   <div className="col-span-2 text-right">
                     <div className="text-sm text-slate-600">Cantidad</div>
