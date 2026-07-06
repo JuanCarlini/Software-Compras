@@ -1,17 +1,15 @@
 import { z } from "zod"
 import { EstadoProveedor } from "@/models"
 
+// Alineado con el modelo real (gu_proveedores + proveedor-form.tsx): nombre, cuit,
+// email, telefono, direccion. El schema viejo (rut/ciudad/pais/contacto_principal/…)
+// describía columnas inexistentes y nunca se usaba — se reemplaza por la forma real.
 export const CreateProveedorSchema = z.object({
-  nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
-  rut: z.string().min(8, "El RUT debe ser válido").regex(/^\d{8,11}-[\dK]$/, "Formato de RUT inválido"),
-  email: z.string().email("Email inválido"),
-  telefono: z.string().min(8, "Teléfono debe tener al menos 8 caracteres"),
-  direccion: z.string().min(5, "La dirección debe tener al menos 5 caracteres"),
-  ciudad: z.string().min(2, "La ciudad es requerida"),
-  pais: z.string().min(2, "El país es requerido"),
-  contacto_principal: z.string().min(2, "El contacto principal es requerido"),
-  sitio_web: z.string().url("URL inválida").optional().or(z.literal("")),
-  notas: z.string().optional()
+  nombre: z.string().min(1, "El nombre es requerido"),
+  cuit: z.string().min(1, "El CUIT es requerido"),
+  email: z.string().email("Email inválido").or(z.literal("")).optional(),
+  telefono: z.string().or(z.literal("")).optional(),
+  direccion: z.string().or(z.literal("")).optional()
 })
 
 export const UpdateProveedorSchema = CreateProveedorSchema.partial().extend({

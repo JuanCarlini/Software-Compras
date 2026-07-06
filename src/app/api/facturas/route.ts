@@ -3,6 +3,8 @@ import { FacturaService } from "@/controllers/factura.controller"
 import { AuditService } from "@/lib/audit/audit.service"
 import { requireRole } from "@/shared/permissions-server"
 import { ROLES_ESCRITURA } from "@/shared/permissions"
+import { CreateFacturaSchema } from "@/shared/factura-validation"
+import { z } from "zod"
 
 export async function GET() {
   try {
@@ -19,7 +21,8 @@ export async function POST(request: NextRequest) {
     const { error: authError } = await requireRole(ROLES_ESCRITURA)
     if (authError) return authError
 
-    const data = await request.json()
+    const body = await request.json()
+    const data = CreateFacturaSchema.parse(body) // S4: whitelist de campos; 'estado' se descarta (S2)
     const nuevaFactura = await FacturaService.create(data)
     await AuditService.registrarDesdeRequest({
       tabla: "gu_facturas",
@@ -30,6 +33,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(nuevaFactura, { status: 201 })
   } catch (error) {
     console.error("Error creating factura:", error)
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Datos inválidos", details: error.errors },
+        { status: 400 }
+      )
+    }
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
