@@ -1,17 +1,12 @@
-// src/controllers/orden-pago.service.ts
-import { createClient } from "@/lib/supabase/service"
+import { OrdenPagoRepository } from "@/repositories/orden-pago.repository"
 
+// Reglas de negocio de órdenes de pago. El I/O vive en OrdenPagoRepository (A1);
+// acá quedan la generación del número, el default de estado y el armado de líneas.
 export class OrdenPagoService {
-  // trae todas las OP
+  // trae todas las OP (con el nombre del proveedor aplanado)
   static async getAll() {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from("gu_ordenesdepago") // <-- tu nombre real
-      .select("*, gu_proveedores(nombre)")
-      .order("created_at", { ascending: false })
-
-    if (error) throw error
-    return (data || []).map((op: any) => ({
+    const ordenes = await OrdenPagoRepository.findAllWithProveedor()
+    return ordenes.map((op: any) => ({
       ...op,
       proveedor_nombre: op.gu_proveedores?.nombre,
     }))
@@ -19,99 +14,54 @@ export class OrdenPagoService {
 
   // trae una sola por id
   static async getById(id: number) {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from("gu_ordenesdepago")
-      .select("*")
-      .eq("id", id)
-      .single()
-
-    if (error) return null
-    return data
+    return OrdenPagoRepository.findById(id)
   }
 
-  // crear
+  // crear (cabecera + líneas)
   static async create(payload: any) {
-    const supabase = createClient()
-    
     const { lineas, ...ordenData } = payload
-    
-    // Generar número automático OP-YYYY-NNN
-    const { data: ultimaOP } = await supabase
-      .from('gu_ordenesdepago')
-      .select('numero_op')
-      .order('id', { ascending: false })
-      .limit(1)
-      .single()
-    
-    let nuevoNumero = `OP-${new Date().getFullYear()}-001`
-    if (ultimaOP?.numero_op) {
-      const match = ultimaOP.numero_op.match(/OP-(\d{4})-(\d{3})/)
-      if (match) {
-        const year = new Date().getFullYear()
-        const lastYear = parseInt(match[1])
-        const lastNum = parseInt(match[2])
-        
-        if (year === lastYear) {
-          nuevoNumero = `OP-${year}-${(lastNum + 1).toString().padStart(3, '0')}`
-        } else {
-          nuevoNumero = `OP-${year}-001`
-        }
-      }
-    }
 
-    const { data: nuevaOP, error } = await supabase
-      .from("gu_ordenesdepago")
-      .insert({
-        ...ordenData,
-        numero_op: nuevoNumero,
-        estado: 'pendiente' // S2: estado inicial fijado por el server, nunca por el cliente
-      })
-      .select()
-      .single()
+    // Número automático OP-YYYY-NNN (regla de negocio; el último número lo trae el repo)
+    const ultimoNumero = await OrdenPagoRepository.findLastNumero()
+    const numero_op = OrdenPagoService.siguienteNumero(ultimoNumero)
 
-    if (error) throw error
+    const nuevaOP = await OrdenPagoRepository.insert({
+      ...ordenData,
+      numero_op,
+      estado: "pendiente", // S2: estado inicial fijado por el server, nunca por el cliente
+    })
 
-    // Insertar líneas de pago
     if (lineas && lineas.length > 0) {
-      const lineasData = lineas.map((linea: any) => ({
-        ...linea,
-        orden_pago_id: nuevaOP.id
-      }))
-      
-      const { error: lineasError } = await supabase
-        .from('gu_lineasdeordenesdepago')
-        .insert(lineasData)
-      
-      if (lineasError) throw lineasError
+      await OrdenPagoRepository.insertLineas(
+        lineas.map((linea: any) => ({ ...linea, orden_pago_id: nuevaOP.id }))
+      )
     }
 
     return nuevaOP
   }
 
-  // update
-  static async update(id: number, payload: any) {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from("gu_ordenesdepago")
-      .update(payload)
-      .eq("id", id)
-      .select()
-      .single()
-
-    if (error) throw error
-    return data
+  // OP-YYYY-NNN: incrementa dentro del año en curso, reinicia en 001 al cambiar de año.
+  // Función pura (sin I/O) → testeable sin DB.
+  private static siguienteNumero(ultimo: string | null): string {
+    const year = new Date().getFullYear()
+    if (ultimo) {
+      const match = ultimo.match(/OP-(\d{4})-(\d{3})/)
+      if (match) {
+        const lastYear = parseInt(match[1])
+        const lastNum = parseInt(match[2])
+        if (year === lastYear) {
+          return `OP-${year}-${(lastNum + 1).toString().padStart(3, "0")}`
+        }
+      }
+    }
+    return `OP-${year}-001`
   }
 
-  // delete
-  static async delete(id: number) {
-    const supabase = createClient()
-    const { error } = await supabase
-      .from("gu_ordenesdepago")
-      .delete()
-      .eq("id", id)
+  static async update(id: number, payload: any) {
+    return OrdenPagoRepository.update(id, payload)
+  }
 
-    if (error) throw error
-    return true
+  static async delete(id: number) {
+    return OrdenPagoRepository.delete(id)
   }
 }

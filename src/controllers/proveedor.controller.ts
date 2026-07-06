@@ -1,67 +1,37 @@
-import { createClient } from "@/lib/supabase/service"
+import { ProveedorRepository } from "@/repositories/proveedor.repository"
 import { Proveedor, EstadoProveedor } from "@/models"
 
+// Reglas de negocio de proveedores. El acceso a datos vive en ProveedorRepository (A1):
+// acá solo quedan las decisiones de dominio (normalizar estado, default al crear).
 export class ProveedorService {
   static async getAll(): Promise<Proveedor[]> {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from("gu_proveedores")
-      .select("*")
-      .order("created_at", { ascending: false })
-
-    if (error) throw error
-
+    const proveedores = await ProveedorRepository.findAll()
     // normalizo estado a 'activo' si viene null
-    return (data || []).map((p: any) => ({
+    return proveedores.map((p) => ({
       ...p,
       estado: p.estado ?? EstadoProveedor.ACTIVO,
     }))
   }
 
   static async getById(id: number): Promise<Proveedor | null> {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from("gu_proveedores")
-      .select("*")
-      .eq("id", id)
-      .single()
-
-    if (error) return null
-
+    const proveedor = await ProveedorRepository.findById(id)
+    if (!proveedor) return null
     return {
-      ...data,
-      estado: data.estado ?? EstadoProveedor.ACTIVO,
-    } as Proveedor
+      ...proveedor,
+      estado: proveedor.estado ?? EstadoProveedor.ACTIVO,
+    }
   }
 
   static async create(proveedor: Partial<Proveedor>): Promise<Proveedor> {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from("gu_proveedores")
-      .insert({ ...proveedor, estado: EstadoProveedor.ACTIVO }) // S2: un proveedor nuevo siempre nace activo; el estado no lo fija el cliente
-      .select()
-      .single()
-
-    if (error) throw error
-    return data as Proveedor
+    // S2: un proveedor nuevo siempre nace activo; el estado no lo fija el cliente
+    return ProveedorRepository.insert({ ...proveedor, estado: EstadoProveedor.ACTIVO })
   }
 
   static async update(id: number, proveedor: Partial<Proveedor>): Promise<Proveedor | null> {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from("gu_proveedores")
-      .update(proveedor)
-      .eq("id", id)
-      .select()
-      .single()
-
-    if (error) return null
-    return data as Proveedor
+    return ProveedorRepository.update(id, proveedor)
   }
 
   static async delete(id: number): Promise<boolean> {
-    const supabase = createClient()
-    const { error } = await supabase.from("gu_proveedores").delete().eq("id", id)
-    return !error
+    return ProveedorRepository.delete(id)
   }
 }
