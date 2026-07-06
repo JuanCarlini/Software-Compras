@@ -10,7 +10,6 @@ import { Textarea } from "@/views/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/views/ui/select"
 import { Alert, AlertDescription } from "@/views/ui/alert"
 import { Loader2, Plus, Trash2, ShoppingCart } from "lucide-react"
-import { ProveedorService, OrdenCompraService } from "@/controllers"
 import { Proveedor, Item } from "@/models"
 import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
 import { formatCurrency } from "@/shared/format-utils"
@@ -75,7 +74,8 @@ export function OrdenCompraForm() {
     const fetchProveedores = async () => {
       try {
         setLoadingProveedores(true)
-        const data = await ProveedorService.getAll()
+        const res = await fetch("/api/proveedores")
+        const data: any[] = res.ok ? await res.json() : []
         // en la base el estado es 'activo' / 'inactivo'
         const activos = data.filter((p) => (p.estado ?? "activo") === "activo")
         setProveedores(activos)
@@ -183,29 +183,14 @@ export function OrdenCompraForm() {
       const total_iva = calcularImpuestos()
       const total_con_iva = calcularTotal()
 
-      // 1) crear cabecera en gu_ordenesdecompra
-      const oc = await OrdenCompraService.create({
-        numero_oc: `OC-${Date.now()}`,              // la tabla tiene numero_oc
-        proveedor_id: Number(formData.proveedor_id),
-        proyecto_id: null,                          // no lo estás pidiendo
-        fecha_oc: formData.fecha_oc,                // la tabla es DATE
-        moneda: formData.moneda as any,             // enum en la base
-        total_neto,
-        total_iva,
-        total_con_iva,
-        estado: "borrador",                         // default en la base
-        observaciones: formData.observaciones || null,
-      })
-
-      // 2) crear líneas en gu_lineasdeordenesdecompra
+      // líneas para gu_lineasdeordenesdecompra (el orden_compra_id lo asigna el backend)
       const lineas = items.map((item) => {
         const totalNeto = item.subtotal
         const iva = 21
         const totalConIva = totalNeto * (1 + iva / 100)
 
         return {
-          orden_compra_id: oc.id,
-          item_id: item.item_id || null,  // NUEVO: Incluir item_id si existe
+          item_id: item.item_id || null,
           item_codigo: item.producto || null,
           // la columna descripcion es NOT NULL en la tabla, así que le mando algo sí o sí
           descripcion: item.descripcion || item.producto,
@@ -218,7 +203,29 @@ export function OrdenCompraForm() {
         }
       })
 
-      await OrdenCompraService.createLines(lineas)
+      // cabecera + líneas en un solo POST (el backend crea todo y audita)
+      const res = await fetch("/api/ordenes-compra", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          numero_oc: `OC-${Date.now()}`,              // la tabla tiene numero_oc
+          proveedor_id: Number(formData.proveedor_id),
+          proyecto_id: null,                          // no lo estás pidiendo
+          fecha_oc: formData.fecha_oc,                // la tabla es DATE
+          moneda: formData.moneda,                    // enum en la base
+          total_neto,
+          total_iva,
+          total_con_iva,
+          estado: "borrador",                         // default en la base
+          observaciones: formData.observaciones || null,
+          lineas,
+        }),
+      })
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error || `Error ${res.status}`)
+      }
 
       showSuccessToast("Orden de compra creada exitosamente")
       router.push("/ordenes-compra")

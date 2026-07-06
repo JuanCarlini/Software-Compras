@@ -3,6 +3,7 @@ import { CertificacionService } from "@/controllers/certificacion.controller"
 import { requireAuth } from "@/shared/permissions-server"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 import { UserRole } from "@/models"
+import { AuditService } from "@/lib/audit/audit.service"
 
 export async function GET(
   request: NextRequest,
@@ -58,6 +59,18 @@ export async function PUT(
         { status: 400 }
       )
     }
+
+    // Bitácora: la acción refleja el cambio de estado si lo hubo (T06)
+    const accion = data.estado === "aprobado" ? "aprobar"
+      : data.estado === "rechazado" ? "rechazar"
+      : "actualizar"
+    await AuditService.registrar({
+      usuarioId: Number(user!.id),
+      tabla: "gu_certificaciones",
+      registroId: parseInt(id),
+      accion,
+      detalle: `Certificación ${cert.numero_cert ?? id}: ${accion}`,
+    })
 
     return NextResponse.json(cert)
   } catch (error) {

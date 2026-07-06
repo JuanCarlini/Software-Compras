@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
 
 export interface ReporteEstadisticas {
   total_ordenes_compra: number
@@ -31,29 +30,18 @@ export function useReportes() {
   const fetchEstadisticas = async () => {
     try {
       setLoading(true)
-      const supabase = createClient()
 
-      // Consultar órdenes de compra
-      const { data: ordenes, error: ordenesError } = await supabase
-        .from('gu_ordenesdecompra')
-        .select(`
-          id,
-          numero_oc,
-          fecha_oc,
-          total_con_iva,
-          estado,
-          proveedor_id,
-          created_at
-        `)
+      // Datos vía API routes (el browser no habla con Supabase — RLS niega anon)
+      const [ordenesRes, proveedoresRes] = await Promise.all([
+        fetch('/api/ordenes-compra'),
+        fetch('/api/proveedores'),
+      ])
 
-      if (ordenesError) throw ordenesError
+      if (!ordenesRes.ok) throw new Error('Error al consultar órdenes de compra')
+      if (!proveedoresRes.ok) throw new Error('Error al consultar proveedores')
 
-      // Consultar proveedores
-      const { data: proveedores, error: proveedoresError } = await supabase
-        .from('gu_proveedores')
-        .select('id, nombre, estado')
-
-      if (proveedoresError) throw proveedoresError
+      const ordenes: any[] = await ordenesRes.json()
+      const proveedores: any[] = await proveedoresRes.json()
 
       // Calcular estadísticas
       const totalOrdenes = ordenes?.length || 0
@@ -69,7 +57,7 @@ export function useReportes() {
       // Órdenes por estado
       const ordenesPorEstado = ordenes?.reduce((acc, o) => {
         const estado = o.estado || 'sin_estado'
-        const existing = acc.find(item => item.estado === estado)
+        const existing = acc.find((item: { estado: string; cantidad: number }) => item.estado === estado)
         if (existing) {
           existing.cantidad++
         } else {

@@ -4,6 +4,7 @@ import { UpdateOrdenCompraSchema, OrdenCompraParamsSchema } from "@/shared/orden
 import { requireAuth } from "@/shared/permissions-server"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 import { UserRole } from "@/models"
+import { AuditService } from "@/lib/audit/audit.service"
 
 // GET /api/ordenes-compra/[id] - Obtener una orden específica
 export async function GET(
@@ -69,6 +70,18 @@ export async function PUT(
       )
     }
 
+    const accion = validatedData.estado === "aprobado" ? "aprobar"
+      : validatedData.estado === "rechazado" ? "rechazar"
+      : validatedData.estado === "anulado" ? "anular"
+      : "actualizar"
+    await AuditService.registrar({
+      usuarioId: Number(user!.id),
+      tabla: "gu_ordenesdecompra",
+      registroId: Number(id),
+      accion,
+      detalle: `Orden de compra ${ordenActualizada.numero_oc ?? id}: ${accion}`,
+    })
+
     return NextResponse.json(ordenActualizada)
   } catch (error) {
     console.error("Error al actualizar orden:", error)
@@ -96,15 +109,22 @@ export async function DELETE(
     const resolvedParams = await params
     const { id } = OrdenCompraParamsSchema.parse(resolvedParams)
     
-    const eliminada = await OrdenCompraService.delete(id)
-    
+    const eliminada = await OrdenCompraService.delete(Number(id))
+
     if (!eliminada) {
       return NextResponse.json(
         { error: "Orden de compra no encontrada" },
         { status: 404 }
       )
     }
-    
+
+    await AuditService.registrarDesdeRequest({
+      tabla: "gu_ordenesdecompra",
+      registroId: Number(id),
+      accion: "eliminar",
+      detalle: `Orden de compra #${id} eliminada`,
+    })
+
     return NextResponse.json({ message: "Orden eliminada correctamente" })
   } catch (error) {
     console.error("Error al eliminar orden:", error)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { OrdenCompraService } from "@/controllers"
 import { CreateOrdenCompraSchema } from "@/shared/orden-compra-validation"
+import { AuditService } from "@/lib/audit/audit.service"
 
 // GET /api/ordenes-compra - Obtener todas las órdenes
 export async function GET() {
@@ -21,9 +22,16 @@ export async function POST(request: NextRequest) {
     // Validar datos de entrada
     const validatedData = CreateOrdenCompraSchema.parse(body)
     
-    // Crear la orden
+    // Crear la orden (cabecera + líneas)
     const nuevaOrden = await OrdenCompraService.create(validatedData)
-    
+
+    await AuditService.registrarDesdeRequest({
+      tabla: "gu_ordenesdecompra",
+      registroId: nuevaOrden.id,
+      accion: "crear",
+      detalle: `Orden de compra ${nuevaOrden.numero_oc} creada`,
+    })
+
     return NextResponse.json(nuevaOrden, { status: 201 })
   } catch (error) {
     console.error("Error al crear orden:", error)

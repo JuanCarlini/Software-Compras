@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { FacturaService } from "@/controllers/factura.controller"
+import { AuditService } from "@/lib/audit/audit.service"
 
 export async function GET() {
   try {
@@ -15,6 +16,12 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
     const nuevaFactura = await FacturaService.create(data)
+    await AuditService.registrarDesdeRequest({
+      tabla: "gu_facturas",
+      registroId: nuevaFactura.id,
+      accion: "crear",
+      detalle: `Factura ${nuevaFactura.numero_factura ?? nuevaFactura.id} creada`,
+    })
     return NextResponse.json(nuevaFactura, { status: 201 })
   } catch (error) {
     console.error("Error creating factura:", error)

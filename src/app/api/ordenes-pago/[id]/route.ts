@@ -3,6 +3,7 @@ import { OrdenPagoService } from "@/controllers"
 import { requireAuth } from "@/shared/permissions-server"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 import { UserRole } from "@/models"
+import { AuditService } from "@/lib/audit/audit.service"
 
 // GET /api/ordenes-pago/[id] - Obtener una orden de pago específica
 export async function GET(
@@ -60,6 +61,18 @@ export async function PUT(
         { status: 400 }
       )
     }
+
+    const accion = data.estado === "aprobado" ? "aprobar"
+      : data.estado === "rechazado" ? "rechazar"
+      : data.estado === "pagado" ? "actualizar"
+      : "actualizar"
+    await AuditService.registrar({
+      usuarioId: Number(user!.id),
+      tabla: "gu_ordenesdepago",
+      registroId: parseInt(id),
+      accion,
+      detalle: `Orden de pago ${orden.numero_op ?? id}: ${data.estado ?? "actualizada"}`,
+    })
 
     return NextResponse.json(orden)
   } catch (error) {

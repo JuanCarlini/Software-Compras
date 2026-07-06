@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase/service"
 import { Item, CreateItemDTO, UpdateItemDTO } from "@/models"
 
 export class ItemService {

@@ -1,5 +1,5 @@
 // src/controllers/OrdenCompraService.ts
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase/service"
 import {
   CreateOrdenCompraData,
   CreateOrdenCompraLinea,
@@ -37,17 +37,36 @@ export class OrdenCompraService {
     return data as OrdenCompra
   }
 
-  // crea la OC (cabecera)
-  static async create(payload: CreateOrdenCompraData): Promise<OrdenCompra> {
+  // crea la OC (cabecera + líneas opcionales, mismo patrón que CertificacionService)
+  static async create(
+    payload: CreateOrdenCompraData & { lineas?: Omit<CreateOrdenCompraLinea, "orden_compra_id">[] }
+  ): Promise<OrdenCompra> {
     const supabase = createClient()
+    const { lineas, ...ocData } = payload
+
     const { data, error } = await supabase
       .from(TABLE_OC)
-      .insert(payload)
+      .insert(ocData)
       .select()
       .single()
 
     if (error) throw error
-    return data as OrdenCompra
+    const oc = data as OrdenCompra
+
+    if (lineas && lineas.length > 0) {
+      const lineasData = lineas.map((l) => ({ ...l, orden_compra_id: oc.id }))
+      const { error: lineasError } = await supabase
+        .from(TABLE_OC_LINEAS)
+        .insert(lineasData)
+
+      if (lineasError) {
+        // compensación: no dejar una OC huérfana si fallan las líneas
+        await supabase.from(TABLE_OC).delete().eq("id", oc.id)
+        throw lineasError
+      }
+    }
+
+    return oc
   }
 
   // crea las líneas para una OC ya creada

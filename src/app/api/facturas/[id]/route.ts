@@ -3,6 +3,7 @@ import { FacturaService } from "@/controllers/factura.controller"
 import { requireAuth } from "@/shared/permissions-server"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 import { UserRole } from "@/models"
+import { AuditService } from "@/lib/audit/audit.service"
 
 export async function GET(
   request: NextRequest,
@@ -58,6 +59,18 @@ export async function PUT(
         { status: 400 }
       )
     }
+
+    const accion = data.estado === "aprobado" ? "aprobar"
+      : data.estado === "rechazado" ? "rechazar"
+      : data.estado === "anulado" ? "anular"
+      : "actualizar"
+    await AuditService.registrar({
+      usuarioId: Number(user!.id),
+      tabla: "gu_facturas",
+      registroId: parseInt(id),
+      accion,
+      detalle: `Factura ${factura.numero_factura ?? id}: ${accion}`,
+    })
 
     return NextResponse.json(factura)
   } catch (error) {

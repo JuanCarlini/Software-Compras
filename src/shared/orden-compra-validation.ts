@@ -4,6 +4,19 @@ import type { OcEstado } from "@/models"
 // Valores de public.oc_estado en la DB (mantener en sync con OcEstado)
 const OC_ESTADOS = ["borrador", "en_aprobacion", "aprobado", "rechazado", "anulado"] as const satisfies readonly OcEstado[]
 
+// Línea de OC (sin orden_compra_id: lo asigna el service al crear la cabecera)
+export const CreateOrdenCompraLineaSchema = z.object({
+  item_id: z.number().int().positive().nullable().optional(),
+  item_codigo: z.string().nullable().optional(),
+  descripcion: z.string().min(1, "La descripción de la línea es requerida"),
+  cantidad: z.number().positive("La cantidad debe ser mayor a 0"),
+  precio_unitario_neto: z.number().min(0),
+  iva_porcentaje: z.number().min(0),
+  total_neto: z.number().min(0),
+  total_con_iva: z.number().min(0),
+  estado: z.string().nullable().optional()
+})
+
 // Alineado con CreateOrdenCompraData (src/models/orden-compra.model.ts) y gu_ordenesdecompra
 export const CreateOrdenCompraSchema = z.object({
   numero_oc: z.string().min(1, "El número de orden es requerido"),
@@ -15,10 +28,12 @@ export const CreateOrdenCompraSchema = z.object({
   total_iva: z.number().min(0),
   total_con_iva: z.number().min(0),
   estado: z.enum(OC_ESTADOS).optional(),
-  observaciones: z.string().nullable().optional()
+  observaciones: z.string().nullable().optional(),
+  lineas: z.array(CreateOrdenCompraLineaSchema).optional()
 })
 
-export const UpdateOrdenCompraSchema = CreateOrdenCompraSchema.partial()
+// El update es solo de cabecera: las líneas tienen sus propias rutas
+export const UpdateOrdenCompraSchema = CreateOrdenCompraSchema.omit({ lineas: true }).partial()
 
 export const OrdenCompraParamsSchema = z.object({
   id: z.string().min(1, "ID requerido")

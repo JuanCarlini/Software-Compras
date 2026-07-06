@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { OrdenCompraService, ProveedorService } from "@/controllers"
 import { Card, CardContent } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
 import { Loader2 } from "lucide-react"
@@ -27,26 +26,27 @@ export function OrdenCompraDetails({ ordenId }: Props) {
         setError(null)
 
         // 1) cabecera
-        const oc = await OrdenCompraService.getById(Number(ordenId))
-        if (!oc) {
+        const ocRes = await fetch(`/api/ordenes-compra/${ordenId}`)
+        if (!ocRes.ok) {
           setError("Orden no encontrada")
           setOrden(null)
           setLineas([])
           return
         }
+        const oc = await ocRes.json()
         setOrden(oc)
 
         // 2) proveedor
         if (oc.proveedor_id) {
-          const prov = await ProveedorService.getById(oc.proveedor_id)
-          setProveedor(prov)
+          const provRes = await fetch(`/api/proveedores/${oc.proveedor_id}`)
+          setProveedor(provRes.ok ? await provRes.json() : null)
         } else {
           setProveedor(null)
         }
 
         // 3) líneas
-        const rows = await OrdenCompraService.getLinesByOrdenId(Number(ordenId))
-        setLineas(rows)
+        const lineasRes = await fetch(`/api/ordenes-compra/${ordenId}/lineas`)
+        setLineas(lineasRes.ok ? await lineasRes.json() : [])
       } catch (err) {
         console.error("Error cargando orden:", err)
         setError("Error al cargar la orden")

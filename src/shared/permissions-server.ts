@@ -1,6 +1,7 @@
 import { UserRole } from "@/models"
 import { NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth/auth.cookies"
+import { isAdmin, stringToUserRole } from "@/shared/permissions"
 
 /**
  * Obtiene el usuario autenticado desde el servidor
@@ -35,6 +36,26 @@ export async function requireAuth() {
       error: NextResponse.json(
         { error: "No autenticado" },
         { status: 401 }
+      ),
+      user: null
+    }
+  }
+
+  return { error: null, user }
+}
+
+/**
+ * Como requireAuth, pero además exige rol admin (rutas /api/admin/*)
+ */
+export async function requireAdmin() {
+  const { error, user } = await requireAuth()
+  if (error) return { error, user: null }
+
+  if (!isAdmin(stringToUserRole(user!.rol))) {
+    return {
+      error: NextResponse.json(
+        { error: "No tienes permisos de administrador" },
+        { status: 403 }
       ),
       user: null
     }

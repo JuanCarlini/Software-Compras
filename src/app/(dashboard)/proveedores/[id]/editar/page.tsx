@@ -8,7 +8,6 @@ import { Loader2, ArrowLeft } from "lucide-react"
 import { Button } from "@/views/ui/button"
 import Link from "next/link"
 import { Proveedor } from "@/models"
-import { ProveedorService } from "@/controllers"
 
 export default function EditarProveedorPage() {
   const params = useParams()
@@ -22,7 +21,8 @@ export default function EditarProveedorPage() {
     const fetchProveedor = async () => {
       try {
         setLoading(true)
-        const data = await ProveedorService.getById(Number(proveedorId))
+        const res = await fetch(`/api/proveedores/${proveedorId}`)
+        const data = res.ok ? await res.json() : null
         if (!data) {
           setError("Proveedor no encontrado")
           return

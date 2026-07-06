@@ -3,6 +3,7 @@ import { ProveedorService } from "@/controllers"
 import { requireAuth } from "@/shared/permissions-server"
 import { canModificarProveedor, stringToUserRole } from "@/shared/permissions"
 import { UserRole, EstadoProveedor } from "@/models"
+import { AuditService } from "@/lib/audit/audit.service"
 
 interface Params {
   params: Promise<{ id: string }>
@@ -33,6 +34,14 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         { status: 404 }
       )
     }
+
+    await AuditService.registrar({
+      usuarioId: Number(user!.id),
+      tabla: "gu_proveedores",
+      registroId: Number(id),
+      accion: "suspender",
+      detalle: `Proveedor ${proveedor.nombre ?? id} suspendido (inactivo)`,
+    })
 
     return NextResponse.json(proveedor)
   } catch (error) {

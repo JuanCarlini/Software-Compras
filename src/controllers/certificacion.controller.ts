@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase/service"
 
 const TABLE_CERT = "gu_certificaciones"
 const TABLE_CERT_LINEAS = "gu_lineasdecertificacion"
