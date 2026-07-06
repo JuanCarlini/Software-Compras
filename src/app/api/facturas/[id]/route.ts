@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { FacturaService } from "@/controllers/factura.controller"
-import { requireAuth } from "@/shared/permissions-server"
-import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
+import { requireAuth, requireRole } from "@/shared/permissions-server"
+import { canAnularDocumento, stringToUserRole, ROLES_DESTRUCTIVO } from "@/shared/permissions"
 import { UserRole } from "@/models"
 import { AuditService } from "@/lib/audit/audit.service"
 
@@ -87,6 +87,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { error: authError } = await requireRole(ROLES_DESTRUCTIVO)
+    if (authError) return authError
+
     const { id } = await params
     const success = await FacturaService.delete(parseInt(id))
     

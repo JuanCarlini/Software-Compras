@@ -27,13 +27,17 @@ export const CreateOrdenCompraSchema = z.object({
   total_neto: z.number().min(0),
   total_iva: z.number().min(0),
   total_con_iva: z.number().min(0),
-  estado: z.enum(OC_ESTADOS).optional(),
+  // S2: 'estado' NO se acepta al crear — el server lo fija en 'borrador'. Zod descarta la clave si el cliente la manda.
   observaciones: z.string().nullable().optional(),
   lineas: z.array(CreateOrdenCompraLineaSchema).optional()
 })
 
-// El update es solo de cabecera: las líneas tienen sus propias rutas
-export const UpdateOrdenCompraSchema = CreateOrdenCompraSchema.omit({ lineas: true }).partial()
+// El update es solo de cabecera: las líneas tienen sus propias rutas.
+// 'estado' se re-agrega acá porque el PUT sí transiciona estados (aprobar/anular), gateado por rol en la ruta.
+export const UpdateOrdenCompraSchema = CreateOrdenCompraSchema
+  .omit({ lineas: true })
+  .partial()
+  .extend({ estado: z.enum(OC_ESTADOS).optional() })
 
 export const OrdenCompraParamsSchema = z.object({
   id: z.string().min(1, "ID requerido")

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { OrdenCompraService } from "@/controllers"
+import { requireRole } from "@/shared/permissions-server"
+import { ROLES_ESCRITURA } from "@/shared/permissions"
 import { z } from "zod"
 
 interface Params {
@@ -20,6 +22,9 @@ const UpdateLineaSchema = z.object({
 // PUT /api/ordenes-compra/lineas/[lineaId] - Actualizar una línea
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
+    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    if (authError) return authError
+
     const { lineaId } = await params
     const lineaIdNum = parseInt(lineaId)
 
@@ -66,6 +71,9 @@ export async function PUT(request: NextRequest, { params }: Params) {
 // DELETE /api/ordenes-compra/lineas/[lineaId] - Eliminar una línea
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
+    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    if (authError) return authError
+
     const { lineaId } = await params
     const lineaIdNum = parseInt(lineaId)
 

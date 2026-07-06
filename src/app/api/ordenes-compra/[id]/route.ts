@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { OrdenCompraService } from "@/controllers"
 import { UpdateOrdenCompraSchema, OrdenCompraParamsSchema } from "@/shared/orden-compra-validation"
-import { requireAuth } from "@/shared/permissions-server"
-import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
+import { requireAuth, requireRole } from "@/shared/permissions-server"
+import { canAnularDocumento, stringToUserRole, ROLES_DESTRUCTIVO } from "@/shared/permissions"
 import { UserRole } from "@/models"
 import { AuditService } from "@/lib/audit/audit.service"
 
@@ -106,9 +106,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { error: authError } = await requireRole(ROLES_DESTRUCTIVO)
+    if (authError) return authError
+
     const resolvedParams = await params
     const { id } = OrdenCompraParamsSchema.parse(resolvedParams)
-    
+
     const eliminada = await OrdenCompraService.delete(Number(id))
 
     if (!eliminada) {

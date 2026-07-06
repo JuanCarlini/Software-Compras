@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ItemService } from "@/controllers"
 import { CreateItemSchema } from "@/shared/item-validation"
+import { requireRole } from "@/shared/permissions-server"
+import { ROLES_ESCRITURA } from "@/shared/permissions"
 import { z } from "zod"
 
 // GET /api/items - Obtener todos los items activos
@@ -34,8 +36,11 @@ export async function GET(request: NextRequest) {
 // POST /api/items - Crear nuevo item
 export async function POST(request: NextRequest) {
   try {
+    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    if (authError) return authError
+
     const body = await request.json()
-    
+
     // Validar datos de entrada
     const validatedData = CreateItemSchema.parse(body)
     

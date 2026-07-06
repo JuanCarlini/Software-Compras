@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { OrdenCompraService } from "@/controllers"
 import { CreateOrdenCompraSchema } from "@/shared/orden-compra-validation"
 import { AuditService } from "@/lib/audit/audit.service"
+import { requireRole } from "@/shared/permissions-server"
+import { ROLES_ESCRITURA } from "@/shared/permissions"
 
 // GET /api/ordenes-compra - Obtener todas las órdenes
 export async function GET() {
@@ -17,8 +19,11 @@ export async function GET() {
 // POST /api/ordenes-compra - Crear nueva orden
 export async function POST(request: NextRequest) {
   try {
+    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    if (authError) return authError
+
     const body = await request.json()
-    
+
     // Validar datos de entrada
     const validatedData = CreateOrdenCompraSchema.parse(body)
     

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { OrdenPagoService } from "@/controllers"
 import { CreateOrdenPagoSchema } from "@/shared/orden-pago-validation"
 import { AuditService } from "@/lib/audit/audit.service"
+import { requireRole } from "@/shared/permissions-server"
+import { ROLES_ESCRITURA } from "@/shared/permissions"
 
 // GET /api/ordenes-pago - Obtener todas las órdenes de pago
 export async function GET() {
@@ -17,8 +19,11 @@ export async function GET() {
 // POST /api/ordenes-pago - Crear nueva orden de pago
 export async function POST(request: NextRequest) {
   try {
+    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    if (authError) return authError
+
     const body = await request.json()
-    
+
     // Validar datos de entrada
     const validatedData = CreateOrdenPagoSchema.parse(body)
     

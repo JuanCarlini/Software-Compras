@@ -64,7 +64,8 @@ export class OrdenPagoService {
       .from("gu_ordenesdepago")
       .insert({
         ...ordenData,
-        numero_op: nuevoNumero
+        numero_op: nuevoNumero,
+        estado: 'pendiente' // S2: estado inicial fijado por el server, nunca por el cliente
       })
       .select()
       .single()

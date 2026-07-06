@@ -4,7 +4,7 @@ export const CreateOrdenPagoSchema = z.object({
   proveedor_id: z.number().min(1, "El proveedor es requerido"),
   fecha_op: z.string().min(1, "La fecha es requerida"),
   total_pago: z.number().min(0.01, "El monto debe ser mayor a 0"),
-  estado: z.string().optional(),
+  // S2: 'estado' NO se acepta al crear — el server lo fija en 'pendiente'. (UpdateOrdenPagoSchema sí lo permite, gateado por rol.)
   observaciones: z.string().nullable().optional(),
   lineas: z.array(z.object({
     factura_id: z.number().optional(),

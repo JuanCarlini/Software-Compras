@@ -63,3 +63,26 @@ export async function requireAdmin() {
 
   return { error: null, user }
 }
+
+/**
+ * Como requireAuth, pero además exige que el rol del usuario esté en la lista permitida.
+ * Base de la autorización por rol en rutas mutantes (S1): el middleware sólo autentica.
+ * Usar con los grupos de shared/permissions.ts (ROLES_ESCRITURA / ROLES_DESTRUCTIVO).
+ * Solo para usar en API Routes.
+ */
+export async function requireRole(rolesPermitidos: UserRole[]) {
+  const { error, user } = await requireAuth()
+  if (error) return { error, user: null }
+
+  if (!rolesPermitidos.includes(stringToUserRole(user!.rol))) {
+    return {
+      error: NextResponse.json(
+        { error: "No tenés permisos para realizar esta acción" },
+        { status: 403 }
+      ),
+      user: null
+    }
+  }
+
+  return { error: null, user }
+}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { OrdenPagoService } from "@/controllers"
-import { requireAuth } from "@/shared/permissions-server"
-import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
+import { requireAuth, requireRole } from "@/shared/permissions-server"
+import { canAnularDocumento, stringToUserRole, ROLES_DESTRUCTIVO } from "@/shared/permissions"
 import { UserRole } from "@/models"
 import { AuditService } from "@/lib/audit/audit.service"
 
@@ -90,6 +90,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { error: authError } = await requireRole(ROLES_DESTRUCTIVO)
+    if (authError) return authError
+
     const { id } = await params
     const success = await OrdenPagoService.delete(parseInt(id))
 

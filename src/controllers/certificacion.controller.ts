@@ -96,7 +96,8 @@ export class CertificacionService {
       .from(TABLE_CERT)
       .insert({
         ...certData,
-        numero_cert: nuevoNumero
+        numero_cert: nuevoNumero,
+        estado: 'borrador' // S2: estado inicial fijado por el server, nunca por el cliente
       })
       .select()
       .single()

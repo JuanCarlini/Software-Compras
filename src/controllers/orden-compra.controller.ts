@@ -46,7 +46,7 @@ export class OrdenCompraService {
 
     const { data, error } = await supabase
       .from(TABLE_OC)
-      .insert(ocData)
+      .insert({ ...ocData, estado: 'borrador' }) // S2: estado inicial fijado por el server, nunca por el cliente
       .select()
       .single()
 

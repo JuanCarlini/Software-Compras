@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { OrdenCompraService } from "@/controllers"
+import { requireRole } from "@/shared/permissions-server"
+import { ROLES_ESCRITURA } from "@/shared/permissions"
 import { z } from "zod"
 
 interface Params {
@@ -43,9 +45,12 @@ const CreateLineaFromItemSchema = z.object({
 // POST /api/ordenes-compra/[id]/lineas - Crear línea desde item del catálogo
 export async function POST(request: NextRequest, { params }: Params) {
   try {
+    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    if (authError) return authError
+
     const { id } = await params
     const ordenId = parseInt(id)
-    
+
     if (isNaN(ordenId)) {
       return NextResponse.json(
         { error: "ID de orden inválido" },

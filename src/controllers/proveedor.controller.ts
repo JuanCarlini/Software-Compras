@@ -38,7 +38,7 @@ export class ProveedorService {
     const supabase = createClient()
     const { data, error } = await supabase
       .from("gu_proveedores")
-      .insert(proveedor)
+      .insert({ ...proveedor, estado: EstadoProveedor.ACTIVO }) // S2: un proveedor nuevo siempre nace activo; el estado no lo fija el cliente
       .select()
       .single()
 

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ItemService } from "@/controllers"
 import { UpdateItemSchema } from "@/shared/item-validation"
+import { requireRole } from "@/shared/permissions-server"
+import { ROLES_ESCRITURA } from "@/shared/permissions"
 import { z } from "zod"
 
 interface Params {
@@ -44,6 +46,9 @@ export async function GET(request: NextRequest, { params }: Params) {
 // PUT /api/items/[id] - Actualizar un item
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
+    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    if (authError) return authError
+
     const { id } = await params
     const itemId = parseInt(id)
     
@@ -90,6 +95,9 @@ export async function PUT(request: NextRequest, { params }: Params) {
 // DELETE /api/items/[id] - Soft delete de un item
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
+    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    if (authError) return authError
+
     const { id } = await params
     const itemId = parseInt(id)
     

@@ -115,7 +115,8 @@ export class FacturaService {
       .from('gu_facturas')
       .insert({
         ...facturaData,
-        numero_factura: nuevoNumero
+        numero_factura: nuevoNumero,
+        estado: 'borrador' // S2: el estado inicial lo fija el server, nunca el cliente (no facturar en 'aprobado' salteando el workflow)
       })
       .select()
       .single()
