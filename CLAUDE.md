@@ -1,6 +1,6 @@
 # Gestión Uno — Memoria de proyecto
 
-> Actualizado: 2026-07-02. Leer antes de tocar código. Si el código y este archivo divergen, manda el código: verificar y actualizar acá. Al cierre de cada sesión relevante, actualizar el Changelog y las Discrepancias.
+> Actualizado: 2026-07-06. Leer antes de tocar código. Si el código y este archivo divergen, manda el código: verificar y actualizar acá. Al cierre de cada sesión relevante, actualizar el Changelog y las Discrepancias.
 
 ## Qué es
 
@@ -44,7 +44,7 @@ src/
 └── middleware.ts   # Solo chequea presencia de cookie (ver Auth)
 ```
 
-- Clases de negocio: `OrdenCompraService`, `CertificacionService`, `FacturaService`, `OrdenPagoService`, `ProveedorService`, `ProyectoService`, `ItemService`, `CajaService`. Excepciones legacy con nombre `*Controller`: `AuthController` (muerto, usa Supabase Auth — solo se importa su tipo `AuthUser`), `ConfiguracionController` y `ReporteController` (mocks con TODOs).
+- Clases de negocio: `OrdenCompraService`, `CertificacionService`, `FacturaService`, `OrdenPagoService`, `ProveedorService`, `ProyectoService`, `ItemService`. Excepciones legacy con nombre `*Controller`: `ConfiguracionController` y `ReporteController` (mocks con TODOs). (`CajaService` y `AuthController` borrados 2026-07-06 — código muerto; el tipo `AuthUser` vivo sale de `models/user.model.ts` para la UI y de `lib/auth/auth.service.ts` para el server.)
 - **Orden al construir un módulo**: controller/service → API route → UI. No invertir.
 - Antes de crear un componente, copiar el patrón de uno existente (ej. `src/views/certificacion-detail.tsx`).
 - Editar antes que duplicar. Reescritura completa solo cuando el archivo cambia sustancialmente.
@@ -89,7 +89,7 @@ Tablas en `schema.sql`: `gu_roles`, `gu_usuario`, `gu_proveedores`, `gu_proyecto
 3. **La carpeta no es repo git** (`.git` ausente) pese al repo declarado `github.com/JuanCarlini/Gestion-Uno`. Sin historial local como fuente de memoria.
 4. ~~Regla del 100% en certificaciones: declarada, no implementada, sin FK cert↔OC~~ **RESUELTO 2026-07-04**: `gu_lineasdecertificacion.linea_oc_id` (FK nullable a líneas de OC; NULL = línea libre) + trigger `check_certificacion_max_100` en la DB (con `FOR UPDATE` para concurrencia) + pre-validación en form con saldo visible. Migración: `supabase/migration_cert_oc_trazabilidad.sql`.
 5. ~~Roles: seed capitalizado vs código en minúsculas; mapeo id↔rol contradictorio~~ **RESUELTO 2026-07-02 en la DB nueva**: roles sembrados en minúsculas — 1=admin, 2=usuario (default de signup), 3=supervisor, 4=readonly. `supabase/seed.sql` y `scripts/cleanup-roles.sql` del repo siguen desactualizados respecto a esto.
-6. `package.json`: `"git": "^0.1.5"` **removido 2026-07-02** (basura, sin imports). `tunnelmole` y `multer` siguen en dependencies sin imports en `src/` — candidatos a remover con OK de Juan Andrés. `npm audit` reporta 16 vulnerabilidades (1 crítica) pendientes de revisar.
+6. `package.json`: `"git": "^0.1.5"` removido 2026-07-02; **`tunnelmole`, `multer`, `recharts` y `@radix-ui/react-toast` removidos 2026-07-06** (sin imports en `src/`). `recharts` se re-agrega cuando se implemente el gráfico real de A02. Tras la poda, `npm audit` bajó de 16 a **8 vulnerabilidades (1 crítica)** pendientes de revisar.
 7. La tesis/prompt describen middleware con control de permisos por ruta — no implementado (solo presencia de cookie).
 8. OP multi-moneda declarada; el schema no la soporta.
 9. `schema.sql` no incluye las tablas de items (viven solo en migraciones).
@@ -127,6 +127,8 @@ Tablas en `schema.sql`: `gu_roles`, `gu_usuario`, `gu_proveedores`, `gu_proyecto
 **Reglas duras transversales**: cambios de schema, borrados de datos y pushes a git se confirman con Juan Andrés antes de ejecutar. No agregar scope excluido. Decisiones de arquitectura → mencionar si valen para los anexos.
 
 ## Changelog de sesiones
+
+- **2026-07-06** — **Limpieza de código muerto (safe-tier, ponytail audit)**. Borrados 16 archivos + 4 deps; `npm run build` **verde** (exit 0, type-check + lint OK). Deps removidas: `recharts`, `@radix-ui/react-toast`, `multer`, `tunnelmole` (`npm audit` 16→8 vulns). Borrado: wrapper recharts `ui/chart` (nada lo importa; se re-agrega con el gráfico de A02); sistema de toast Radix paralelo (`ui/toast`, `ui/toaster`, `shared/use-toast`) — el toast real es **sonner**; `CajaService` + `caja.model` (consultaban tabla `cajas` inexistente); páginas de scaffolding solo-por-URL (`create-admin`, `debug-user`, `api/auth/debug`); `AuthController` muerto; `producto.model`; scripts one-shot (`run-items-migration*`, `update-user-role`, `cleanup-roles.sql`); `shared/temp.txt`; bloque `experimental` no-op en `next.config.mjs`. **Dos ajustes más allá del borrado puro, forzados por el requisito de build-verde** (la auditoría los había dado por seguros): (a) `ItemQuickCreateDialog.tsx` **sí** consumía `use-toast` → migradas sus 2 llamadas a `showSuccessToast`/`showErrorToast` de `shared/toast-helpers` (sonner, ya montado), comportamiento idéntico; (b) `auth-context.tsx` repuntado a **`@/models`** (no a `@/lib/auth` como decía el plan): el `AuthUser` de `lib/auth` no tiene campo `rol` y ~10 vistas hacen `stringToUserRole(user.rol)` → repuntar ahí rompía el build; el de `models/user.model.ts` es shape-compatible con lo que devuelve `/api/auth/me`. `git diff --stat`: 23 archivos, 3925 borrados (2307 = churn de `package-lock.json`), ~1618 líneas de fuente/scripts/config muertas.
 
 - **2026-07-04** — **Git + trazabilidad Cert↔OC con regla del 100%**. (1) `git init` (rama main) + commit baseline `0d4155f`; `.claude/settings.local.json` ignorado; sin remote todavía. (2) Migración `cert_oc_trazabilidad`: `linea_oc_id` nullable en líneas de certificación + trigger `check_certificacion_max_100` (regla en capa de datos, lock `FOR UPDATE`, mensaje en español). (3) `CertificacionService.getLineasOCDisponibles` + ruta `GET /api/certificaciones/lineas-oc-disponibles?proveedorId=` + form con selector de línea de OC (prefill, saldo visible, pre-validación) + detalle muestra OC vinculada + compensación anti-huérfanas en `create` + POST devuelve 422 con el mensaje del trigger. (4) Fix numeración: año hardcodeado 2025 → año corriente (cert y OP). **Verificado E2E**: disponible 100 → cert 60 (201) → disponible 40 → exceso 50 rechazado (422); trigger probado también con 100% justo. Queda de demo OC-2026-001 + CERT-2025-001 en la DB. **Decisión de arquitectura (candidata a anexo tesis)**: la regla del 100% vive en un trigger de Postgres, no en la app — con la UI hablando directo a Supabase (discrepancia #11), cualquier validación solo en app/API es bypasseable; la capa de datos es el único punto de control garantizado.
 

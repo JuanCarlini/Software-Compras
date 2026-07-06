@@ -34,7 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/views/ui/select"
-import { useToast } from "@/shared/use-toast"
+import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
 
 interface ItemQuickCreateDialogProps {
   open: boolean
@@ -50,7 +50,6 @@ export function ItemQuickCreateDialog({
   userId,
 }: ItemQuickCreateDialogProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
 
   const form = useForm<CreateItemFormData>({
     resolver: zodResolver(CreateItemSchema),
@@ -102,10 +101,7 @@ export function ItemQuickCreateDialog({
 
       const nuevoItem = await response.json() as Item
 
-      toast({
-        title: "Item creado",
-        description: `"${nuevoItem.nombre}" se ha creado exitosamente`,
-      })
+      showSuccessToast("Item creado", `"${nuevoItem.nombre}" se ha creado exitosamente`)
 
       // Cerrar el dialog y notificar
       form.reset({
@@ -120,11 +116,7 @@ export function ItemQuickCreateDialog({
       onItemCreated?.(nuevoItem)
     } catch (error) {
       console.error("Error al crear item:", error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Error al crear el item",
-        variant: "destructive",
-      })
+      showErrorToast("Error", error instanceof Error ? error.message : "Error al crear el item")
     } finally {
       setIsLoading(false)
     }

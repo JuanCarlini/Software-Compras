@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState } from "react"
-import { AuthUser } from "@/controllers/auth.controller"
+import { AuthUser } from "@/models"
 
 interface AuthContextType {
   user: AuthUser | null

@@ -9,10 +9,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Configuración para usar src/ directory
-  experimental: {
-    typedRoutes: false,
-  },
 }
 
 export default nextConfig
