@@ -1,183 +1,53 @@
-import { createClient } from "@/lib/supabase/service"
+import { ItemRepository } from "@/repositories/item.repository"
 import { Item, CreateItemDTO, UpdateItemDTO } from "@/models"
 
+// Reglas de negocio de items. El I/O vive en ItemRepository (A1); acá quedan el
+// default is_active al crear, el dedup/orden de categorías y la lectura de "en uso".
 export class ItemService {
-  /**
-   * Obtener todos los items activos
-   */
   static async getAll(): Promise<Item[]> {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from("gu_items")
-      .select("*")
-      .eq("is_active", true)
-      .order("nombre", { ascending: true })
-
-    if (error) throw error
-    return data || []
+    return ItemRepository.findAllActive()
   }
 
-  /**
-   * Obtener todos los items (incluyendo inactivos)
-   */
   static async getAllIncludingInactive(): Promise<Item[]> {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from("gu_items")
-      .select("*")
-      .order("nombre", { ascending: true })
-
-    if (error) throw error
-    return data || []
+    return ItemRepository.findAll()
   }
 
-  /**
-   * Buscar items por nombre (búsqueda de texto completo)
-   */
   static async search(query: string): Promise<Item[]> {
-    const supabase = createClient()
-    
-    // Búsqueda usando ILIKE para coincidencias parciales
-    const { data, error } = await supabase
-      .from("gu_items")
-      .select("*")
-      .eq("is_active", true)
-      .or(`nombre.ilike.%${query}%,descripcion.ilike.%${query}%`)
-      .order("nombre", { ascending: true })
-      .limit(20)
-
-    if (error) throw error
-    return data || []
+    return ItemRepository.search(query)
   }
 
-  /**
-   * Obtener un item por ID
-   */
   static async getById(id: number): Promise<Item | null> {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from("gu_items")
-      .select("*")
-      .eq("id", id)
-      .single()
-
-    if (error) return null
-    return data as Item
+    return ItemRepository.findById(id)
   }
 
-  /**
-   * Crear un nuevo item
-   */
   static async create(item: CreateItemDTO): Promise<Item> {
-    const supabase = createClient()
-    
-    const { data, error } = await supabase
-      .from("gu_items")
-      .insert({
-        ...item,
-        is_active: true
-      })
-      .select()
-      .single()
-
-    if (error) throw error
-    return data as Item
+    return ItemRepository.insert({ ...item, is_active: true })
   }
 
-  /**
-   * Actualizar un item existente
-   */
   static async update(id: number, item: UpdateItemDTO): Promise<Item | null> {
-    const supabase = createClient()
-    
-    const { data, error } = await supabase
-      .from("gu_items")
-      .update(item)
-      .eq("id", id)
-      .select()
-      .single()
-
-    if (error) return null
-    return data as Item
+    return ItemRepository.update(id, item)
   }
 
-  /**
-   * Soft delete - Marcar item como inactivo
-   */
+  // Soft delete: marcar inactivo (reversible con reactivate)
   static async softDelete(id: number): Promise<boolean> {
-    const supabase = createClient()
-    
-    const { error } = await supabase
-      .from("gu_items")
-      .update({ is_active: false })
-      .eq("id", id)
-
-    return !error
+    return ItemRepository.setActive(id, false)
   }
 
-  /**
-   * Reactivar un item
-   */
   static async reactivate(id: number): Promise<boolean> {
-    const supabase = createClient()
-    
-    const { error } = await supabase
-      .from("gu_items")
-      .update({ is_active: true })
-      .eq("id", id)
-
-    return !error
+    return ItemRepository.setActive(id, true)
   }
 
-  /**
-   * Verificar si un item está en uso en alguna orden de compra
-   */
   static async isInUse(id: number): Promise<boolean> {
-    const supabase = createClient()
-    
-    const { data, error } = await supabase
-      .from("gu_lineasdeordenesdecompra")
-      .select("id")
-      .eq("item_id", id)
-      .limit(1)
-
-    if (error) return false
-    return (data?.length ?? 0) > 0
+    return ItemRepository.existsInLineasOC(id)
   }
 
-  /**
-   * Obtener items por categoría
-   */
   static async getByCategoria(categoria: string): Promise<Item[]> {
-    const supabase = createClient()
-    
-    const { data, error } = await supabase
-      .from("gu_items")
-      .select("*")
-      .eq("is_active", true)
-      .eq("categoria", categoria)
-      .order("nombre", { ascending: true })
-
-    if (error) throw error
-    return data || []
+    return ItemRepository.findByCategoria(categoria)
   }
 
-  /**
-   * Obtener todas las categorías únicas
-   */
   static async getCategorias(): Promise<string[]> {
-    const supabase = createClient()
-    
-    const { data, error } = await supabase
-      .from("gu_items")
-      .select("categoria")
-      .eq("is_active", true)
-      .not("categoria", "is", null)
-
-    if (error) return []
-    
-    // Extraer categorías únicas
-    const categorias = [...new Set(data.map(item => item.categoria).filter(Boolean))]
-    return categorias.sort()
+    const valores = await ItemRepository.findCategoriaValues()
+    // categorías únicas, sin vacíos, ordenadas
+    return [...new Set(valores.filter(Boolean) as string[])].sort()
   }
 }

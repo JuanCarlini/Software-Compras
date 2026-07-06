@@ -1,66 +1,26 @@
-import { createClient } from '@/lib/supabase/service'
+import { ProyectoRepository } from "@/repositories/proyecto.repository"
 
+// CRUD de proyectos. Sin reglas de negocio propias hoy: delega el I/O al repo (A1).
+// La capa existe como costura donde irían futuras reglas y para mantener la
+// convención ruta -> service -> repo uniforme en todos los dominios.
 export class ProyectoService {
-  static async getAll() {
-    const supabase = createClient()
-    
-    const { data, error } = await supabase
-      .from('gu_proyectos')
-      .select('*')
-      .order('created_at', { ascending: false })
-    
-    if (error) throw error
-    return data || []
+  static getAll() {
+    return ProyectoRepository.findAll()
   }
 
-  static async getById(id: number) {
-    const supabase = createClient()
-    
-    const { data, error } = await supabase
-      .from('gu_proyectos')
-      .select('*')
-      .eq('id', id)
-      .single()
-    
-    if (error) return null
-    return data
+  static getById(id: number) {
+    return ProyectoRepository.findById(id)
   }
 
-  static async create(proyecto: any) {
-    const supabase = createClient()
-    
-    const { data, error } = await supabase
-      .from('gu_proyectos')
-      .insert(proyecto)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
+  static create(proyecto: any) {
+    return ProyectoRepository.insert(proyecto)
   }
 
-  static async update(id: number, proyecto: any) {
-    const supabase = createClient()
-    
-    const { data, error } = await supabase
-      .from('gu_proyectos')
-      .update(proyecto)
-      .eq('id', id)
-      .select()
-      .single()
-    
-    if (error) return null
-    return data
+  static update(id: number, proyecto: any) {
+    return ProyectoRepository.update(id, proyecto)
   }
 
-  static async delete(id: number) {
-    const supabase = createClient()
-    
-    const { error } = await supabase
-      .from('gu_proyectos')
-      .delete()
-      .eq('id', id)
-    
-    return !error
+  static delete(id: number) {
+    return ProyectoRepository.delete(id)
   }
 }

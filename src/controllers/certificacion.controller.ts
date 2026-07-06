@@ -1,26 +1,12 @@
-import { createClient } from "@/lib/supabase/service"
+import { CertificacionRepository } from "@/repositories/certificacion.repository"
 
-const TABLE_CERT = "gu_certificaciones"
-const TABLE_CERT_LINEAS = "gu_lineasdecertificacion"
-
+// Reglas de negocio de certificaciones. El I/O vive en CertificacionRepository (A1):
+// acá quedan la generación del número, el aplanado de joins, la compensación
+// anti-huérfanas y el cálculo del saldo certificable.
 export class CertificacionService {
   static async getAll() {
-    const supabase = createClient()
-
-    const { data, error } = await supabase
-      .from(TABLE_CERT)
-      .select(
-        `
-        *,
-        gu_proyectos(nombre, codigo),
-        gu_proveedores(nombre)
-      `
-      )
-      .order("created_at", { ascending: false })
-
-    if (error) throw error
-
-    return (data || []).map((cert) => ({
+    const certs = await CertificacionRepository.findAllWithRelations()
+    return certs.map((cert: any) => ({
       ...cert,
       proyecto_nombre: cert.gu_proyectos?.nombre,
       proyecto_codigo: cert.gu_proyectos?.codigo,
@@ -29,28 +15,10 @@ export class CertificacionService {
   }
 
   static async getById(id: number) {
-    const supabase = createClient()
+    const cert = await CertificacionRepository.findByIdWithRelations(id)
+    if (!cert) return null
 
-    const { data: cert, error } = await supabase
-      .from(TABLE_CERT)
-      .select(
-        `
-        *,
-        gu_proyectos(nombre, codigo),
-        gu_proveedores(nombre, cuit, email)
-      `
-      )
-      .eq("id", id)
-      .single()
-
-    if (error || !cert) return null
-
-    const { data: lineas } = await supabase
-      .from(TABLE_CERT_LINEAS)
-      .select("*, gu_lineasdeordenesdecompra(id, descripcion, cantidad, gu_ordenesdecompra(id, numero_oc))")
-      .eq("certificacion_id", id)
-      .order("id", { ascending: true })
-
+    const lineas = await CertificacionRepository.findLineasByCertId(id)
     return {
       ...cert,
       proyecto_nombre: cert.gu_proyectos?.nombre,
@@ -58,90 +26,60 @@ export class CertificacionService {
       proveedor_nombre: cert.gu_proveedores?.nombre,
       proveedor_cuit: cert.gu_proveedores?.cuit,
       proveedor_email: cert.gu_proveedores?.email,
-      lineas: lineas || [],
+      lineas,
     }
   }
 
   static async create(data: any) {
-    const supabase = createClient()
-
     const { lineas, ...certData } = data
 
-    // Generar número automático CERT-YYYY-NNN
-    const { data: ultimaCert } = await supabase
-      .from(TABLE_CERT)
-      .select('numero_cert')
-      .order('id', { ascending: false })
-      .limit(1)
-      .single()
-    
-    let nuevoNumero = `CERT-${new Date().getFullYear()}-001`
-    if (ultimaCert?.numero_cert) {
-      const match = ultimaCert.numero_cert.match(/CERT-(\d{4})-(\d{3})/)
-      if (match) {
-        const year = new Date().getFullYear()
-        const lastYear = parseInt(match[1])
-        const lastNum = parseInt(match[2])
-        
-        // Si es el mismo año, incrementar; si no, empezar desde 001
-        if (year === lastYear) {
-          nuevoNumero = `CERT-${year}-${(lastNum + 1).toString().padStart(3, '0')}`
-        } else {
-          nuevoNumero = `CERT-${year}-001`
-        }
-      }
-    }
+    // Número automático CERT-YYYY-NNN (regla; el último número lo trae el repo)
+    const numero_cert = CertificacionService.siguienteNumero(await CertificacionRepository.findLastNumero())
 
-    const { data: nuevaCert, error } = await supabase
-      .from(TABLE_CERT)
-      .insert({
-        ...certData,
-        numero_cert: nuevoNumero,
-        estado: 'borrador' // S2: estado inicial fijado por el server, nunca por el cliente
-      })
-      .select()
-      .single()
-
-    if (error) throw error
+    const nuevaCert = await CertificacionRepository.insert({
+      ...certData,
+      numero_cert,
+      estado: "borrador", // S2: estado inicial fijado por el server, nunca por el cliente
+    })
 
     if (lineas && lineas.length > 0) {
-      const lineasData = lineas.map((linea: any) => ({
-        ...linea,
-        certificacion_id: nuevaCert.id,
-      }))
-
-      const { error: lineasError } = await supabase
-        .from(TABLE_CERT_LINEAS)
-        .insert(lineasData)
-
-      if (lineasError) {
-        // compensación: sin transacciones en el cliente, borramos la cabecera
-        // para no dejar una certificación huérfana si el trigger rechazó las líneas
-        await supabase.from(TABLE_CERT).delete().eq("id", nuevaCert.id)
-        throw lineasError
+      try {
+        await CertificacionRepository.insertLineas(
+          lineas.map((linea: any) => ({ ...linea, certificacion_id: nuevaCert.id }))
+        )
+      } catch (e) {
+        // compensación: sin transacciones en el cliente, borramos la cabecera para
+        // no dejar una certificación huérfana si el trigger rechazó las líneas
+        await CertificacionRepository.deleteById(nuevaCert.id)
+        throw e
       }
     }
 
     return nuevaCert
   }
 
-  static async update(id: number, data: any) {
-    const supabase = createClient()
-    const { data: certActualizada, error } = await supabase
-      .from(TABLE_CERT)
-      .update(data)
-      .eq("id", id)
-      .select()
-      .single()
+  // CERT-YYYY-NNN: incrementa dentro del año en curso, reinicia en 001 al cambiar de año.
+  private static siguienteNumero(ultimo: string | null): string {
+    const year = new Date().getFullYear()
+    if (ultimo) {
+      const match = ultimo.match(/CERT-(\d{4})-(\d{3})/)
+      if (match) {
+        const lastYear = parseInt(match[1])
+        const lastNum = parseInt(match[2])
+        if (year === lastYear) {
+          return `CERT-${year}-${(lastNum + 1).toString().padStart(3, "0")}`
+        }
+      }
+    }
+    return `CERT-${year}-001`
+  }
 
-    if (error) return null
-    return certActualizada
+  static async update(id: number, data: any) {
+    return CertificacionRepository.update(id, data)
   }
 
   static async delete(id: number) {
-    const supabase = createClient()
-    const { error } = await supabase.from(TABLE_CERT).delete().eq("id", id)
-    return !error
+    return CertificacionRepository.deleteById(id)
   }
 
   /**
@@ -150,30 +88,14 @@ export class CertificacionService {
    * esto alimenta el formulario para que el usuario vea el disponible antes de enviar.
    */
   static async getLineasOCDisponibles(proveedorId: number) {
-    const supabase = createClient()
+    const lineasOC = await CertificacionRepository.findLineasOCAprobadas(proveedorId)
+    if (lineasOC.length === 0) return []
 
-    const { data: lineasOC, error } = await supabase
-      .from("gu_lineasdeordenesdecompra")
-      .select("id, descripcion, cantidad, precio_unitario_neto, iva_porcentaje, gu_ordenesdecompra!inner(id, numero_oc, estado, proveedor_id)")
-      .eq("gu_ordenesdecompra.proveedor_id", proveedorId)
-      .eq("gu_ordenesdecompra.estado", "aprobado")
-      .order("id", { ascending: true })
-
-    if (error) throw error
-    if (!lineasOC || lineasOC.length === 0) return []
-
-    // Certificado acumulado por línea de OC (excluye rechazadas)
     const ids = lineasOC.map((l: any) => l.id)
-    const { data: certificado, error: certError } = await supabase
-      .from(TABLE_CERT_LINEAS)
-      .select("linea_oc_id, cantidad, estado")
-      .in("linea_oc_id", ids)
-      .neq("estado", "rechazado")
-
-    if (certError) throw certError
+    const certificado = await CertificacionRepository.findCertificadoByLineaOCIds(ids)
 
     const certificadoPorLinea = new Map<number, number>()
-    for (const c of certificado || []) {
+    for (const c of certificado) {
       certificadoPorLinea.set(
         c.linea_oc_id,
         (certificadoPorLinea.get(c.linea_oc_id) || 0) + Number(c.cantidad)
@@ -197,22 +119,8 @@ export class CertificacionService {
   }
 
   static async getByProyecto(proyectoId: number) {
-    const supabase = createClient()
-
-    const { data, error } = await supabase
-      .from(TABLE_CERT)
-      .select(
-        `
-        *,
-        gu_proveedores(nombre)
-      `
-      )
-      .eq("proyecto_id", proyectoId)
-      .order("fecha_cert", { ascending: false })
-
-    if (error) throw error
-
-    return (data || []).map((cert) => ({
+    const certs = await CertificacionRepository.findByProyecto(proyectoId)
+    return certs.map((cert: any) => ({
       ...cert,
       proveedor_nombre: cert.gu_proveedores?.nombre,
     }))

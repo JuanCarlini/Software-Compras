@@ -1,5 +1,3 @@
-// src/controllers/OrdenCompraService.ts
-import { createClient } from "@/lib/supabase/service"
 import {
   CreateOrdenCompraData,
   CreateOrdenCompraLinea,
@@ -8,61 +6,36 @@ import {
   OrdenCompraLineaConItem,
   CreateLineaFromItem,
 } from "@/models/orden-compra.model"
+import { OrdenCompraRepository } from "@/repositories/orden-compra.repository"
 import { ItemService } from "./item.controller"
 
-const TABLE_OC = "gu_ordenesdecompra"
-const TABLE_OC_LINEAS = "gu_lineasdeordenesdecompra"
-
+// Reglas de negocio de órdenes de compra. El I/O vive en OrdenCompraRepository (A1):
+// acá quedan el default de estado (S2), la compensación anti-huérfanas y el cálculo
+// de totales de línea (precio × cantidad, IVA) al crear/actualizar desde el catálogo.
 export class OrdenCompraService {
   static async getAll(): Promise<OrdenCompra[]> {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from(TABLE_OC)
-      .select("*")
-      .order("created_at", { ascending: false })
-
-    if (error) throw error
-    return (data || []) as OrdenCompra[]
+    return OrdenCompraRepository.findAll()
   }
 
   static async getById(id: number): Promise<OrdenCompra | null> {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from(TABLE_OC)
-      .select("*")
-      .eq("id", id)
-      .single()
-
-    if (error) return null
-    return data as OrdenCompra
+    return OrdenCompraRepository.findById(id)
   }
 
-  // crea la OC (cabecera + líneas opcionales, mismo patrón que CertificacionService)
+  // crea la OC (cabecera + líneas opcionales)
   static async create(
     payload: CreateOrdenCompraData & { lineas?: Omit<CreateOrdenCompraLinea, "orden_compra_id">[] }
   ): Promise<OrdenCompra> {
-    const supabase = createClient()
     const { lineas, ...ocData } = payload
 
-    const { data, error } = await supabase
-      .from(TABLE_OC)
-      .insert({ ...ocData, estado: 'borrador' }) // S2: estado inicial fijado por el server, nunca por el cliente
-      .select()
-      .single()
-
-    if (error) throw error
-    const oc = data as OrdenCompra
+    const oc = await OrdenCompraRepository.insert({ ...ocData, estado: "borrador" }) // S2: estado inicial fijado por el server
 
     if (lineas && lineas.length > 0) {
-      const lineasData = lineas.map((l) => ({ ...l, orden_compra_id: oc.id }))
-      const { error: lineasError } = await supabase
-        .from(TABLE_OC_LINEAS)
-        .insert(lineasData)
-
-      if (lineasError) {
+      try {
+        await OrdenCompraRepository.insertLineas(lineas.map((l) => ({ ...l, orden_compra_id: oc.id })))
+      } catch (e) {
         // compensación: no dejar una OC huérfana si fallan las líneas
-        await supabase.from(TABLE_OC).delete().eq("id", oc.id)
-        throw lineasError
+        await OrdenCompraRepository.deleteById(oc.id)
+        throw e
       }
     }
 
@@ -71,90 +44,31 @@ export class OrdenCompraService {
 
   // crea las líneas para una OC ya creada
   static async createLines(lines: CreateOrdenCompraLinea[]): Promise<OrdenCompraLinea[]> {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from(TABLE_OC_LINEAS)
-      .insert(lines)
-      .select()
-
-    if (error) throw error
-    return (data || []) as OrdenCompraLinea[]
+    return OrdenCompraRepository.insertLineasReturning(lines)
   }
-  static async getLinesByOrdenId(ordenId: number) {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from(TABLE_OC_LINEAS)
-      .select("*")
-      .eq("orden_compra_id", ordenId)
-      .order("id", { ascending: true })
 
-    if (error) throw error
-    return data || []
+  static async getLinesByOrdenId(ordenId: number) {
+    return OrdenCompraRepository.findLineasByOrdenId(ordenId)
   }
 
   static async update(id: string | number, payload: Partial<OrdenCompra>): Promise<OrdenCompra | null> {
-    const supabase = createClient()
-    console.log("OrdenCompraService.update - ID:", id, "Payload:", payload)
-    
-    const { data, error } = await supabase
-      .from(TABLE_OC)
-      .update(payload)
-      .eq("id", id)
-      .select()
-      .single()
-
-    if (error) {
-      console.error("OrdenCompraService.update - Error:", error)
-      throw error
-    }
-    
-    console.log("OrdenCompraService.update - Success:", data)
-    return data as OrdenCompra
+    return OrdenCompraRepository.update(id, payload)
   }
 
   static async delete(id: string | number): Promise<boolean> {
-    const supabase = createClient()
-    const { error } = await supabase
-      .from(TABLE_OC)
-      .delete()
-      .eq("id", id)
-
-    return !error
+    return OrdenCompraRepository.deleteById(id)
   }
 
-  // NUEVO: Obtener líneas con información del item del catálogo
+  // Líneas con la info del item del catálogo (LEFT JOIN a gu_items)
   static async getLinesWithItems(ordenId: number): Promise<OrdenCompraLineaConItem[]> {
-    const supabase = createClient()
-    
-    // Obtener líneas con LEFT JOIN a gu_items
-    const { data, error } = await supabase
-      .from(TABLE_OC_LINEAS)
-      .select(`
-        *,
-        item:item_id (
-          id,
-          nombre,
-          descripcion,
-          precio_sugerido,
-          unidad_medida,
-          categoria
-        )
-      `)
-      .eq("orden_compra_id", ordenId)
-      .order("id", { ascending: true })
-
-    if (error) throw error
-    return (data || []) as OrdenCompraLineaConItem[]
+    return OrdenCompraRepository.findLineasWithItems(ordenId)
   }
 
-  // NUEVO: Crear línea desde un item del catálogo
+  // Crear línea desde un item del catálogo (calcula precio/totales según el item)
   static async createLineFromItem(
     ordenId: number,
     lineaData: CreateLineaFromItem
   ): Promise<OrdenCompraLinea> {
-    const supabase = createClient()
-    
-    // Obtener información del item
     const item = await ItemService.getById(lineaData.item_id)
     if (!item) {
       throw new Error(`Item con ID ${lineaData.item_id} no encontrado`)
@@ -181,34 +95,23 @@ export class OrdenCompraService {
       iva_porcentaje: ivaPorcentaje,
       total_neto: totalNeto,
       total_con_iva: totalConIva,
-      estado: "borrador"
+      estado: "borrador",
     }
 
-    const { data, error } = await supabase
-      .from(TABLE_OC_LINEAS)
-      .insert(nuevaLinea)
-      .select()
-      .single()
-
-    if (error) throw error
-    return data as OrdenCompraLinea
+    return OrdenCompraRepository.insertLinea(nuevaLinea)
   }
 
-  // NUEVO: Actualizar una línea existente
+  // Actualizar una línea; si cambia cantidad/precio/IVA, recalcula los totales
   static async updateLine(
     lineaId: number,
     updates: Partial<CreateOrdenCompraLinea>
   ): Promise<OrdenCompraLinea | null> {
-    const supabase = createClient()
-    
-    // Si se actualizan cantidad o precio, recalcular totales
-    if (updates.cantidad !== undefined || updates.precio_unitario_neto !== undefined || updates.iva_porcentaje !== undefined) {
-      const { data: lineaActual } = await supabase
-        .from(TABLE_OC_LINEAS)
-        .select("*")
-        .eq("id", lineaId)
-        .single()
-
+    if (
+      updates.cantidad !== undefined ||
+      updates.precio_unitario_neto !== undefined ||
+      updates.iva_porcentaje !== undefined
+    ) {
+      const lineaActual = await OrdenCompraRepository.findLineaById(lineaId)
       if (lineaActual) {
         const cantidad = updates.cantidad ?? lineaActual.cantidad
         const precio = updates.precio_unitario_neto ?? lineaActual.precio_unitario_neto
@@ -219,25 +122,10 @@ export class OrdenCompraService {
       }
     }
 
-    const { data, error } = await supabase
-      .from(TABLE_OC_LINEAS)
-      .update(updates)
-      .eq("id", lineaId)
-      .select()
-      .single()
-
-    if (error) return null
-    return data as OrdenCompraLinea
+    return OrdenCompraRepository.updateLinea(lineaId, updates)
   }
 
-  // NUEVO: Eliminar una línea
   static async deleteLine(lineaId: number): Promise<boolean> {
-    const supabase = createClient()
-    const { error } = await supabase
-      .from(TABLE_OC_LINEAS)
-      .delete()
-      .eq("id", lineaId)
-
-    return !error
+    return OrdenCompraRepository.deleteLinea(lineaId)
   }
 }
