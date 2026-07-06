@@ -2,12 +2,18 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { createClient } from '@/lib/supabase/service'
 
-// Fail-fast: sin JWT_SECRET el sistema no debe operar con un secreto predecible
-const JWT_SECRET = process.env.JWT_SECRET as string
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET no está configurada. Definila en .env.local / variables de entorno del deploy.')
-}
 const JWT_EXPIRES_IN = '7d'
+
+// Se resuelve en tiempo de request, NO al importar el módulo: un throw a nivel de
+// módulo rompe el "Collecting page data" de `next build` (Next importa cada ruta).
+// Sigue siendo fail-fast, pero sólo cuando de verdad se firma/verifica un token.
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET
+  if (!secret) {
+    throw new Error('JWT_SECRET no está configurada. Definila en .env.local / variables de entorno del deploy.')
+  }
+  return secret
+}
 
 // El join gu_roles(nombre) es many-to-one: en runtime llega como objeto,
 // pero el cliente sin tipar lo infiere como array
@@ -80,7 +86,7 @@ export class AuthService {
         rolNombre: rolNombreDe(usuario.gu_roles)
       }
 
-      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN })
+      const token = jwt.sign(payload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN })
 
       // Retornar usuario y token
       return {
@@ -105,7 +111,7 @@ export class AuthService {
    */
   static async verifyToken(token: string): Promise<JWTPayload | null> {
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload
+      const decoded = jwt.verify(token, getJwtSecret()) as JWTPayload
       return decoded
     } catch (error) {
       console.error('Error al verificar token:', error)

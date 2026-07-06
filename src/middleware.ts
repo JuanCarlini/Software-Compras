@@ -5,17 +5,18 @@ import { jwtVerify } from 'jose'
 const publicRoutes = ['/login', '/api/auth/login']
 const authRoutes = ['/login']
 
-// Fail-fast: sin JWT_SECRET el sistema no debe arrancar con un secreto predecible
-const JWT_SECRET = process.env.JWT_SECRET
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET no está configurada. Definila en .env.local / variables de entorno del deploy.')
-}
-const SECRET_KEY = new TextEncoder().encode(JWT_SECRET)
-
 async function verificarToken(token: string): Promise<boolean> {
+  // Se lee en cada request (no a nivel de módulo: eso rompe el build de Next).
+  const secret = process.env.JWT_SECRET
+  if (!secret) {
+    // Fail-CLOSED: sin secreto no se puede validar → el token se trata como inválido
+    // (el usuario cae a /login o recibe 401), nunca se deja pasar.
+    console.error('JWT_SECRET no está configurada en el entorno.')
+    return false
+  }
   try {
     // Verificación real de firma (HS256, mismo secreto que AuthService.login)
-    await jwtVerify(token, SECRET_KEY, { algorithms: ['HS256'] })
+    await jwtVerify(token, new TextEncoder().encode(secret), { algorithms: ['HS256'] })
     return true
   } catch {
     return false
