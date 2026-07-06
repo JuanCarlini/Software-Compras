@@ -76,10 +76,8 @@ export function LoginForm() {
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Iniciando..." : "Iniciar Sesión"}
           </Button>
-          <div className="text-center text-sm">
-            <Link href="/signup" className="text-slate-900 hover:underline">
-              ¿No tienes cuenta? Regístrate
-            </Link>
+          <div className="text-center text-sm text-slate-500">
+            ¿Olvidaste tu contraseña o no tenés cuenta? Contactá al administrador.
           </div>
         </form>
       </CardContent>

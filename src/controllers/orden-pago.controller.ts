@@ -1,5 +1,5 @@
 // src/controllers/orden-pago.service.ts
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase/service"
 
 export class OrdenPagoService {
   // trae todas las OP

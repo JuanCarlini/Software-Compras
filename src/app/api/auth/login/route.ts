@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { AuthService } from '@/lib/auth/auth.service'
 import { setAuthCookie } from '@/lib/auth/auth.cookies'
+import { AuditService } from '@/lib/audit/audit.service'
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,6 +37,15 @@ export async function POST(request: NextRequest) {
 
     // Establecer cookie de autenticación
     await setAuthCookie(result.token)
+
+    // Bitácora: inicio de sesión (T06)
+    await AuditService.registrar({
+      usuarioId: result.user.id,
+      tabla: 'sesion',
+      registroId: result.user.id,
+      accion: 'login',
+      detalle: `Inicio de sesión: ${result.user.email}`,
+    })
 
     // Retornar usuario (sin el token en el body por seguridad)
     return NextResponse.json({

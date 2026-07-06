@@ -1,6 +1,6 @@
 "use client"
 
-import { BarChart3, Building2, CreditCard, Settings, ShoppingCart, Home, FileCheck, Receipt, Shield, LogOut } from "lucide-react"
+import { BarChart3, Building2, CreditCard, Settings, ShoppingCart, Home, FileCheck, Receipt, Shield, LogOut, ClipboardList } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
@@ -140,6 +140,19 @@ export function AppSidebar() {
                     <Link href="/admin/usuarios">
                       <Shield className="h-4 w-4" />
                       <span>Gestión de Usuarios</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    className={`text-slate-700 hover:bg-red-50 hover:text-red-700 ${
+                      pathname === "/admin/auditoria" ? "bg-red-50 text-red-700 font-medium" : ""
+                    }`}
+                  >
+                    <Link href="/admin/auditoria">
+                      <ClipboardList className="h-4 w-4" />
+                      <span>Auditoría</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

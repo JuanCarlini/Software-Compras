@@ -3,6 +3,16 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
+import { Input } from "@/views/ui/input"
+import { Label } from "@/views/ui/label"
+import { Badge } from "@/views/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/views/ui/tabs"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/views/ui/dialog"
 import {
   Select,
   SelectContent,
@@ -10,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/views/ui/select"
-import { Loader2, Shield, User, Eye, Users } from "lucide-react"
+import { Loader2, Shield, User, Eye, Users, UserPlus, KeyRound, UserX, UserCheck, Plus, Trash2 } from "lucide-react"
 import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
 import { useAuth } from "@/shared/auth-context"
 import { isAdmin, stringToUserRole } from "@/shared/permissions"
@@ -20,10 +30,18 @@ interface UserData {
   id: string
   email: string
   nombre: string
-  apellido: string
   rol: string
+  rol_id: number
+  estado: "activo" | "inactivo"
   created_at: string
-  last_sign_in_at: string | null
+}
+
+interface RolData {
+  id: number
+  nombre: string
+  descripcion: string | null
+  usuarios: number
+  es_sistema: boolean
 }
 
 const roleLabels: Record<string, string> = {
@@ -47,12 +65,29 @@ const roleColors: Record<string, string> = {
   readonly: "text-gray-600",
 }
 
+async function api(path: string, init?: RequestInit) {
+  const res = await fetch(path, init)
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(body.error || `Error ${res.status}`)
+  return body
+}
+
 export default function AdminUsersPage() {
   const { user } = useAuth()
   const router = useRouter()
   const [users, setUsers] = useState<UserData[]>([])
+  const [roles, setRoles] = useState<RolData[]>([])
   const [loading, setLoading] = useState(true)
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null)
+
+  // diálogos
+  const [nuevoOpen, setNuevoOpen] = useState(false)
+  const [nuevo, setNuevo] = useState({ nombre: "", email: "", password: "", rol_id: "2" })
+  const [resetUser, setResetUser] = useState<UserData | null>(null)
+  const [resetPass, setResetPass] = useState("")
+  const [nuevoRolOpen, setNuevoRolOpen] = useState(false)
+  const [nuevoRol, setNuevoRol] = useState({ nombre: "", descripcion: "" })
+  const [saving, setSaving] = useState(false)
 
   // Verificar permisos
   const userRole = user ? stringToUserRole(user.rol) : null
@@ -66,65 +101,143 @@ export default function AdminUsersPage() {
   }, [canAccess, loading, router])
 
   useEffect(() => {
-    fetchUsers()
+    Promise.all([fetchUsers(), fetchRoles()]).finally(() => setLoading(false))
   }, [])
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch("/api/admin/users")
-      if (!response.ok) {
-        throw new Error("Error al obtener usuarios")
-      }
-      const data = await response.json()
-      setUsers(data)
-    } catch (error) {
-      console.error("Error:", error)
+      setUsers(await api("/api/admin/users"))
+    } catch {
       showErrorToast("Error", "No se pudieron cargar los usuarios")
-    } finally {
-      setLoading(false)
+    }
+  }
+
+  const fetchRoles = async () => {
+    try {
+      setRoles(await api("/api/admin/roles"))
+    } catch {
+      showErrorToast("Error", "No se pudieron cargar los roles")
     }
   }
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     setUpdatingUserId(userId)
     try {
-      const response = await fetch(`/api/admin/users/${userId}/role`, {
+      await api(`/api/admin/users/${userId}/role`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rol: newRole }),
       })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Error al actualizar rol")
-      }
-
-      showSuccessToast("Rol actualizado", `El rol se ha actualizado correctamente`)
-
-      // Actualizar la lista de usuarios
-      setUsers(prevUsers =>
-        prevUsers.map(u =>
-          u.id === userId ? { ...u, rol: newRole } : u
-        )
-      )
-
-      // Si el usuario actualizó su propio rol, recargar la página
+      showSuccessToast("Rol actualizado")
+      setUsers(prev => prev.map(u => (u.id === userId ? { ...u, rol: newRole } : u)))
       if (userId.toString() === user?.id?.toString()) {
-        setTimeout(() => {
-          window.location.reload()
-        }, 1500)
+        setTimeout(() => window.location.reload(), 1500)
       }
     } catch (error) {
-      console.error("Error:", error)
-      showErrorToast(
-        "Error al actualizar rol",
-        error instanceof Error ? error.message : "Por favor intenta nuevamente"
-      )
+      showErrorToast("Error al actualizar rol", error instanceof Error ? error.message : "Intenta nuevamente")
     } finally {
       setUpdatingUserId(null)
+    }
+  }
+
+  const handleCrearUsuario = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await api("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...nuevo, rol_id: Number(nuevo.rol_id) }),
+      })
+      showSuccessToast("Usuario creado", nuevo.email)
+      setNuevoOpen(false)
+      setNuevo({ nombre: "", email: "", password: "", rol_id: "2" })
+      await fetchUsers()
+      await fetchRoles()
+    } catch (error) {
+      showErrorToast("Error", error instanceof Error ? error.message : "No se pudo crear el usuario")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleBaja = async (u: UserData) => {
+    setUpdatingUserId(u.id)
+    try {
+      await api(`/api/admin/users/${u.id}`, { method: "DELETE" })
+      showSuccessToast("Usuario dado de baja", u.email)
+      setUsers(prev => prev.map(x => (x.id === u.id ? { ...x, estado: "inactivo" } : x)))
+    } catch (error) {
+      showErrorToast("Error", error instanceof Error ? error.message : "No se pudo dar de baja")
+    } finally {
+      setUpdatingUserId(null)
+    }
+  }
+
+  const handleReactivar = async (u: UserData) => {
+    setUpdatingUserId(u.id)
+    try {
+      await api(`/api/admin/users/${u.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: "activo" }),
+      })
+      showSuccessToast("Usuario reactivado", u.email)
+      setUsers(prev => prev.map(x => (x.id === u.id ? { ...x, estado: "activo" } : x)))
+    } catch (error) {
+      showErrorToast("Error", error instanceof Error ? error.message : "No se pudo reactivar")
+    } finally {
+      setUpdatingUserId(null)
+    }
+  }
+
+  const handleResetClave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!resetUser) return
+    setSaving(true)
+    try {
+      await api(`/api/admin/users/${resetUser.id}/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: resetPass }),
+      })
+      showSuccessToast("Clave reseteada", `Comunicale la nueva clave a ${resetUser.email}`)
+      setResetUser(null)
+      setResetPass("")
+    } catch (error) {
+      showErrorToast("Error", error instanceof Error ? error.message : "No se pudo resetear la clave")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCrearRol = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await api("/api/admin/roles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nuevoRol),
+      })
+      showSuccessToast("Rol creado", nuevoRol.nombre)
+      setNuevoRolOpen(false)
+      setNuevoRol({ nombre: "", descripcion: "" })
+      await fetchRoles()
+    } catch (error) {
+      showErrorToast("Error", error instanceof Error ? error.message : "No se pudo crear el rol")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleEliminarRol = async (rol: RolData) => {
+    try {
+      await api(`/api/admin/roles/${rol.id}`, { method: "DELETE" })
+      showSuccessToast("Rol eliminado", rol.nombre)
+      await fetchRoles()
+    } catch (error) {
+      showErrorToast("Error", error instanceof Error ? error.message : "No se pudo eliminar el rol")
     }
   }
 
@@ -145,114 +258,261 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">
-          Administración de Usuarios
-        </h1>
-        <p className="text-slate-600 mt-2">
-          Gestiona los roles y permisos de los usuarios del sistema
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Administración de Usuarios</h1>
+          <p className="text-slate-600 mt-2">
+            Alta, baja, roles y claves de los usuarios del sistema
+          </p>
+        </div>
+        <Button onClick={() => setNuevoOpen(true)}>
+          <UserPlus className="h-4 w-4 mr-2" />
+          Nuevo usuario
+        </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Usuarios del Sistema ({users.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {users.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-slate-500">No hay usuarios registrados</p>
-              </div>
-            ) : (
-              users.map((userData) => {
-                const RoleIcon = roleIcons[userData.rol] || User
-                const roleColor = roleColors[userData.rol] || "text-gray-600"
+      <Tabs defaultValue="usuarios">
+        <TabsList>
+          <TabsTrigger value="usuarios">Usuarios ({users.length})</TabsTrigger>
+          <TabsTrigger value="roles">Roles ({roles.length})</TabsTrigger>
+        </TabsList>
 
-                return (
-                  <div
-                    key={userData.id}
-                    className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-                  >
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* Columna 1: Información del usuario */}
-                      <div>
-                        <p className="font-medium text-slate-900">
-                          {userData.nombre} {userData.apellido}
-                        </p>
-                        <p className="text-sm text-slate-500">{userData.email}</p>
-                        {userData.id.toString() === user?.id?.toString() && (
-                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded mt-1 inline-block">
-                            Tú
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Columna 2: Rol actual */}
-                      <div className="flex items-center">
-                        <RoleIcon className={`h-5 w-5 ${roleColor} mr-2`} />
-                        <span className={`font-medium ${roleColor}`}>
-                          {roleLabels[userData.rol] || userData.rol}
-                        </span>
-                      </div>
-
-                      {/* Columna 3: Cambiar rol */}
-                      <div className="flex items-center space-x-2">
-                        <Select
-                          value={userData.rol}
-                          onValueChange={(value) => handleRoleChange(userData.id, value)}
-                          disabled={updatingUserId === userData.id}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Administrador</SelectItem>
-                            <SelectItem value="supervisor">Supervisor</SelectItem>
-                            <SelectItem value="usuario">Usuario</SelectItem>
-                            <SelectItem value="readonly">Solo Lectura</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {updatingUserId === userData.id && (
-                          <Loader2 className="h-4 w-4 animate-spin text-slate-500" />
-                        )}
-                      </div>
-                    </div>
+        <TabsContent value="usuarios">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                {users.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-slate-500">No hay usuarios registrados</p>
                   </div>
-                )
-              })
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                ) : (
+                  users.map((userData) => {
+                    const RoleIcon = roleIcons[userData.rol] || User
+                    const roleColor = roleColors[userData.rol] || "text-gray-600"
+                    const esUnoMismo = userData.id.toString() === user?.id?.toString()
 
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="pt-6">
-          <div className="flex items-start space-x-3">
-            <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
+                    return (
+                      <div
+                        key={userData.id}
+                        className={`flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors ${userData.estado === "inactivo" ? "opacity-60" : ""}`}
+                      >
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                          <div>
+                            <p className="font-medium text-slate-900">{userData.nombre}</p>
+                            <p className="text-sm text-slate-500">{userData.email}</p>
+                            <div className="flex gap-1 mt-1">
+                              {esUnoMismo && (
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Tú</span>
+                              )}
+                              <Badge variant={userData.estado === "activo" ? "outline" : "destructive"}>
+                                {userData.estado}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center">
+                            <RoleIcon className={`h-5 w-5 ${roleColor} mr-2`} />
+                            <span className={`font-medium ${roleColor}`}>
+                              {roleLabels[userData.rol] || userData.rol}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <Select
+                              value={userData.rol}
+                              onValueChange={(value) => handleRoleChange(userData.id, value)}
+                              disabled={updatingUserId === userData.id || esUnoMismo}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="admin">Administrador</SelectItem>
+                                <SelectItem value="supervisor">Supervisor</SelectItem>
+                                <SelectItem value="usuario">Usuario</SelectItem>
+                                <SelectItem value="readonly">Solo Lectura</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {updatingUserId === userData.id && (
+                              <Loader2 className="h-4 w-4 animate-spin text-slate-500" />
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 justify-end">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              title="Resetear clave"
+                              onClick={() => setResetUser(userData)}
+                            >
+                              <KeyRound className="h-4 w-4" />
+                            </Button>
+                            {userData.estado === "activo" ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                title="Dar de baja"
+                                disabled={esUnoMismo || updatingUserId === userData.id}
+                                onClick={() => handleBaja(userData)}
+                              >
+                                <UserX className="h-4 w-4 text-red-600" />
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                title="Reactivar"
+                                disabled={updatingUserId === userData.id}
+                                onClick={() => handleReactivar(userData)}
+                              >
+                                <UserCheck className="h-4 w-4 text-green-600" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="roles">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Catálogo de roles</CardTitle>
+              <Button size="sm" onClick={() => setNuevoRolOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" />
+                Nuevo rol
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {roles.map((rol) => (
+                  <div key={rol.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-lg">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-slate-900">{rol.nombre}</p>
+                        {rol.es_sistema && <Badge variant="outline">sistema</Badge>}
+                        <Badge variant="secondary">{rol.usuarios} usuario(s)</Badge>
+                      </div>
+                      <p className="text-sm text-slate-500">{rol.descripcion}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      title={rol.es_sistema ? "Los roles del sistema no se eliminan" : "Eliminar rol"}
+                      disabled={rol.es_sistema || rol.usuarios > 0}
+                      onClick={() => handleEliminarRol(rol)}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-slate-500 mt-4">
+                Los roles del sistema (admin, supervisor, usuario, readonly) están vinculados a los permisos
+                del código y no pueden renombrarse ni eliminarse. Los roles nuevos reciben permisos de
+                &quot;usuario&quot; hasta que se les asigne un mapeo propio.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Dialog: nuevo usuario */}
+      <Dialog open={nuevoOpen} onOpenChange={setNuevoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nuevo usuario</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCrearUsuario} className="space-y-4">
             <div>
-              <h3 className="font-semibold text-blue-900">Información sobre roles</h3>
-              <ul className="mt-2 space-y-1 text-sm text-blue-800">
-                <li>
-                  <strong>Administrador:</strong> Acceso completo al sistema, puede
-                  gestionar usuarios y realizar todas las acciones
-                </li>
-                <li>
-                  <strong>Supervisor:</strong> Puede aprobar, rechazar y anular documentos
-                </li>
-                <li>
-                  <strong>Usuario:</strong> Acceso básico, no puede anular documentos ni
-                  modificar proveedores
-                </li>
-                <li>
-                  <strong>Solo Lectura:</strong> Solo puede visualizar información sin
-                  realizar cambios
-                </li>
-              </ul>
+              <Label>Nombre *</Label>
+              <Input value={nuevo.nombre} onChange={(e) => setNuevo({ ...nuevo, nombre: e.target.value })} required />
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            <div>
+              <Label>Email *</Label>
+              <Input type="email" value={nuevo.email} onChange={(e) => setNuevo({ ...nuevo, email: e.target.value })} required />
+            </div>
+            <div>
+              <Label>Contraseña inicial *</Label>
+              <Input type="password" minLength={6} value={nuevo.password} onChange={(e) => setNuevo({ ...nuevo, password: e.target.value })} required />
+            </div>
+            <div>
+              <Label>Rol *</Label>
+              <Select value={nuevo.rol_id} onValueChange={(v) => setNuevo({ ...nuevo, rol_id: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {roles.map((r) => (
+                    <SelectItem key={r.id} value={String(r.id)}>{roleLabels[r.nombre] || r.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => setNuevoOpen(false)}>Cancelar</Button>
+              <Button type="submit" disabled={saving}>
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Crear usuario
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: reset de clave */}
+      <Dialog open={resetUser !== null} onOpenChange={(open) => { if (!open) { setResetUser(null); setResetPass("") } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resetear clave de {resetUser?.email}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleResetClave} className="space-y-4">
+            <div>
+              <Label>Nueva contraseña *</Label>
+              <Input type="text" minLength={6} value={resetPass} onChange={(e) => setResetPass(e.target.value)} required />
+              <p className="text-xs text-slate-500 mt-1">
+                Se muestra en texto plano para que puedas comunicársela al usuario (mecanismo de recuperación de clave).
+              </p>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => setResetUser(null)}>Cancelar</Button>
+              <Button type="submit" disabled={saving}>
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Resetear
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: nuevo rol */}
+      <Dialog open={nuevoRolOpen} onOpenChange={setNuevoRolOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nuevo rol</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCrearRol} className="space-y-4">
+            <div>
+              <Label>Nombre *</Label>
+              <Input value={nuevoRol.nombre} onChange={(e) => setNuevoRol({ ...nuevoRol, nombre: e.target.value })} required />
+            </div>
+            <div>
+              <Label>Descripción</Label>
+              <Input value={nuevoRol.descripcion} onChange={(e) => setNuevoRol({ ...nuevoRol, descripcion: e.target.value })} />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => setNuevoRolOpen(false)}>Cancelar</Button>
+              <Button type="submit" disabled={saving}>
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Crear rol
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -1,8 +1,12 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/service'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
+// Fail-fast: sin JWT_SECRET el sistema no debe operar con un secreto predecible
+const JWT_SECRET = process.env.JWT_SECRET as string
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET no está configurada. Definila en .env.local / variables de entorno del deploy.')
+}
 const JWT_EXPIRES_IN = '7d'
 
 // El join gu_roles(nombre) es many-to-one: en runtime llega como objeto,
@@ -92,87 +96,6 @@ export class AuthService {
       }
     } catch (error) {
       console.error('Error en login:', error)
-      return null
-    }
-  }
-
-  /**
-   * Registrar nuevo usuario
-   */
-  static async signup(
-    email: string,
-    password: string,
-    nombre: string,
-    rolId: number = 2 // Por defecto rol "usuario"
-  ): Promise<{ user: AuthUser; token: string } | null> {
-    try {
-      const supabase = await createClient()
-
-      // Verificar si el email ya existe
-      const { data: existingUser } = await supabase
-        .from('gu_usuario')
-        .select('id')
-        .eq('email', email)
-        .single()
-
-      if (existingUser) {
-        throw new Error('El email ya está registrado')
-      }
-
-      // Hashear contraseña
-      const passwordHash = await bcrypt.hash(password, 10)
-
-      // Crear usuario
-      const { data: nuevoUsuario, error } = await supabase
-        .from('gu_usuario')
-        .insert({
-          email,
-          nombre,
-          password_hash: passwordHash,
-          rol_id: rolId,
-          estado: 'activo'
-        })
-        .select(`
-          id,
-          email,
-          nombre,
-          rol_id,
-          estado,
-          gu_roles (
-            nombre
-          )
-        `)
-        .single()
-
-      if (error || !nuevoUsuario) {
-        console.error('Error al crear usuario:', error)
-        return null
-      }
-
-      // Crear token JWT
-      const payload: JWTPayload = {
-        userId: nuevoUsuario.id,
-        email: nuevoUsuario.email,
-        nombre: nuevoUsuario.nombre,
-        rolId: nuevoUsuario.rol_id,
-        rolNombre: rolNombreDe(nuevoUsuario.gu_roles)
-      }
-
-      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN })
-
-      return {
-        user: {
-          id: nuevoUsuario.id,
-          email: nuevoUsuario.email,
-          nombre: nuevoUsuario.nombre,
-          rol_id: nuevoUsuario.rol_id,
-          rol_nombre: rolNombreDe(nuevoUsuario.gu_roles),
-          estado: nuevoUsuario.estado
-        },
-        token
-      }
-    } catch (error) {
-      console.error('Error en signup:', error)
       return null
     }
   }

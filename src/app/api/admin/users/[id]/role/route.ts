@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/shared/permissions-server"
 import { isAdmin } from "@/shared/permissions"
 import { UserRole } from "@/models"
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/service"
 
 // PATCH /api/admin/users/[id]/role - Actualizar rol de un usuario (solo admin)
 export async function PATCH(

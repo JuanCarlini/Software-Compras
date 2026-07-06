@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase/service"
 import { Proveedor, EstadoProveedor } from "@/models"
 
 export class ProveedorService {

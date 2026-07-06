@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { CertificacionService } from "@/controllers/certificacion.controller"
+import { AuditService } from "@/lib/audit/audit.service"
 
 export async function GET() {
   try {
@@ -18,6 +19,12 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
     const nuevaCert = await CertificacionService.create(data)
+    await AuditService.registrarDesdeRequest({
+      tabla: "gu_certificaciones",
+      registroId: nuevaCert.id,
+      accion: "crear",
+      detalle: `Certificación ${nuevaCert.numero_cert} creada`,
+    })
     return NextResponse.json(nuevaCert, { status: 201 })
   } catch (error: any) {
     console.error("Error creating certificacion:", error)

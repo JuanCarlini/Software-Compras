@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { OrdenPagoService } from "@/controllers"
 import { CreateOrdenPagoSchema } from "@/shared/orden-pago-validation"
+import { AuditService } from "@/lib/audit/audit.service"
 
 // GET /api/ordenes-pago - Obtener todas las órdenes de pago
 export async function GET() {
@@ -23,7 +24,14 @@ export async function POST(request: NextRequest) {
     
     // Crear la orden
     const nuevaOrden = await OrdenPagoService.create(validatedData)
-    
+
+    await AuditService.registrarDesdeRequest({
+      tabla: "gu_ordenesdepago",
+      registroId: nuevaOrden.id,
+      accion: "crear",
+      detalle: `Orden de pago ${nuevaOrden.numero_op ?? nuevaOrden.id} creada`,
+    })
+
     return NextResponse.json(nuevaOrden, { status: 201 })
   } catch (error) {
     console.error("Error al crear orden de pago:", error)

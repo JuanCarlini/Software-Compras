@@ -1,8 +1,21 @@
 import { NextResponse } from "next/server"
-import { removeAuthCookie } from '@/lib/auth/auth.cookies'
+import { removeAuthCookie, getCurrentUser } from '@/lib/auth/auth.cookies'
+import { AuditService } from '@/lib/audit/audit.service'
 
 export async function POST() {
   try {
+    // Bitácora: cierre de sesión (T06) — resolver el usuario ANTES de borrar la cookie
+    const user = await getCurrentUser()
+    if (user) {
+      await AuditService.registrar({
+        usuarioId: user.id,
+        tabla: 'sesion',
+        registroId: user.id,
+        accion: 'logout',
+        detalle: `Cierre de sesión: ${user.email}`,
+      })
+    }
+
     // Eliminar cookie de autenticación
     await removeAuthCookie()
 

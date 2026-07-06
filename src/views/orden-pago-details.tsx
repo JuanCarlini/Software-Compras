@@ -9,7 +9,6 @@ import { Separator } from "@/views/ui/separator"
 import { formatDateShort } from "@/shared/date-utils"
 import { formatCurrency } from "@/shared/format-utils"
 import { StatusBadge } from "@/shared/status-badge"
-import { OrdenPagoService, ProveedorService } from "@/controllers"
 import { useAuth } from "@/shared/auth-context"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 import {
@@ -42,19 +41,20 @@ export function OrdenPagoDetails() {
     const fetchOrden = async () => {
       try {
         setLoading(true)
-        const data = await OrdenPagoService.getById(Number(id))
-        if (!data) {
+        const res = await fetch(`/api/ordenes-pago/${id}`)
+        if (!res.ok) {
           setError("Orden no encontrada")
           setOrden(null)
         } else {
+          const data = await res.json()
           setOrden(data)
-          
+
           // Cargar proveedor
           if (data.proveedor_id) {
-            const prov = await ProveedorService.getById(data.proveedor_id)
-            setProveedor(prov)
+            const provRes = await fetch(`/api/proveedores/${data.proveedor_id}`)
+            setProveedor(provRes.ok ? await provRes.json() : null)
           }
-          
+
           setError(null)
         }
       } catch (error) {
@@ -75,9 +75,13 @@ export function OrdenPagoDetails() {
     if (!orden) return
     setProcessing(true)
     try {
-      const updated = await OrdenPagoService.update(Number(id), { estado: 'aprobado' })
-      if (updated) {
-        setOrden(updated)
+      const res = await fetch(`/api/ordenes-pago/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: 'aprobado' }),
+      })
+      if (res.ok) {
+        setOrden(await res.json())
       }
     } catch (error) {
       console.error("Error al aprobar:", error)
@@ -90,9 +94,13 @@ export function OrdenPagoDetails() {
     if (!orden) return
     setProcessing(true)
     try {
-      const updated = await OrdenPagoService.update(Number(id), { estado: 'rechazado' })
-      if (updated) {
-        setOrden(updated)
+      const res = await fetch(`/api/ordenes-pago/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: 'rechazado' }),
+      })
+      if (res.ok) {
+        setOrden(await res.json())
       }
     } catch (error) {
       console.error("Error al rechazar:", error)
@@ -105,9 +113,13 @@ export function OrdenPagoDetails() {
     if (!orden) return
     setProcessing(true)
     try {
-      const updated = await OrdenPagoService.update(Number(id), { estado: 'pagado' })
-      if (updated) {
-        setOrden(updated)
+      const res = await fetch(`/api/ordenes-pago/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: 'pagado' }),
+      })
+      if (res.ok) {
+        setOrden(await res.json())
       }
     } catch (error) {
       console.error("Error al marcar como pagada:", error)

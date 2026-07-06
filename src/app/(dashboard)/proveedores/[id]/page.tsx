@@ -5,8 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { ProveedorDetails } from "@/views/proveedor-details"
 import { Card, CardContent } from "@/views/ui/card"
 import { Loader2 } from "lucide-react"
-import { Proveedor, EstadoProveedor } from "@/models"
-import { ProveedorService } from "@/controllers"
+import { Proveedor } from "@/models"
 
 export default function ProveedorDetailsPage() {
   const params = useParams()
@@ -21,12 +20,12 @@ export default function ProveedorDetailsPage() {
     const fetchProveedor = async () => {
       try {
         setLoading(true)
-        const data = await ProveedorService.getById(Number(proveedorId))
-        if (!data) {
+        const res = await fetch(`/api/proveedores/${proveedorId}`)
+        if (!res.ok) {
           setError("Proveedor no encontrado")
           return
         }
-        setProveedor(data)
+        setProveedor(await res.json())
         setError(null)
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error desconocido")
@@ -43,9 +42,9 @@ export default function ProveedorDetailsPage() {
   const handleActivar = async () => {
     if (!proveedor) return
     try {
-      const updatedProveedor = await ProveedorService.update(proveedor.id, { estado: EstadoProveedor.ACTIVO })
-      if (updatedProveedor) {
-        setProveedor(updatedProveedor)
+      const res = await fetch(`/api/proveedores/${proveedor.id}/activar`, { method: "PATCH" })
+      if (res.ok) {
+        setProveedor(await res.json())
       }
     } catch (error) {
       console.error("Error al activar proveedor:", error)
@@ -56,10 +55,10 @@ export default function ProveedorDetailsPage() {
   const handleSuspender = async () => {
     if (!proveedor) return
     try {
-      // La DB solo tiene activo/inactivo: "suspender" se materializa como inactivo
-      const updatedProveedor = await ProveedorService.update(proveedor.id, { estado: EstadoProveedor.INACTIVO })
-      if (updatedProveedor) {
-        setProveedor(updatedProveedor)
+      // La ruta materializa "suspender" como inactivo y chequea permisos por rol
+      const res = await fetch(`/api/proveedores/${proveedor.id}/suspender`, { method: "PATCH" })
+      if (res.ok) {
+        setProveedor(await res.json())
       }
     } catch (error) {
       console.error("Error al suspender proveedor:", error)

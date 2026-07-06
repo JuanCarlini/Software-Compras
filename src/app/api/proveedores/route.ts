@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ProveedorService } from "@/controllers"
+import { AuditService } from "@/lib/audit/audit.service"
 
 export async function GET() {
   try {
@@ -15,6 +16,12 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
     const newProveedor = await ProveedorService.create(data)
+    await AuditService.registrarDesdeRequest({
+      tabla: "gu_proveedores",
+      registroId: newProveedor.id,
+      accion: "crear",
+      detalle: `Proveedor ${newProveedor.nombre} creado`,
+    })
     return NextResponse.json(newProveedor, { status: 201 })
   } catch (error) {
     console.error("Error creating proveedor:", error)
