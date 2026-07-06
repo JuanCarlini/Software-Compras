@@ -16,6 +16,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# scratch / logs temporales
+scratch_*.log
+
 # env files
 .env*
 

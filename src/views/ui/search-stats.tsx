@@ -20,7 +20,7 @@ export function SearchStats({ totalItems, filteredItems, searchTerm, entityName 
         <>
           <span>Búsqueda:</span>
           <Badge variant="secondary" className="font-normal">
-            "{searchTerm}"
+            &ldquo;{searchTerm}&rdquo;
           </Badge>
         </>
       )}
