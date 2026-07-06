@@ -1,59 +1,44 @@
 "use client"
 
-import { Button } from "@/views/ui/button"
-import { Plus, BarChart3 } from "lucide-react"
-import Link from "next/link"
 import { useReportes } from "@/shared/use-reportes"
 import { ReportesDashboard } from "@/views/reportes-dashboard"
-import { ReportesList } from "@/views/reportes-list"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/views/ui/tabs"
+import { Card, CardContent } from "@/views/ui/card"
+import { Loader2 } from "lucide-react"
 
+// /reportes = dashboard de indicadores reales (calculados desde OC + proveedores).
+// El CRUD de "reportes guardados" era un mock en memoria y se eliminó (D1, 2026-07-06 d).
 export default function ReportesPage() {
-  const { estadisticas } = useReportes()
+  const { estadisticas, loading, error } = useReportes()
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Reportes</h1>
-          <p className="text-slate-600">Genera y consulta reportes del sistema</p>
-        </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" asChild>
-            <Link href="/reportes/dashboard">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Dashboard
-            </Link>
-          </Button>
-          <Button asChild>
-            <Link href="/reportes/nuevo">
-              <Plus className="h-4 w-4 mr-2" />
-              Generar Reporte
-            </Link>
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900">Reportes</h1>
+        <p className="text-slate-600">Indicadores y métricas del sistema</p>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="overview">Resumen</TabsTrigger>
-          <TabsTrigger value="reportes">Todos los Reportes</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview">
-          {estadisticas ? (
-            <ReportesDashboard />
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-slate-500">Cargando estadísticas...</p>
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="reportes">
-          <ReportesList />
-        </TabsContent>
-      </Tabs>
+      {loading ? (
+        <Card>
+          <CardContent className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Cargando estadísticas...</span>
+          </CardContent>
+        </Card>
+      ) : error ? (
+        <Card>
+          <CardContent className="text-center py-8">
+            <p className="text-red-600">Error: {error}</p>
+          </CardContent>
+        </Card>
+      ) : !estadisticas ? (
+        <Card>
+          <CardContent className="text-center py-8">
+            <p className="text-slate-500">No hay estadísticas disponibles</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <ReportesDashboard />
+      )}
     </div>
   )
 }

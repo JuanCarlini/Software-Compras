@@ -1,6 +1,6 @@
 "use client"
 
-import { BarChart3, Building2, CreditCard, Settings, ShoppingCart, Home, FileCheck, Receipt, Shield, LogOut, ClipboardList } from "lucide-react"
+import { BarChart3, Building2, CreditCard, ShoppingCart, Home, FileCheck, Receipt, Shield, LogOut, ClipboardList } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
@@ -54,11 +54,6 @@ const menuItems = [
     title: "Reportes",
     url: "/reportes",
     icon: BarChart3,
-  },
-  {
-    title: "Configuración",
-    url: "/configuración",
-    icon: Settings,
   },
 ]
 
