@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     return NextResponse.json(lineas || [])
   } catch (error) {
     console.error("Error al obtener líneas con items:", error)
-    return NextResponse.json([], { status: 200 })
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }
 

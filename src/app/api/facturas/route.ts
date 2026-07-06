@@ -12,7 +12,7 @@ export async function GET() {
     return NextResponse.json(facturas || [])
   } catch (error) {
     console.error("Error fetching facturas:", error)
-    return NextResponse.json([], { status: 200 })
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }
 

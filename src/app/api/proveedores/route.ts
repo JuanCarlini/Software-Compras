@@ -12,7 +12,7 @@ export async function GET() {
     return NextResponse.json(proveedores || [])
   } catch (error) {
     console.error("Error fetching proveedores:", error)
-    return NextResponse.json([], { status: 200 })
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
 }
 
