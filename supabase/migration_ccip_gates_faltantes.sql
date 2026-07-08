@@ -1,6 +1,13 @@
--- Migración: los gates del circuito CCIP que hoy viven SOLO en la app
--- Fecha: 2026-07-08 (PENDIENTE DE APLICAR — requiere OK explícito de Juan Andrés)
--- Escrita por el agente de backend, que NO tiene acceso a Supabase. Sin correr todavía.
+-- Migración: los gates del circuito CCIP que vivían SOLO en la app
+-- Fecha: 2026-07-08 — ✅ APLICADA Y VERIFICADA en "Gestion Uno v2" (ahhpzfoausrpfkumtzzx)
+-- Nombre de la migración en Supabase: ccip_06_gates_faltantes
+--
+-- RESULTADO: 11/11 verificaciones OK (ver bloque VERIFICACIÓN más abajo).
+--   - Los 8 casos negativos rebotan con SQLSTATE P0001 y el mensaje en español exacto.
+--   - #1c: con proveedor_id NULL el trigger lo rellena desde la OC (queda en 1). Gap #3 cerrado.
+--   - #6c/#6d: la OC en borrador acepta alta/edición/baja de líneas, y el DELETE en cascada
+--     de una OC con líneas pasa limpio.
+--   - Datos previos coherentes (0 filas malas), circuito demo intacto, advisor sin WARN nuevos.
 --
 -- CONTEXTO
 -- El schema CCIP (2026-07-07) dejó cuatro reglas duras como triggers: fn_oc_gate (>=1
@@ -31,8 +38,12 @@
 --    entre el chequeo y el INSERT (mismo motivo por el que fn_check_avance_100 usa FOR UPDATE).
 --  - Todo idempotente: CREATE OR REPLACE + DROP TRIGGER IF EXISTS.
 --
--- ⚠️ SIN VERIFICAR CONTRA LA DB REAL. Escrita a partir de src/lib/supabase/database.types.ts
---    y docs/SCHEMA_CIRCUITO_2026-07-07.md. Ver "PUNTOS A VERIFICAR" al final.
+-- SOBRE EL BRANCH "NOT FOUND => dejar pasar" (#2 y #6):
+--   gu_lineasdeordenesdecompra -> gu_ordenesdecompra y gu_lineasdeordenesdepago ->
+--   gu_ordenesdepago son ON DELETE CASCADE. Verificado experimentalmente en esta DB:
+--   en un borrado directo de la hija el trigger VE al padre; en un borrado en cascada
+--   NO lo ve (la fila padre ya se borró en el mismo comando). Por eso ese branch deja
+--   pasar la cascada en vez de bloquearla.
 
 BEGIN;
 
@@ -274,37 +285,28 @@ COMMIT;
 
 
 -- ===========================================================================
--- PUNTOS A VERIFICAR ANTES DE APLICAR (yo no pude)
+-- NOTAS
 -- ===========================================================================
--- 1. Nombres de trigger. Usé trg_*; si el schema CCIP ya usa otra convención, alinealos.
---    Ninguno de estos tres nombres debería existir, pero los DROP IF EXISTS lo cubren.
---
--- 2. El branch "NOT FOUND => dejar pasar" de #6 y #2 asume que, en un DELETE en cascada,
---    el trigger de la hija ve la fila padre YA borrada. Es lo que espero de Postgres
---    (la acción referencial corre después del delete del padre, con el command counter
---    avanzado), pero NO lo verifiqué. Probá #6d: si "borrar una OC en borrador con
---    líneas" falla con el mensaje del trigger, la premisa es falsa y hay que cambiar el
---    branch por una comprobación de pg_trigger_depth() o un guard explícito.
---    Si gu_lineasdeordenesdecompra NO tiene ON DELETE CASCADE, este punto es irrelevante.
---
--- 3. Filas existentes. Los triggers NO validan lo que ya está en la tabla. El circuito
---    demo (OC-00001 aprobada, CE-00001.1, FACT-00001 finalizada, OP-00001 pagada) es
---    coherente, así que no debería haber sorpresas. Vale un chequeo:
---      SELECT c.id FROM gu_certificaciones c JOIN gu_ordenesdecompra o ON o.id = c.orden_compra_id
---       WHERE o.estado <> 'aprobado' OR c.proveedor_id <> o.proveedor_id;   -- debe dar 0 filas
---      SELECT l.id FROM gu_lineasdeordenesdepago l JOIN gu_facturas f ON f.id = l.factura_id
---       WHERE f.estado <> 'finalizado';                                      -- debe dar 0 filas
---
--- 4. Alcance extra que metí sin que me lo pidieras (decidí que valía; sacalo si no):
---      - #1: coherencia de proveedor CE<->OC (y relleno de proveedor_id desde la OC).
+-- 1. Alcance extra al pedido original (tres gates), agregado porque salía del mismo
+--    INSERT a costo cero:
+--      - #1: coherencia de proveedor CE<->OC, y relleno de proveedor_id desde la OC.
 --      - #2: coherencia de proveedor y moneda factura<->OP, y LOP inmutable una vez que
 --            la OP salió de borrador (mismo argumento que #6: fn_op_gate ya validó las
---            sumas y cambiar las líneas después las invalida en silencio).
+--            sumas y cambiar las líneas después las invalidaría en silencio).
 --
--- 5. Lo que esta migración NO cubre y sigue siendo solo-app:
+-- 2. Lo que esta migración NO cubre y sigue siendo solo-app (bypasseable):
 --      - Finalizar una factura sin ninguna imputación (gap #5). No hay fn_fact_gate.
---      - Las líneas de certificación de una CE ya aprobada son mutables.
---    Decidilo aparte; no las agregué porque pediste tres.
+--      - Las líneas de una certificación ya aprobada son mutables (mismo agujero que #6,
+--        un nivel más abajo: cambiar avance_unidades post-aprobación mueve v_loc_rollup).
+--
+-- 3. Las pre-validaciones equivalentes en los *Service NO sobran: dan un error más rápido
+--    y más específico (con el código del item, el estado concreto). Pero ya no son la
+--    garantía — la garantía es esto. Los mensajes están redactados para que la app los
+--    devuelva tal cual: handle-route-error.ts mapea P0001 -> HTTP 422 con SQLERRM.
+--
+-- 4. Huérfano detectado al pasar: public.update_gu_items_updated_at no la usa ningún
+--    trigger (la reemplazó fn_set_updated_at en la reconstrucción CCIP). Es el único
+--    WARN que le queda al advisor de seguridad. Pendiente de decisión: DROP FUNCTION.
 
 
 -- ===========================================================================
