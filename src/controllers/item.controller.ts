@@ -12,8 +12,13 @@ export class ItemService {
     return ItemRepository.findAll()
   }
 
+  // El repo arma un filtro `.or(...)` de PostgREST concatenando este texto. Ahí la coma
+  // termina el valor y el paréntesis cierra el grupo: sin sanear, `?query=x,id.gt.0`
+  // inyecta una condición OR extra. Los comodines de LIKE (% _) no son un vector.
   static async search(query: string): Promise<Item[]> {
-    return ItemRepository.search(query)
+    const limpio = query.replace(/[,()"\\]/g, " ").replace(/\s+/g, " ").trim()
+    if (!limpio) return []
+    return ItemRepository.search(limpio)
   }
 
   static async getById(id: number): Promise<Item | null> {

@@ -27,13 +27,14 @@ export class ItemRepository {
     return data || []
   }
 
+  // `query` viene saneado por ItemService.search (la coma cortaría el filtro .or()).
   static async search(query: string): Promise<Item[]> {
     const supabase = createClient()
     const { data, error } = await supabase
       .from(TABLE)
       .select("*")
       .eq("is_active", true)
-      .or(`nombre.ilike.%${query}%,descripcion.ilike.%${query}%`)
+      .or(`codigo.ilike.%${query}%,nombre.ilike.%${query}%,descripcion.ilike.%${query}%`)
       .order("nombre", { ascending: true })
       .limit(20)
 
