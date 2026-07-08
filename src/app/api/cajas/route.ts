@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { CajaService } from "@/controllers"
 import { CreateCajaSchema } from "@/shared/caja-validation"
-import { requireAuth, requireAdmin } from "@/shared/permissions-server"
+import { requireAdmin } from "@/shared/permissions-server"
 import { handleRouteError } from "@/shared/handle-route-error"
 import { AuditService } from "@/lib/audit/audit.service"
 
-// GET /api/cajas - Cajas activas (cualquier usuario autenticado: la OP las necesita)
+// GET /api/cajas - Cajas activas (la OP las necesita; autentica el middleware)
 export async function GET(request: NextRequest) {
   try {
-    const { error: authError } = await requireAuth()
-    if (authError) return authError
-
     const incluirInactivas = request.nextUrl.searchParams.get("incluirInactivas") === "true"
     const cajas = incluirInactivas
       ? await CajaService.getAllIncludingInactive()

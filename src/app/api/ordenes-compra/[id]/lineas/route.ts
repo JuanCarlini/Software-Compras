@@ -1,92 +1,54 @@
 import { NextRequest, NextResponse } from "next/server"
 import { OrdenCompraService } from "@/controllers"
+import { CreateOrdenCompraLineaSchema } from "@/shared/orden-compra-validation"
 import { requireRole } from "@/shared/permissions-server"
 import { ROLES_ESCRITURA } from "@/shared/permissions"
-import { z } from "zod"
+import { parseId } from "@/shared/parse-id"
+import { handleRouteError } from "@/shared/handle-route-error"
 
 interface Params {
-  params: Promise<{
-    id: string
-  }>
+  params: Promise<{ id: string }>
 }
 
-// GET /api/ordenes-compra/[id]/lineas - Obtener líneas con información de items
+// GET /api/ordenes-compra/[id]/lineas - Líneas con el item del catálogo y su avance certificado
 export async function GET(request: NextRequest, { params }: Params) {
   try {
-    const { id } = await params
-    const ordenId = parseInt(id)
-    
-    if (isNaN(ordenId)) {
-      return NextResponse.json(
-        { error: "ID de orden inválido" },
-        { status: 400 }
-      )
-    }
+    const ordenId = parseId((await params).id)
 
-    // Obtener líneas con información de items del catálogo
-    const lineas = await OrdenCompraService.getLinesWithItems(ordenId)
-    
-    return NextResponse.json(lineas || [])
+    const [lineas, rollups] = await Promise.all([
+      OrdenCompraService.getLinesWithItems(ordenId),
+      OrdenCompraService.getLocRollups(ordenId),
+    ])
+
+    // El avance por línea lo publica v_loc_rollup (solo certificaciones aprobadas).
+    const porLinea = new Map(rollups.map((r) => [r.linea_oc_id, r]))
+    return NextResponse.json(
+      lineas.map((l) => ({
+        ...l,
+        unidades_certificadas: Number(porLinea.get(l.id)?.unidades_certificadas ?? 0),
+        unidades_pendientes: Number(porLinea.get(l.id)?.unidades_pendientes ?? l.cantidad),
+        estado_certificacion: porLinea.get(l.id)?.estado_certificacion ?? "sin",
+      }))
+    )
   } catch (error) {
-    console.error("Error al obtener líneas con items:", error)
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+    return handleRouteError(error, "GET /api/ordenes-compra/[id]/lineas")
   }
 }
 
-// Schema de validación para crear línea desde item
-const CreateLineaFromItemSchema = z.object({
-  item_id: z.number().positive("Item ID debe ser positivo"),
-  cantidad: z.number().positive("Cantidad debe ser mayor a 0"),
-  precio_unitario_neto: z.number().nonnegative("Precio no puede ser negativo").optional(),
-  iva_porcentaje: z.number().nonnegative("IVA no puede ser negativo").optional(),
-  descripcion: z.string().optional()
-})
-
-// POST /api/ordenes-compra/[id]/lineas - Crear línea desde item del catálogo
+// POST /api/ordenes-compra/[id]/lineas - Agregar línea eligiendo un item del catálogo.
+// Sin precio_unitario_neto se hereda el del proveedor; con precio, se guarda para él.
+// 422 si la OC ya no es editable o el item no tiene precio para ese proveedor.
 export async function POST(request: NextRequest, { params }: Params) {
   try {
     const { error: authError } = await requireRole(ROLES_ESCRITURA)
     if (authError) return authError
 
-    const { id } = await params
-    const ordenId = parseInt(id)
+    const ordenId = parseId((await params).id)
+    const validatedData = CreateOrdenCompraLineaSchema.parse(await request.json())
 
-    if (isNaN(ordenId)) {
-      return NextResponse.json(
-        { error: "ID de orden inválido" },
-        { status: 400 }
-      )
-    }
-
-    const body = await request.json()
-    
-    // Validar datos
-    const validatedData = CreateLineaFromItemSchema.parse(body)
-    
-    // Crear línea desde item
-    const nuevaLinea = await OrdenCompraService.createLineFromItem(ordenId, validatedData)
-    
+    const nuevaLinea = await OrdenCompraService.addLinea(ordenId, validatedData)
     return NextResponse.json(nuevaLinea, { status: 201 })
   } catch (error) {
-    console.error("Error al crear línea desde item:", error)
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Datos inválidos", details: error.errors },
-        { status: 400 }
-      )
-    }
-
-    if (error instanceof Error && error.message.includes("no encontrado")) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 404 }
-      )
-    }
-    
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "POST /api/ordenes-compra/[id]/lineas")
   }
 }

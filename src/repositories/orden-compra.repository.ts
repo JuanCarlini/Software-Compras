@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/service"
 import type { TablesUpdate } from "@/lib/supabase/database.types"
+import type { EstadoAprobacion, LocRollup, OcRollup } from "@/models"
 import {
   OrdenCompra,
   OrdenCompraLinea,
@@ -68,6 +69,32 @@ export class OrdenCompraRepository {
     const { data, error } = await supabase.from(TABLE).update(payload).eq("id", id).select().single()
     if (error) throw error
     return data as OrdenCompra
+  }
+
+  // Transición de estado. El gate (fn_oc_gate: >=1 línea) es un trigger: si rebota,
+  // el error sube como P0001 y la ruta lo traduce a 422 con el mensaje de la DB.
+  static async updateEstado(id: number, estado: EstadoAprobacion): Promise<OrdenCompra> {
+    const supabase = createClient()
+    const { data, error } = await supabase.from(TABLE).update({ estado }).eq("id", id).select().single()
+    if (error) throw error
+    return data as OrdenCompra
+  }
+
+  // Rollups: los publica la vista v_oc_rollup (security_invoker). No se recalculan en JS.
+  static async findRollupsByIds(ids: number[]): Promise<OcRollup[]> {
+    if (ids.length === 0) return []
+    const supabase = createClient()
+    const { data, error } = await supabase.from("v_oc_rollup").select("*").in("orden_compra_id", ids)
+    if (error) throw error
+    return data ?? []
+  }
+
+  // Rollup por línea (unidades certificadas/pendientes) para el detalle de la OC.
+  static async findLocRollups(ordenId: number): Promise<LocRollup[]> {
+    const supabase = createClient()
+    const { data, error } = await supabase.from("v_loc_rollup").select("*").eq("orden_compra_id", ordenId)
+    if (error) throw error
+    return data ?? []
   }
 
   static async deleteById(id: number): Promise<boolean> {

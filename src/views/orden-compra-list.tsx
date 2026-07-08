@@ -16,7 +16,7 @@ import { useAuth } from "@/shared/auth-context"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 
 export function OrdenCompraList() {
-  const { orders, loading, error, updateOrder } = useOrders()
+  const { orders, loading, error, cambiarEstadoOrden } = useOrders()
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
   const [updatingId, setUpdatingId] = useState<number | null>(null)
@@ -37,25 +37,18 @@ export function OrdenCompraList() {
     }
   )
 
-  const handleAprobar = async (id: number | string) => {
+  // El circuito no saltea etapas: de borrador se manda a aprobar, y recién de
+  // en_aprobacion se aprueba. Ir directo a 'aprobado' devuelve 409.
+  const handleTransicion = async (id: number | string, estado: string) => {
     try {
       setUpdatingId(Number(id))
-      await updateOrder(id, { estado: "aprobado" })
+      await cambiarEstadoOrden(id, estado)
     } catch (error) {
-      console.error("Error al aprobar orden:", error)
-      showErrorToast("Error al aprobar", error instanceof Error ? error.message : "Error desconocido")
-    } finally {
-      setUpdatingId(null)
-    }
-  }
-
-  const handleAnular = async (id: number | string) => {
-    try {
-      setUpdatingId(Number(id))
-      await updateOrder(id, { estado: "anulado" })
-    } catch (error) {
-      console.error("Error al anular orden:", error)
-      showErrorToast("Error al anular", error instanceof Error ? error.message : "Error desconocido")
+      console.error(`Error al pasar la orden a ${estado}:`, error)
+      showErrorToast(
+        "No se pudo cambiar el estado",
+        error instanceof Error ? error.message : "Error desconocido"
+      )
     } finally {
       setUpdatingId(null)
     }
@@ -161,13 +154,16 @@ export function OrdenCompraList() {
                       </Link>
                     </Button>
 
-                    {/* solo si está en borrador y el usuario tiene permisos */}
-                    {canAnular && orden.estado === "borrador" && (
+                    {/* borrador -> "mandar a aprobar"; en_aprobacion -> "aprobar". */}
+                    {canAnular && (orden.estado === "borrador" || orden.estado === "en_aprobacion") && (
                       <>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleAprobar(orden.id)}
+                          title={orden.estado === "borrador" ? "Mandar a aprobar" : "Aprobar"}
+                          onClick={() =>
+                            handleTransicion(orden.id, orden.estado === "borrador" ? "en_aprobacion" : "aprobado")
+                          }
                           disabled={updatingId === orden.id}
                         >
                           {updatingId === orden.id ? (
@@ -179,7 +175,8 @@ export function OrdenCompraList() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleAnular(orden.id)}
+                          title="Anular"
+                          onClick={() => handleTransicion(orden.id, "anulado")}
                           disabled={updatingId === orden.id}
                         >
                           {updatingId === orden.id ? (

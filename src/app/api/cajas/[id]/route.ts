@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { CajaService } from "@/controllers"
 import { UpdateCajaSchema } from "@/shared/caja-validation"
-import { requireAuth, requireAdmin } from "@/shared/permissions-server"
+import { requireAdmin } from "@/shared/permissions-server"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
 import { AuditService } from "@/lib/audit/audit.service"
@@ -10,12 +10,9 @@ interface Params {
   params: Promise<{ id: string }>
 }
 
-// GET /api/cajas/[id]
+// GET /api/cajas/[id] — autentica el middleware
 export async function GET(request: NextRequest, { params }: Params) {
   try {
-    const { error: authError } = await requireAuth()
-    if (authError) return authError
-
     const id = parseId((await params).id)
     const caja = await CajaService.getById(id)
     if (!caja) return NextResponse.json({ error: "Caja no encontrada" }, { status: 404 })

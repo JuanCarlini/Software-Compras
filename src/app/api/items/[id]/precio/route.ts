@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ItemPrecioRepository } from "@/repositories/item-precio.repository"
-import { requireAuth } from "@/shared/permissions-server"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
 import { HttpError } from "@/shared/http-error"
 
 // GET /api/items/[id]/precio?proveedorId=N — precio de este item PARA ese proveedor.
 // 404 si el par no tiene precio cargado todavía: la UI pide entonces uno y la primera
-// línea de OC que lo use lo deja guardado (alta al vuelo).
+// línea de OC que lo use lo deja guardado (alta al vuelo). Autentica el middleware.
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { error: authError } = await requireAuth()
-    if (authError) return authError
-
     const itemId = parseId((await params).id)
     const proveedorParam = request.nextUrl.searchParams.get("proveedorId")
     if (!proveedorParam) throw new HttpError(400, "Falta el parámetro proveedorId")

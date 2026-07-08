@@ -23,14 +23,11 @@ export const CreateOrdenCompraSchema = z.object({
   lineas: z.array(CreateOrdenCompraLineaSchema).optional(),
 })
 
-// El update es solo de cabecera: las líneas tienen sus propias rutas.
-// TODO(F3): sacar 'estado' de acá cuando exista PATCH /api/ordenes-compra/[id]/estado.
-// Se mantiene mientras tanto porque Zod descarta las claves desconocidas en silencio:
-// quitarlo antes de tener la ruta nueva rompería "aprobar" sin devolver ningún error.
-export const UpdateOrdenCompraSchema = CreateOrdenCompraSchema
-  .omit({ lineas: true })
-  .partial()
-  .extend({ estado: z.enum(ESTADOS_APROBACION).optional() })
+// El update es solo de cabecera. 'estado' NO va acá: se cambia por
+// PATCH /api/ordenes-compra/[id]/estado, que valida el grafo y el rol del destino.
+// (Zod descarta las claves desconocidas en silencio, así que un cliente viejo que
+// mande {estado} no rompe: simplemente no cambia el estado.)
+export const UpdateOrdenCompraSchema = CreateOrdenCompraSchema.omit({ lineas: true }).partial()
 
 // Body de la transición de estado.
 export const CambiarEstadoOCSchema = z.object({ estado: z.enum(ESTADOS_APROBACION) })
