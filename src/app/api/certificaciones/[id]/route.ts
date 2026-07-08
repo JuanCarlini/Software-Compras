@@ -1,111 +1,82 @@
 import { NextRequest, NextResponse } from "next/server"
 import { CertificacionService } from "@/controllers/certificacion.controller"
-import { requireAuth, requireRole } from "@/shared/permissions-server"
-import { canAnularDocumento, stringToUserRole, ROLES_DESTRUCTIVO } from "@/shared/permissions"
-import { UserRole } from "@/models"
+import { UpdateCertificacionSchema } from "@/shared/certificacion-validation"
+import { requireRole } from "@/shared/permissions-server"
+import { ROLES_DESTRUCTIVO, ROLES_ESCRITURA } from "@/shared/permissions"
+import { parseId } from "@/shared/parse-id"
+import { handleRouteError } from "@/shared/handle-route-error"
 import { AuditService } from "@/lib/audit/audit.service"
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+interface Params {
+  params: Promise<{ id: string }>
+}
+
+// GET /api/certificaciones/[id] - Cabecera + líneas derivadas + rollup de facturación
+export async function GET(request: NextRequest, { params }: Params) {
   try {
-    const { id } = await params
-    const cert = await CertificacionService.getById(parseInt(id))
-    
+    const id = parseId((await params).id)
+
+    const cert = await CertificacionService.getById(id)
     if (!cert) {
-      return NextResponse.json(
-        { error: "Certificación no encontrada" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Certificación no encontrada" }, { status: 404 })
     }
-    
+
     return NextResponse.json(cert)
   } catch (error) {
-    console.error("Error fetching certificacion:", error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "GET /api/certificaciones/[id]")
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// PUT /api/certificaciones/[id] - Editar la cabecera (el estado va por PATCH /estado)
+export async function PUT(request: NextRequest, { params }: Params) {
   try {
-    // Verificar autenticación
-    const { error: authError, user } = await requireAuth()
+    const { error: authError, user } = await requireRole(ROLES_ESCRITURA)
     if (authError) return authError
 
-    const { id } = await params
-    const data = await request.json()
+    const id = parseId((await params).id)
+    const validatedData = UpdateCertificacionSchema.parse(await request.json())
 
-    // Si se intenta cambiar a estado rechazado o aprobado, verificar permisos
-    const userRole = stringToUserRole(user!.rol)
-    if ((data.estado === "rechazado" || data.estado === "aprobado") && !canAnularDocumento(userRole)) {
-      return NextResponse.json(
-        { error: "No tienes permisos para aprobar o rechazar certificaciones" },
-        { status: 403 }
-      )
-    }
-
-    const cert = await CertificacionService.update(parseInt(id), data)
-
+    const cert = await CertificacionService.update(id, validatedData)
     if (!cert) {
-      return NextResponse.json(
-        { error: "Error al actualizar certificación" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Certificación no encontrada" }, { status: 404 })
     }
 
-    // Bitácora: la acción refleja el cambio de estado si lo hubo (T06)
-    const accion = data.estado === "aprobado" ? "aprobar"
-      : data.estado === "rechazado" ? "rechazar"
-      : "actualizar"
     await AuditService.registrar({
       usuarioId: user!.id,
       tabla: "gu_certificaciones",
-      registroId: parseInt(id),
-      accion,
-      detalle: `Certificación ${cert.numero_cert ?? id}: ${accion}`,
+      registroId: id,
+      accion: "actualizar",
+      detalle: `Certificación ${cert.numero_cert ?? id}: actualizar`,
     })
 
     return NextResponse.json(cert)
   } catch (error) {
-    console.error("Error updating certificacion:", error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "PUT /api/certificaciones/[id]")
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// DELETE /api/certificaciones/[id]
+export async function DELETE(request: NextRequest, { params }: Params) {
   try {
     const { error: authError } = await requireRole(ROLES_DESTRUCTIVO)
     if (authError) return authError
 
-    const { id } = await params
-    const success = await CertificacionService.delete(parseInt(id))
-    
+    const id = parseId((await params).id)
+
+    const success = await CertificacionService.delete(id)
     if (!success) {
-      return NextResponse.json(
-        { error: "Error al eliminar certificación" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Certificación no encontrada" }, { status: 404 })
     }
-    
-    return NextResponse.json({ success: true })
+
+    await AuditService.registrarDesdeRequest({
+      tabla: "gu_certificaciones",
+      registroId: id,
+      accion: "eliminar",
+      detalle: `Certificación #${id} eliminada`,
+    })
+
+    return NextResponse.json({ message: "Certificación eliminada correctamente" })
   } catch (error) {
-    console.error("Error deleting certificacion:", error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "DELETE /api/certificaciones/[id]")
   }
 }

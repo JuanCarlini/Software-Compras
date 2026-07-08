@@ -1,26 +1,21 @@
 import { NextRequest, NextResponse } from "next/server"
 import { CertificacionService } from "@/controllers/certificacion.controller"
+import { parseId } from "@/shared/parse-id"
+import { handleRouteError } from "@/shared/handle-route-error"
+import { HttpError } from "@/shared/http-error"
 
-// GET /api/certificaciones/lineas-oc-disponibles?proveedorId=N
-// Líneas de OCs aprobadas del proveedor con su saldo certificable
+// GET /api/certificaciones/lineas-oc-disponibles?ordenCompraId=N
+// Líneas de esa OC con su saldo certificable (unidades certificadas / pendientes), leído
+// de v_loc_rollup. Antes se consultaba por proveedorId, cuando una certificación podía
+// cruzar varias OCs; en CCIP cuelga de UNA sola.
 export async function GET(request: NextRequest) {
   try {
-    const proveedorId = request.nextUrl.searchParams.get("proveedorId")
+    const param = request.nextUrl.searchParams.get("ordenCompraId")
+    if (!param) throw new HttpError(400, "Falta el parámetro ordenCompraId")
 
-    if (!proveedorId) {
-      return NextResponse.json(
-        { error: "proveedorId es requerido" },
-        { status: 400 }
-      )
-    }
-
-    const lineas = await CertificacionService.getLineasOCDisponibles(parseInt(proveedorId))
-    return NextResponse.json(lineas || [])
+    const lineas = await CertificacionService.getLineasDisponibles(parseId(param))
+    return NextResponse.json(lineas)
   } catch (error) {
-    console.error("Error fetching líneas de OC disponibles:", error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "GET /api/certificaciones/lineas-oc-disponibles")
   }
 }

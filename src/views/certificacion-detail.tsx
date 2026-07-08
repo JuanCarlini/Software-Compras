@@ -56,31 +56,38 @@ export function CertificacionDetail({ params }: Props) {
     fetchCertificacion()
   }, [id])
 
+  // Las transiciones tienen ruta propia: el PUT solo edita la cabecera. Un 422 trae el
+  // mensaje del trigger en español (regla del 100%, OC no aprobada); un 409, una
+  // transición imposible (el circuito no saltea etapas).
   const cambiarEstado = async (nuevoEstado: string) => {
     setUpdating(true)
     try {
-      const response = await fetch(`/api/certificaciones/${id}`, {
-        method: "PUT",
+      const response = await fetch(`/api/certificaciones/${id}/estado`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ estado: nuevoEstado }),
       })
 
-      if (!response.ok) throw new Error("Error al actualizar estado")
-
       const data = await response.json()
+      if (!response.ok) throw new Error(data.error || "Error al actualizar estado")
+
       setCert(data)
-      
+
       const mensajes: Record<string, string> = {
+        en_aprobacion: "Certificación enviada a aprobación",
         aprobado: "Certificación aprobada correctamente",
         rechazado: "Certificación rechazada",
-        borrador: "Certificación marcada como borrador"
+        anulado: "Certificación anulada",
       }
-      
+
       showSuccessToast("Éxito", mensajes[nuevoEstado] || "Estado actualizado")
       setShowApproveDialog(false)
       setShowRejectDialog(false)
     } catch (error) {
-      showErrorToast("Error", "No se pudo actualizar el estado")
+      showErrorToast(
+        "No se pudo cambiar el estado",
+        error instanceof Error ? error.message : "Error desconocido"
+      )
     } finally {
       setUpdating(false)
     }
@@ -100,8 +107,12 @@ export function CertificacionDetail({ params }: Props) {
   if (loading) return <div className="text-center py-8">Cargando...</div>
   if (!cert) return <div className="text-center py-8">Certificación no encontrada</div>
 
-  const puedeAprobar = cert.estado === "borrador"
-  const puedeRechazar = cert.estado === "borrador"
+  // El circuito no saltea etapas: de borrador se manda a aprobar; recién de en_aprobacion
+  // se aprueba. Ir de borrador directo a aprobado devuelve 409.
+  const esBorrador = cert.estado === "borrador"
+  const puedeMandarAAprobar = esBorrador
+  const puedeAprobar = cert.estado === "en_aprobacion"
+  const puedeRechazar = cert.estado === "en_aprobacion"
 
   return (
     <div className="space-y-6">
@@ -110,8 +121,15 @@ export function CertificacionDetail({ params }: Props) {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Volver
         </Button>
-        
+
         <div className="flex gap-2">
+          {puedeMandarAAprobar && (
+            <Button onClick={() => cambiarEstado("en_aprobacion")} disabled={updating}>
+              <Check className="h-4 w-4 mr-2" />
+              Mandar a aprobar
+            </Button>
+          )}
+
           {canModify && puedeAprobar && (
             <Button
               onClick={() => setShowApproveDialog(true)}
@@ -162,11 +180,12 @@ export function CertificacionDetail({ params }: Props) {
               <div className="flex items-start gap-3">
                 <Building2 className="h-5 w-5 text-slate-400 mt-0.5" />
                 <div>
-                  <div className="text-sm text-slate-600">Proyecto</div>
-                  <div className="font-semibold">{cert.proyecto_nombre ?? "—"}</div>
-                  {cert.proyecto_codigo && (
+                  {/* La CE ya no cuelga de un proyecto: cuelga de UNA orden de compra. */}
+                  <div className="text-sm text-slate-600">Orden de compra</div>
+                  <div className="font-semibold">{cert.numero_oc ?? "—"}</div>
+                  {cert.estado_facturacion && (
                     <Badge variant="outline" className="mt-1">
-                      {cert.proyecto_codigo}
+                      Facturación: {cert.estado_facturacion}
                     </Badge>
                   )}
                 </div>

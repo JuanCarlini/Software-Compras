@@ -78,11 +78,12 @@ export function CertificacionesList() {
                     </CardTitle>
                     <div className="flex flex-col gap-2 text-sm text-slate-600">
                       <div className="flex items-center gap-2">
+                        {/* La CE cuelga de una OC, ya no de un proyecto. */}
                         <Building2 className="h-4 w-4" />
-                        <span>{cert.proyecto_nombre || 'Sin proyecto'}</span>
-                        {cert.proyecto_codigo && (
+                        <span>{cert.numero_oc || 'Sin OC'}</span>
+                        {cert.estado_facturacion && (
                           <Badge variant="outline" className="ml-2">
-                            {cert.proyecto_codigo}
+                            Facturación: {cert.estado_facturacion}
                           </Badge>
                         )}
                       </div>
