@@ -88,7 +88,11 @@ export function FacturasList() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                        <span>{new Date(factura.fecha_factura).toLocaleDateString('es-AR')}</span>
+                        <span>
+                          {factura.fecha_emision
+                            ? new Date(factura.fecha_emision).toLocaleDateString('es-AR')
+                            : '—'}
+                        </span>
                       </div>
                     </div>
                   </div>

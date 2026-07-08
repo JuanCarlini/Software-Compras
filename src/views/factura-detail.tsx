@@ -56,29 +56,25 @@ export function FacturaDetail({ params }: Props) {
     fetchFactura()
   }, [id])
 
+  // FACT no tiene aprobación intermedia: borrador -> finalizado (habilita pagar) | anulado.
+  // Finalizar exige >=1 imputación; un 422 trae ese mensaje o el del trigger de imputación.
   const cambiarEstado = async (nuevoEstado: string) => {
     setUpdating(true)
     try {
-      const response = await fetch(`/api/facturas/${id}`, {
-        method: "PUT",
+      const response = await fetch(`/api/facturas/${id}/estado`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ estado: nuevoEstado }),
       })
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Error al actualizar factura")
-      }
-
       const updated = await response.json()
+      if (!response.ok) throw new Error(updated.error || "Error al actualizar factura")
+
       setFactura(updated)
-      showSuccessToast(
-        "Éxito",
-        `Factura ${nuevoEstado === "aprobado" ? "aprobada" : "rechazada"} correctamente`
-      )
+      showSuccessToast("Éxito", nuevoEstado === "finalizado" ? "Factura finalizada" : "Factura anulada")
     } catch (error) {
       showErrorToast(
-        "Error",
+        "No se pudo cambiar el estado",
         error instanceof Error ? error.message : "Error al actualizar factura"
       )
     } finally {
@@ -91,11 +87,10 @@ export function FacturaDetail({ params }: Props) {
   const getEstadoBadge = (estado: string) => {
     const variants: Record<string, { variant: any; label: string }> = {
       borrador: { variant: "secondary", label: "Borrador" },
-      aprobado: { variant: "default", label: "Aprobado" },
-      rechazado: { variant: "destructive", label: "Rechazado" },
+      finalizado: { variant: "default", label: "Finalizado" },
       anulado: { variant: "outline", label: "Anulado" }
     }
-    
+
     const config = variants[estado] || variants.borrador
     return <Badge variant={config.variant}>{config.label}</Badge>
   }
@@ -111,7 +106,7 @@ export function FacturaDetail({ params }: Props) {
           Volver
         </Button>
 
-        {canModify && factura.estado === "borrador" && (
+        {factura.estado === "borrador" && (
           <div className="flex gap-2">
             <Button
               onClick={() => setShowApproveDialog(true)}
@@ -119,16 +114,14 @@ export function FacturaDetail({ params }: Props) {
               className="bg-green-600 hover:bg-green-700"
             >
               <Check className="h-4 w-4 mr-2" />
-              Aprobar
+              Finalizar
             </Button>
-            <Button
-              onClick={() => setShowRejectDialog(true)}
-              disabled={updating}
-              variant="destructive"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Rechazar
-            </Button>
+            {canModify && (
+              <Button onClick={() => setShowRejectDialog(true)} disabled={updating} variant="destructive">
+                <X className="h-4 w-4 mr-2" />
+                Anular
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -180,9 +173,11 @@ export function FacturaDetail({ params }: Props) {
               <div className="flex items-start gap-3">
                 <Calendar className="h-5 w-5 text-slate-400 mt-0.5" />
                 <div>
-                  <div className="text-sm text-slate-600">Fecha de Factura</div>
+                  <div className="text-sm text-slate-600">Fecha de emisión</div>
                   <div className="font-semibold">
-                    {new Date(factura.fecha_factura).toLocaleDateString("es-AR")}
+                    {factura.fecha_emision
+                      ? new Date(factura.fecha_emision).toLocaleDateString("es-AR")
+                      : "—"}
                   </div>
                 </div>
               </div>
@@ -221,32 +216,32 @@ export function FacturaDetail({ params }: Props) {
         </CardContent>
       </Card>
 
-      {factura.certificaciones && factura.certificaciones.length > 0 && (
+      {factura.imputaciones && factura.imputaciones.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileCheck className="h-5 w-5" />
-              Certificaciones Asociadas
+              Certificaciones imputadas
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {factura.certificaciones.map((cert: any) => (
+              {factura.imputaciones.map((imp: any) => (
                 <div
-                  key={cert.id}
+                  key={imp.certificacion_id}
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 cursor-pointer"
-                  onClick={() => router.push(`/certificaciones/${cert.id}`)}
+                  onClick={() => router.push(`/certificaciones/${imp.certificacion_id}`)}
                 >
                   <div>
-                    <div className="font-semibold">{cert.numero_cert}</div>
+                    <div className="font-semibold">{imp.gu_certificaciones?.numero_cert}</div>
                     <div className="text-sm text-slate-600">
-                      Fecha: {new Date(cert.fecha_cert).toLocaleDateString('es-AR')}
+                      Certificado: ${Number(imp.gu_certificaciones?.total_con_iva ?? 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                     </div>
                   </div>
                   <div className="text-right">
-                    <Badge>Aprobado</Badge>
+                    <div className="text-xs text-slate-500">Imputado</div>
                     <div className="text-sm font-medium mt-1">
-                      ${Number(cert.total_con_iva ?? 0).toLocaleString("es-AR", {
+                      ${Number(imp.monto_asignado ?? 0).toLocaleString("es-AR", {
                         minimumFractionDigits: 2,
                       })}
                     </div>
@@ -306,18 +301,19 @@ export function FacturaDetail({ params }: Props) {
       <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Aprobar factura</AlertDialogTitle>
+            <AlertDialogTitle>Finalizar factura</AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Estás seguro de que deseas aprobar esta factura? Esta acción no se puede deshacer.
+              Al finalizar, la factura queda habilitada para pagarse. Requiere al menos una
+              certificación imputada. Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => cambiarEstado("aprobado")}
+              onClick={() => cambiarEstado("finalizado")}
               className="bg-green-600 hover:bg-green-700"
             >
-              Aprobar
+              Finalizar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -326,18 +322,18 @@ export function FacturaDetail({ params }: Props) {
       <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Rechazar factura</AlertDialogTitle>
+            <AlertDialogTitle>Anular factura</AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Estás seguro de que deseas rechazar esta factura? Esta acción no se puede deshacer.
+              ¿Estás seguro de que deseas anular esta factura? Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => cambiarEstado("rechazado")}
+              onClick={() => cambiarEstado("anulado")}
               className="bg-red-600 hover:bg-red-700"
             >
-              Rechazar
+              Anular
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
