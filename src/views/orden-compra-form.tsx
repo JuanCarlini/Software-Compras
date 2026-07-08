@@ -397,11 +397,8 @@ export function OrdenCompraForm() {
                     disabled={isLoading}
                     placeholder="0.00"
                   />
-                  {selectedItem?.precio_sugerido && (
-                    <p className="text-xs text-muted-foreground">
-                      Precio sugerido: ${selectedItem.precio_sugerido.toFixed(2)}
-                    </p>
-                  )}
+                  {/* TODO(F3): mostrar el precio del item PARA ESTE PROVEEDOR
+                      (GET /api/items/[id]/precio?proveedorId=). El item ya no tiene precio propio. */}
                 </div>
                 <div className="flex items-end">
                   <Button type="button" onClick={agregarItem} disabled={isLoading} className="w-full">

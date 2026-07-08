@@ -12,10 +12,10 @@ export async function GET() {
       )
     }
 
-    // Mapear el usuario al formato esperado por el frontend
+    // Mapear el usuario al formato esperado por el frontend (models/user.model.ts AuthUser)
     return NextResponse.json({
       user: {
-        id: user.id.toString(),
+        id: user.id,
         email: user.email,
         nombre: user.nombre,
         rol: user.rol_nombre?.toLowerCase() || 'usuario'

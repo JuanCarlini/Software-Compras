@@ -35,16 +35,13 @@ export class FacturaService {
     return FacturaRepository.findCertificacionesAprobadas(proveedorId)
   }
 
+  // numero_factura (FACT-N) lo genera la DB; estado lo fija el server (S2).
   static async create(data: any) {
     const { lineas, certificaciones_ids, ...facturaData } = data
 
-    // Número automático FACT-YYYY-NNN (regla; el último número lo trae el repo)
-    const numero_factura = FacturaService.siguienteNumero(await FacturaRepository.findLastNumero())
-
     const nuevaFactura = await FacturaRepository.insert({
       ...facturaData,
-      numero_factura,
-      estado: "borrador", // S2: el estado inicial lo fija el server, nunca el cliente
+      estado: "borrador",
     })
 
     // Líneas de la factura
@@ -61,23 +58,6 @@ export class FacturaService {
     )
 
     return nuevaFactura
-  }
-
-  // FACT-YYYY-NNN: incrementa dentro del año en curso, reinicia en 001 al cambiar de año.
-  // (Antes el default con tabla vacía estaba hardcodeado a 'FACT-2025-001' — P5; ahora usa el año corriente.)
-  private static siguienteNumero(ultimo: string | null): string {
-    const year = new Date().getFullYear()
-    if (ultimo) {
-      const match = ultimo.match(/FACT-(\d{4})-(\d{3})/)
-      if (match) {
-        const lastYear = parseInt(match[1])
-        const lastNum = parseInt(match[2])
-        if (year === lastYear) {
-          return `FACT-${year}-${(lastNum + 1).toString().padStart(3, "0")}`
-        }
-      }
-    }
-    return `FACT-${year}-001`
   }
 
   static async update(id: number, data: any) {

@@ -41,23 +41,16 @@ export function ItemSelector({
 }: ItemSelectorProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
 
+  // TODO(F3): el item ya no tiene precio_sugerido — el precio vive en
+  // gu_item_proveedor_precio (por proveedor). Recablear onPriceAutoFill contra
+  // GET /api/items/[id]/precio?proveedorId= cuando exista esa ruta.
   const handleItemCreated = (newItem: Item) => {
     // Seleccionar automáticamente el item recién creado
     onChange(newItem.id, newItem)
-    
-    // Autocompletar precio si está disponible
-    if (onPriceAutoFill && newItem.precio_sugerido) {
-      onPriceAutoFill(newItem.precio_sugerido)
-    }
   }
 
   const handleItemChange = (itemId: number | null, item: Item | null) => {
     onChange(itemId, item)
-    
-    // Autocompletar precio si está disponible
-    if (onPriceAutoFill && item?.precio_sugerido) {
-      onPriceAutoFill(item.precio_sugerido)
-    }
   }
 
   return (

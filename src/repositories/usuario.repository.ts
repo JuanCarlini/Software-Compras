@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/service"
+import type { TablesInsert, TablesUpdate } from "@/lib/supabase/database.types"
 
 const TABLE = "gu_usuario"
 // Nunca exponer password_hash: todas las lecturas de vuelta usan esta proyección.
@@ -14,20 +15,14 @@ export class UsuarioRepository {
     return (data as { id: number } | null) ?? null
   }
 
-  static async insert(usuario: {
-    nombre: string
-    email: string
-    password_hash: string
-    rol_id: number
-    estado: string
-  }): Promise<any> {
+  static async insert(usuario: TablesInsert<"gu_usuario">): Promise<any> {
     const supabase = createClient()
     const { data, error } = await supabase.from(TABLE).insert(usuario).select(SELECT_SIN_HASH).single()
     if (error) throw error
     return data
   }
 
-  static async update(id: number, data: Record<string, unknown>): Promise<any> {
+  static async update(id: number, data: TablesUpdate<"gu_usuario">): Promise<any> {
     const supabase = createClient()
     const { data: actualizado, error } = await supabase
       .from(TABLE)

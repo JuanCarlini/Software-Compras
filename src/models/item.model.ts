@@ -1,37 +1,20 @@
-// Item Model - Catálogo de productos y servicios reutilizables
+import type { Database } from "@/lib/supabase/database.types"
 
-export interface Item {
-  id: number
-  nombre: string
-  descripcion?: string | null
-  precio_sugerido?: number | null
-  unidad_medida?: string | null
-  categoria?: string | null
-  is_active: boolean
-  created_by?: number | null
-  created_at: string
-  updated_at: string
-}
+type T = Database["public"]["Tables"]
 
-export interface CreateItemDTO {
-  nombre: string
-  descripcion?: string | null
-  precio_sugerido?: number | null
-  unidad_medida?: string | null
-  categoria?: string | null
-  created_by?: number | null
-}
+// El item es agnóstico al proveedor: el precio vive en gu_item_proveedor_precio (N:M).
+// Por eso se fue `precio_sugerido`. `codigo` es UNIQUE y requerido.
+export type Item = T["gu_items"]["Row"]
+export type ItemProveedorPrecio = T["gu_item_proveedor_precio"]["Row"]
 
-export interface UpdateItemDTO {
-  nombre?: string
-  descripcion?: string | null
-  precio_sugerido?: number | null
-  unidad_medida?: string | null
-  categoria?: string | null
-  is_active?: boolean
-}
+export type CreateItemDTO = Omit<
+  T["gu_items"]["Insert"],
+  "id" | "is_active" | "created_at" | "updated_at"
+>
 
-// Categorías comunes para items (puedes expandir según necesidad)
+export type UpdateItemDTO = Omit<T["gu_items"]["Update"], "id" | "created_at" | "updated_at">
+
+// Categorías comunes para items
 export enum ItemCategoria {
   MATERIALES = 'Materiales',
   SERVICIOS = 'Servicios',

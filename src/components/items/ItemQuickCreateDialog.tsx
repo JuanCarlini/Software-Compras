@@ -54,12 +54,11 @@ export function ItemQuickCreateDialog({
   const form = useForm<CreateItemFormData>({
     resolver: zodResolver(CreateItemSchema),
     defaultValues: {
+      codigo: "",
       nombre: "",
       descripcion: null,
-      precio_sugerido: undefined,
       unidad_medida: null,
       categoria: null,
-      created_by: userId || undefined,
     },
   })
 
@@ -67,23 +66,13 @@ export function ItemQuickCreateDialog({
     setIsLoading(true)
 
     try {
-      // Preparar datos sin created_by si no hay usuario
-      const payload = {
-        ...data,
-        created_by: userId || undefined
-      }
-      
-      // Eliminar created_by si es undefined
-      if (!payload.created_by) {
-        delete payload.created_by
-      }
-
+      // created_by lo fija el server desde el JWT (S2); el cliente no lo manda.
       const response = await fetch("/api/items", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(data),
       })
 
       if (!response.ok) {
@@ -105,12 +94,11 @@ export function ItemQuickCreateDialog({
 
       // Cerrar el dialog y notificar
       form.reset({
+        codigo: "",
         nombre: "",
         descripcion: null,
-        precio_sugerido: undefined,
         unidad_medida: null,
         categoria: null,
-        created_by: userId || undefined,
       })
       onOpenChange(false)
       onItemCreated?.(nuevoItem)
@@ -180,24 +168,23 @@ export function ItemQuickCreateDialog({
               )}
             />
 
-            {/* Precio Sugerido y Unidad de Medida en la misma fila */}
+            {/* Código y Unidad de Medida en la misma fila.
+                El precio ya no es del item: vive en gu_item_proveedor_precio (por proveedor)
+                y se carga al vuelo desde la línea de OC. */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="precio_sugerido"
+                name="codigo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Precio Sugerido</FormLabel>
+                    <FormLabel>
+                      Código <span className="text-red-500">*</span>
+                    </FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
+                        placeholder="COD-0001"
                         {...field}
                         value={field.value || ""}
-                        onChange={(e) =>
-                          field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)
-                        }
                         disabled={isLoading}
                       />
                     </FormControl>

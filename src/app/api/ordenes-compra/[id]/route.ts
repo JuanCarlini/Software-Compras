@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { OrdenCompraService } from "@/controllers"
-import { UpdateOrdenCompraSchema, OrdenCompraParamsSchema } from "@/shared/orden-compra-validation"
+import { UpdateOrdenCompraSchema } from "@/shared/orden-compra-validation"
 import { requireAuth, requireRole } from "@/shared/permissions-server"
 import { canAnularDocumento, stringToUserRole, ROLES_DESTRUCTIVO } from "@/shared/permissions"
-import { UserRole } from "@/models"
+import { parseId } from "@/shared/parse-id"
+import { handleRouteError } from "@/shared/handle-route-error"
 import { AuditService } from "@/lib/audit/audit.service"
 
 // GET /api/ordenes-compra/[id] - Obtener una orden específica
@@ -12,25 +13,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const resolvedParams = await params
-    const { id } = OrdenCompraParamsSchema.parse(resolvedParams)
-    
-    const orden = await OrdenCompraService.getById(Number(id))
-    
+    const id = parseId((await params).id)
+
+    const orden = await OrdenCompraService.getById(id)
     if (!orden) {
-      return NextResponse.json(
-        { error: "Orden de compra no encontrada" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Orden de compra no encontrada" }, { status: 404 })
     }
-    
+
     return NextResponse.json(orden)
   } catch (error) {
-    console.error("Error al obtener orden:", error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "GET /api/ordenes-compra/[id]")
   }
 }
 
@@ -40,16 +32,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verificar autenticación
     const { error: authError, user } = await requireAuth()
     if (authError) return authError
 
-    const resolvedParams = await params
-    const { id } = OrdenCompraParamsSchema.parse(resolvedParams)
-    const body = await request.json()
-
-    // Validar datos de entrada
-    const validatedData = UpdateOrdenCompraSchema.parse(body)
+    const id = parseId((await params).id)
+    const validatedData = UpdateOrdenCompraSchema.parse(await request.json())
 
     // Si se intenta anular, verificar permisos
     const userRole = stringToUserRole(user!.rol)
@@ -60,14 +47,9 @@ export async function PUT(
       )
     }
 
-    // Actualizar la orden
-    const ordenActualizada = await OrdenCompraService.update(Number(id), validatedData)
-
+    const ordenActualizada = await OrdenCompraService.update(id, validatedData)
     if (!ordenActualizada) {
-      return NextResponse.json(
-        { error: "Orden de compra no encontrada" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Orden de compra no encontrada" }, { status: 404 })
     }
 
     const accion = validatedData.estado === "aprobado" ? "aprobar"
@@ -77,26 +59,14 @@ export async function PUT(
     await AuditService.registrar({
       usuarioId: user!.id,
       tabla: "gu_ordenesdecompra",
-      registroId: Number(id),
+      registroId: id,
       accion,
       detalle: `Orden de compra ${ordenActualizada.numero_oc ?? id}: ${accion}`,
     })
 
     return NextResponse.json(ordenActualizada)
   } catch (error) {
-    console.error("Error al actualizar orden:", error)
-
-    if (error instanceof Error && error.name === "ZodError") {
-      return NextResponse.json(
-        { error: "Datos inválidos", details: error.message },
-        { status: 400 }
-      )
-    }
-
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "PUT /api/ordenes-compra/[id]")
   }
 }
 
@@ -109,31 +79,22 @@ export async function DELETE(
     const { error: authError } = await requireRole(ROLES_DESTRUCTIVO)
     if (authError) return authError
 
-    const resolvedParams = await params
-    const { id } = OrdenCompraParamsSchema.parse(resolvedParams)
+    const id = parseId((await params).id)
 
-    const eliminada = await OrdenCompraService.delete(Number(id))
-
+    const eliminada = await OrdenCompraService.delete(id)
     if (!eliminada) {
-      return NextResponse.json(
-        { error: "Orden de compra no encontrada" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Orden de compra no encontrada" }, { status: 404 })
     }
 
     await AuditService.registrarDesdeRequest({
       tabla: "gu_ordenesdecompra",
-      registroId: Number(id),
+      registroId: id,
       accion: "eliminar",
       detalle: `Orden de compra #${id} eliminada`,
     })
 
     return NextResponse.json({ message: "Orden eliminada correctamente" })
   } catch (error) {
-    console.error("Error al eliminar orden:", error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "DELETE /api/ordenes-compra/[id]")
   }
 }

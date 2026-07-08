@@ -1,17 +1,14 @@
-// como en la base está en minúsculas:
+import type { Database } from "@/lib/supabase/database.types"
+
+// El enum de la DB (estado_activo_inactivo) solo tiene activo/inactivo: "suspender"
+// en la UI escribe 'inactivo'. Ver discrepancia #10 de CLAUDE.md.
 export enum EstadoProveedor {
   ACTIVO = "activo",
   INACTIVO = "inactivo",
 }
 
-export interface Proveedor {
-  id: number;               // bigint
-  nombre: string;
-  cuit: string | null;
-  direccion: string | null;
-  telefono: string | null;
-  email: string | null;
-  estado: EstadoProveedor | null;  // puede venir null pero default es 'activo'
-  created_at: string;       // timestamp
-  // no hay updated_at en la tabla que me pasaste
-}
+export type Proveedor = Database["public"]["Tables"]["gu_proveedores"]["Row"]
+export type CreateProveedorData = Omit<
+  Database["public"]["Tables"]["gu_proveedores"]["Insert"],
+  "id" | "estado" | "created_at"
+>

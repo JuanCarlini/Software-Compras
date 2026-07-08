@@ -12,7 +12,6 @@ import { useState } from "react"
 import { useOrdensPago } from "@/shared/use-ordenes-pago"
 import { formatCurrency } from "@/shared/format-utils"
 import { formatDateShort } from "@/shared/date-utils"
-import { EstadoOrdenPago } from "@/models"
 import { searchWithScore } from "@/shared/search-utils"
 import { StatusBadge } from "@/shared/status-badge"
 import { useAuth } from "@/shared/auth-context"
@@ -142,7 +141,7 @@ export function OrdenPagoList() {
                     <p className="text-sm text-slate-900">{orden.proveedor_nombre}</p>
                   </div>
                   <div>
-                    <p className="font-medium text-slate-900">{formatCurrency(orden.total_pago)}</p>
+                    <p className="font-medium text-slate-900">{formatCurrency(orden.total_a_pagar)}</p>
                   </div>
                   <div>
                     <StatusBadge estado={orden.estado} showIcon />
@@ -154,7 +153,7 @@ export function OrdenPagoList() {
                       </Link>
                     </Button>
                     
-                    {canModify && orden.estado === EstadoOrdenPago.PENDIENTE && (
+                    {canModify && orden.estado === "borrador" && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -165,7 +164,7 @@ export function OrdenPagoList() {
                       </Button>
                     )}
 
-                    {canModify && orden.estado === EstadoOrdenPago.APROBADO && (
+                    {canModify && orden.estado === "aprobado" && (
                       <Dialog 
                         open={pagoDialog === orden.id} 
                         onOpenChange={(open) => {
@@ -222,8 +221,8 @@ export function OrdenPagoList() {
                       </Dialog>
                     )}
                     
-                    {canModify && (orden.estado === EstadoOrdenPago.PENDIENTE ||
-                      orden.estado === EstadoOrdenPago.APROBADO) && (
+                    {canModify && (orden.estado === "borrador" ||
+                      orden.estado === "aprobado") && (
                       <Button
                         variant="outline"
                         size="sm"

@@ -30,22 +30,24 @@ export class CertificacionService {
     }
   }
 
+  // numero_cert (CE-N.s) lo genera la DB; estado lo fija el server (S2).
+  // Las líneas solo llevan avance_unidades: el resto lo deriva el trigger fn_lce_derive.
   static async create(data: any) {
     const { lineas, ...certData } = data
 
-    // Número automático CERT-YYYY-NNN (regla; el último número lo trae el repo)
-    const numero_cert = CertificacionService.siguienteNumero(await CertificacionRepository.findLastNumero())
-
     const nuevaCert = await CertificacionRepository.insert({
       ...certData,
-      numero_cert,
-      estado: "borrador", // S2: estado inicial fijado por el server, nunca por el cliente
+      estado: "borrador",
     })
 
     if (lineas && lineas.length > 0) {
       try {
         await CertificacionRepository.insertLineas(
-          lineas.map((linea: any) => ({ ...linea, certificacion_id: nuevaCert.id }))
+          lineas.map((linea: any) => ({
+            certificacion_id: nuevaCert.id,
+            linea_oc_id: linea.linea_oc_id,
+            avance_unidades: linea.avance_unidades,
+          }))
         )
       } catch (e) {
         // compensación: sin transacciones en el cliente, borramos la cabecera para
@@ -58,22 +60,6 @@ export class CertificacionService {
     return nuevaCert
   }
 
-  // CERT-YYYY-NNN: incrementa dentro del año en curso, reinicia en 001 al cambiar de año.
-  private static siguienteNumero(ultimo: string | null): string {
-    const year = new Date().getFullYear()
-    if (ultimo) {
-      const match = ultimo.match(/CERT-(\d{4})-(\d{3})/)
-      if (match) {
-        const lastYear = parseInt(match[1])
-        const lastNum = parseInt(match[2])
-        if (year === lastYear) {
-          return `CERT-${year}-${(lastNum + 1).toString().padStart(3, "0")}`
-        }
-      }
-    }
-    return `CERT-${year}-001`
-  }
-
   static async update(id: number, data: any) {
     return CertificacionRepository.update(id, data)
   }
@@ -84,45 +70,32 @@ export class CertificacionService {
 
   /**
    * Líneas de OCs aprobadas del proveedor con su saldo certificable.
-   * La regla del 100% la garantiza el trigger check_certificacion_max_100 en la DB;
-   * esto alimenta el formulario para que el usuario vea el disponible antes de enviar.
+   * La regla del 100% la garantiza el trigger fn_check_avance_100 en la DB; esto solo
+   * alimenta el formulario para que el usuario vea el disponible antes de enviar.
+   * El avance NO se recalcula en JS: lo publica la vista v_loc_rollup (solo CE aprobadas).
    */
   static async getLineasOCDisponibles(proveedorId: number) {
     const lineasOC = await CertificacionRepository.findLineasOCAprobadas(proveedorId)
     if (lineasOC.length === 0) return []
 
-    const ids = lineasOC.map((l: any) => l.id)
-    const certificado = await CertificacionRepository.findCertificadoByLineaOCIds(ids)
-
-    const certificadoPorLinea = new Map<number, number>()
-    for (const c of certificado) {
-      certificadoPorLinea.set(
-        c.linea_oc_id,
-        (certificadoPorLinea.get(c.linea_oc_id) || 0) + Number(c.cantidad)
-      )
-    }
+    const rollups = await CertificacionRepository.findLocRollupsByIds(lineasOC.map((l: any) => l.id))
+    const rollupPorLinea = new Map(rollups.map((r) => [r.linea_oc_id, r]))
 
     return lineasOC.map((l: any) => {
-      const cantidadCertificada = certificadoPorLinea.get(l.id) || 0
+      const rollup = rollupPorLinea.get(l.id)
       return {
         id: l.id,
+        numero_loc: l.numero_loc,
         descripcion: l.descripcion,
         cantidad: Number(l.cantidad),
         precio_unitario_neto: Number(l.precio_unitario_neto),
         iva_porcentaje: Number(l.iva_porcentaje),
         numero_oc: l.gu_ordenesdecompra?.numero_oc,
         orden_compra_id: l.gu_ordenesdecompra?.id,
-        cantidad_certificada: cantidadCertificada,
-        cantidad_disponible: Number(l.cantidad) - cantidadCertificada,
+        cantidad_certificada: Number(rollup?.unidades_certificadas ?? 0),
+        cantidad_disponible: Number(rollup?.unidades_pendientes ?? l.cantidad),
+        estado_certificacion: rollup?.estado_certificacion ?? "sin",
       }
     })
-  }
-
-  static async getByProyecto(proyectoId: number) {
-    const certs = await CertificacionRepository.findByProyecto(proyectoId)
-    return certs.map((cert: any) => ({
-      ...cert,
-      proveedor_nombre: cert.gu_proveedores?.nombre,
-    }))
   }
 }

@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/service"
+import type { TablesInsert, TablesUpdate } from "@/lib/supabase/database.types"
+import type { OrdenPago } from "@/models"
 
 const TABLE = "gu_ordenesdepago"
 const TABLE_LINEAS = "gu_lineasdeordenesdepago"
@@ -31,21 +33,8 @@ export class OrdenPagoRepository {
     return data
   }
 
-  // Último numero_op registrado, para calcular el siguiente. Solo I/O:
-  // el parseo/incremento es regla de negocio y vive en el service.
-  static async findLastNumero(): Promise<string | null> {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from(TABLE)
-      .select("numero_op")
-      .order("id", { ascending: false })
-      .limit(1)
-      .single()
 
-    return data?.numero_op ?? null
-  }
-
-  static async insert(orden: any): Promise<any> {
+  static async insert(orden: TablesInsert<"gu_ordenesdepago">): Promise<OrdenPago> {
     const supabase = createClient()
     const { data, error } = await supabase
       .from(TABLE)
@@ -57,14 +46,14 @@ export class OrdenPagoRepository {
     return data
   }
 
-  static async insertLineas(lineas: any[]): Promise<void> {
+  static async insertLineas(lineas: TablesInsert<"gu_lineasdeordenesdepago">[]): Promise<void> {
     if (!lineas || lineas.length === 0) return
     const supabase = createClient()
     const { error } = await supabase.from(TABLE_LINEAS).insert(lineas)
     if (error) throw error
   }
 
-  static async update(id: number, payload: any): Promise<any> {
+  static async update(id: number, payload: TablesUpdate<"gu_ordenesdepago">): Promise<OrdenPago> {
     const supabase = createClient()
     const { data, error } = await supabase
       .from(TABLE)

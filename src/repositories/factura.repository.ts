@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/service"
+import type { TablesInsert, TablesUpdate } from "@/lib/supabase/database.types"
+import type { Factura } from "@/models"
 
 const TABLE = "gu_facturas"
 const TABLE_LINEAS = "gu_lineasdefactura"
@@ -62,26 +64,15 @@ export class FacturaRepository {
     return data || []
   }
 
-  static async findLastNumero(): Promise<string | null> {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from(TABLE)
-      .select("numero_factura")
-      .order("id", { ascending: false })
-      .limit(1)
-      .single()
 
-    return data?.numero_factura ?? null
-  }
-
-  static async insert(factura: any): Promise<any> {
+  static async insert(factura: TablesInsert<"gu_facturas">): Promise<Factura> {
     const supabase = createClient()
     const { data, error } = await supabase.from(TABLE).insert(factura).select().single()
     if (error) throw error
     return data
   }
 
-  static async insertLineas(lineas: any[]): Promise<void> {
+  static async insertLineas(lineas: TablesInsert<"gu_lineasdefactura">[]): Promise<void> {
     if (!lineas || lineas.length === 0) return
     const supabase = createClient()
     const { error } = await supabase.from(TABLE_LINEAS).insert(lineas)
@@ -100,7 +91,7 @@ export class FacturaRepository {
     await supabase.from(TABLE_CERTS).delete().eq("factura_id", facturaId)
   }
 
-  static async update(id: number, factura: any): Promise<any | null> {
+  static async update(id: number, factura: TablesUpdate<"gu_facturas">): Promise<Factura | null> {
     const supabase = createClient()
     const { data, error } = await supabase.from(TABLE).update(factura).eq("id", id).select().single()
     if (error) return null

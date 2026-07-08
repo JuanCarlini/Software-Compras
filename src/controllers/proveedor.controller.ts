@@ -1,3 +1,4 @@
+import type { TablesInsert, TablesUpdate } from "@/lib/supabase/database.types"
 import { ProveedorRepository } from "@/repositories/proveedor.repository"
 import { Proveedor, EstadoProveedor } from "@/models"
 
@@ -22,12 +23,12 @@ export class ProveedorService {
     }
   }
 
-  static async create(proveedor: Partial<Proveedor>): Promise<Proveedor> {
+  static async create(proveedor: Omit<TablesInsert<"gu_proveedores">, "estado">): Promise<Proveedor> {
     // S2: un proveedor nuevo siempre nace activo; el estado no lo fija el cliente
     return ProveedorRepository.insert({ ...proveedor, estado: EstadoProveedor.ACTIVO })
   }
 
-  static async update(id: number, proveedor: Partial<Proveedor>): Promise<Proveedor | null> {
+  static async update(id: number, proveedor: TablesUpdate<"gu_proveedores">): Promise<Proveedor | null> {
     return ProveedorRepository.update(id, proveedor)
   }
 

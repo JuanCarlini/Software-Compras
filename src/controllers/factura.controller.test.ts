@@ -9,7 +9,6 @@ vi.mock("@/repositories/factura.repository", () => ({
     findLineasByFacturaId: vi.fn(),
     findCertificacionesByFacturaId: vi.fn(),
     findCertificacionesAprobadas: vi.fn(),
-    findLastNumero: vi.fn(),
     insert: vi.fn(),
     insertLineas: vi.fn(),
     insertCertificacionRelations: vi.fn(),
@@ -20,43 +19,31 @@ vi.mock("@/repositories/factura.repository", () => ({
 }))
 
 const repo = vi.mocked(FacturaRepository)
-const year = new Date().getFullYear()
 
 beforeEach(() => {
   vi.clearAllMocks()
-  repo.insert.mockResolvedValue({ id: 1, numero_factura: "X" })
+  repo.insert.mockResolvedValue({ id: 1, numero_factura: "FACT-00001" } as never)
   repo.insertLineas.mockResolvedValue(undefined)
   repo.insertCertificacionRelations.mockResolvedValue(undefined)
   repo.deleteCertificacionRelations.mockResolvedValue(undefined)
 })
 
-describe("FacturaService.create — numeración, estado y relaciones", () => {
-  it("primera factura del año: FACT-<año>-001 y estado 'borrador'", async () => {
-    repo.findLastNumero.mockResolvedValue(null)
-    await FacturaService.create({ proveedor_id: 1, fecha_factura: "2026-01-01", total_neto: 100 })
-    expect(repo.insert).toHaveBeenCalledWith(
-      expect.objectContaining({ numero_factura: `FACT-${year}-001`, estado: "borrador" })
-    )
+describe("FacturaService.create — estado, numeración y relaciones", () => {
+  it("no manda numero_factura: lo genera la DB (fn_num_factura)", async () => {
+    await FacturaService.create({ proveedor_id: 1, fecha_emision: "2026-01-01" })
+    expect(repo.insert.mock.calls[0][0]).not.toHaveProperty("numero_factura")
   })
 
-  it("fuerza estado 'borrador' aunque el cliente mande 'aprobado' (S2 — bypass de workflow)", async () => {
-    repo.findLastNumero.mockResolvedValue(null)
-    await FacturaService.create({ proveedor_id: 1, fecha_factura: "2026-01-01", estado: "aprobado" })
+  it("fuerza estado 'borrador' aunque el cliente mande otro (S2 — bypass de workflow)", async () => {
+    await FacturaService.create({ proveedor_id: 1, fecha_emision: "2026-01-01", estado: "finalizado" })
     expect(repo.insert).toHaveBeenCalledWith(expect.objectContaining({ estado: "borrador" }))
   })
 
-  it("incrementa el correlativo dentro del mismo año", async () => {
-    repo.findLastNumero.mockResolvedValue(`FACT-${year}-012`)
-    await FacturaService.create({ proveedor_id: 1, fecha_factura: "x" })
-    expect(repo.insert).toHaveBeenCalledWith(expect.objectContaining({ numero_factura: `FACT-${year}-013` }))
-  })
-
   it("asocia líneas y certificaciones al id de la factura creada", async () => {
-    repo.findLastNumero.mockResolvedValue(null)
-    repo.insert.mockResolvedValue({ id: 77, numero_factura: `FACT-${year}-001` })
+    repo.insert.mockResolvedValue({ id: 77, numero_factura: "FACT-00077" } as never)
     await FacturaService.create({
       proveedor_id: 1,
-      fecha_factura: "x",
+      fecha_emision: "2026-01-01",
       lineas: [{ descripcion: "item", cantidad: 1, total_neto: 100 }],
       certificaciones_ids: [3, 4],
     })

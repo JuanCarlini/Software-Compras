@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { OrdenPago, EstadoOrdenPago } from "@/models"
+// TODO(F6): la OP ahora es borrador -> en_aprobacion -> aprobado -> pagado.
+// Los botones de abajo siguen el flujo viejo (pendiente -> aprobado -> pagado):
+// hay que rehacerlos contra PATCH /api/ordenes-pago/[id]/estado.
+import { OrdenPago } from "@/models"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
 import { Separator } from "@/views/ui/separator"
@@ -177,7 +180,7 @@ export function OrdenPagoDetails() {
             <div className="text-right">
               <p className="text-sm text-slate-600">Monto Total</p>
               <p className="text-3xl font-bold text-slate-900">
-                {formatCurrency(orden.total_pago)}
+                {formatCurrency(orden.total_a_pagar)}
               </p>
             </div>
           </div>
@@ -222,7 +225,9 @@ export function OrdenPagoDetails() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">Creado:</span>
-                    <span className="font-medium">{formatDateShort(orden.created_at)}</span>
+                    <span className="font-medium">
+                      {orden.created_at ? formatDateShort(orden.created_at) : "—"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -239,7 +244,7 @@ export function OrdenPagoDetails() {
                   <div className="flex justify-between">
                     <span className="text-slate-600">Total a Pagar:</span>
                     <span className="text-xl font-bold text-green-600">
-                      {formatCurrency(orden.total_pago)}
+                      {formatCurrency(orden.total_a_pagar)}
                     </span>
                   </div>
                   <div className="flex justify-between">
@@ -269,7 +274,7 @@ export function OrdenPagoDetails() {
       </Card>
 
       {/* Acciones - Solo para usuarios con permisos */}
-      {canModify && orden.estado === EstadoOrdenPago.PENDIENTE && (
+      {canModify && orden.estado === "borrador" && (
         <Card>
           <CardHeader>
             <CardTitle>Acciones Disponibles</CardTitle>
@@ -306,7 +311,7 @@ export function OrdenPagoDetails() {
         </Card>
       )}
 
-      {canModify && orden.estado === EstadoOrdenPago.APROBADO && (
+      {canModify && orden.estado === "aprobado" && (
         <Card>
           <CardHeader>
             <CardTitle>Marcar como Pagada</CardTitle>

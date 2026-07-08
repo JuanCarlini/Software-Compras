@@ -17,18 +17,15 @@ export class OrdenPagoService {
     return OrdenPagoRepository.findById(id)
   }
 
-  // crear (cabecera + líneas)
+  // crear (cabecera + líneas de factura).
+  // numero_op (OP-N) lo genera la DB; estado nace en 'borrador' (S2 — antes decía
+  // 'pendiente', que ya no existe en el enum estado_op y reventaba el INSERT).
   static async create(payload: any) {
     const { lineas, ...ordenData } = payload
 
-    // Número automático OP-YYYY-NNN (regla de negocio; el último número lo trae el repo)
-    const ultimoNumero = await OrdenPagoRepository.findLastNumero()
-    const numero_op = OrdenPagoService.siguienteNumero(ultimoNumero)
-
     const nuevaOP = await OrdenPagoRepository.insert({
       ...ordenData,
-      numero_op,
-      estado: "pendiente", // S2: estado inicial fijado por el server, nunca por el cliente
+      estado: "borrador",
     })
 
     if (lineas && lineas.length > 0) {
@@ -38,23 +35,6 @@ export class OrdenPagoService {
     }
 
     return nuevaOP
-  }
-
-  // OP-YYYY-NNN: incrementa dentro del año en curso, reinicia en 001 al cambiar de año.
-  // Función pura (sin I/O) → testeable sin DB.
-  private static siguienteNumero(ultimo: string | null): string {
-    const year = new Date().getFullYear()
-    if (ultimo) {
-      const match = ultimo.match(/OP-(\d{4})-(\d{3})/)
-      if (match) {
-        const lastYear = parseInt(match[1])
-        const lastNum = parseInt(match[2])
-        if (year === lastYear) {
-          return `OP-${year}-${(lastNum + 1).toString().padStart(3, "0")}`
-        }
-      }
-    }
-    return `OP-${year}-001`
   }
 
   static async update(id: number, payload: any) {

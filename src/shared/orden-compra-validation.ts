@@ -1,47 +1,39 @@
 import { z } from "zod"
-import type { OcEstado } from "@/models"
+import { ESTADOS_APROBACION, MONEDAS } from "@/models/enums"
 
-// Valores de public.oc_estado en la DB (mantener en sync con OcEstado)
-const OC_ESTADOS = ["borrador", "en_aprobacion", "aprobado", "rechazado", "anulado"] as const satisfies readonly OcEstado[]
-
-// Línea de OC (sin orden_compra_id: lo asigna el service al crear la cabecera)
+// Línea de OC: elige un item del catálogo. Sin orden_compra_id (lo asigna el service)
+// y sin totales (los calcula el server con shared/totales.ts).
 export const CreateOrdenCompraLineaSchema = z.object({
-  item_id: z.number().int().positive().nullable().optional(),
-  item_codigo: z.string().nullable().optional(),
-  descripcion: z.string().min(1, "La descripción de la línea es requerida"),
+  item_id: z.number().int().positive("El item es requerido"),
+  descripcion: z.string().optional(),
   cantidad: z.number().positive("La cantidad debe ser mayor a 0"),
-  precio_unitario_neto: z.number().min(0),
-  iva_porcentaje: z.number().min(0),
-  total_neto: z.number().min(0),
-  total_con_iva: z.number().min(0),
-  estado: z.string().nullable().optional()
+  precio_unitario_neto: z.number().min(0).optional(), // ausente = heredar el del proveedor
+  iva_porcentaje: z.number().min(0).max(100).optional(),
 })
 
-// Alineado con CreateOrdenCompraData (src/models/orden-compra.model.ts) y gu_ordenesdecompra
+// numero_oc lo genera la DB (fn_num_oc); `estado` lo fija el server en 'borrador' (S2);
+// los totales los calcula el server desde las líneas. Nada de eso se acepta del cliente.
 export const CreateOrdenCompraSchema = z.object({
-  numero_oc: z.string().min(1, "El número de orden es requerido"),
   proveedor_id: z.number().int().positive("El proveedor es requerido"),
-  proyecto_id: z.number().int().positive().nullable().optional(),
+  proyecto_id: z.number().int().positive().nullish(),
   fecha_oc: z.string().min(1, "La fecha es requerida"), // YYYY-MM-DD
-  moneda: z.enum(["ARS", "USD", "EUR"]).optional(),
-  total_neto: z.number().min(0),
-  total_iva: z.number().min(0),
-  total_con_iva: z.number().min(0),
-  // S2: 'estado' NO se acepta al crear — el server lo fija en 'borrador'. Zod descarta la clave si el cliente la manda.
-  observaciones: z.string().nullable().optional(),
-  lineas: z.array(CreateOrdenCompraLineaSchema).optional()
+  moneda: z.enum(MONEDAS).optional(),
+  tarea: z.string().nullish(),
+  observaciones: z.string().nullish(),
+  lineas: z.array(CreateOrdenCompraLineaSchema).optional(),
 })
 
 // El update es solo de cabecera: las líneas tienen sus propias rutas.
-// 'estado' se re-agrega acá porque el PUT sí transiciona estados (aprobar/anular), gateado por rol en la ruta.
+// TODO(F3): sacar 'estado' de acá cuando exista PATCH /api/ordenes-compra/[id]/estado.
+// Se mantiene mientras tanto porque Zod descarta las claves desconocidas en silencio:
+// quitarlo antes de tener la ruta nueva rompería "aprobar" sin devolver ningún error.
 export const UpdateOrdenCompraSchema = CreateOrdenCompraSchema
   .omit({ lineas: true })
   .partial()
-  .extend({ estado: z.enum(OC_ESTADOS).optional() })
+  .extend({ estado: z.enum(ESTADOS_APROBACION).optional() })
 
-export const OrdenCompraParamsSchema = z.object({
-  id: z.string().min(1, "ID requerido")
-})
+// Body de la transición de estado.
+export const CambiarEstadoOCSchema = z.object({ estado: z.enum(ESTADOS_APROBACION) })
 
 export type CreateOrdenCompraFormData = z.infer<typeof CreateOrdenCompraSchema>
 export type UpdateOrdenCompraFormData = z.infer<typeof UpdateOrdenCompraSchema>
