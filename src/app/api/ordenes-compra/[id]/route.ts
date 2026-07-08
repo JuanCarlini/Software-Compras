@@ -75,7 +75,7 @@ export async function PUT(
       : validatedData.estado === "anulado" ? "anular"
       : "actualizar"
     await AuditService.registrar({
-      usuarioId: Number(user!.id),
+      usuarioId: user!.id,
       tabla: "gu_ordenesdecompra",
       registroId: Number(id),
       accion,

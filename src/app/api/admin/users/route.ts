@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     const nuevo = await UsuarioService.create({ nombre, email, password, rol_id: Number(rol_id) })
 
     await AuditService.registrar({
-      usuarioId: Number(user!.id),
+      usuarioId: user!.id,
       tabla: "gu_usuario",
       registroId: nuevo.id,
       accion: "crear",

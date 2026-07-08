@@ -29,7 +29,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     await UsuarioService.resetPassword(userId, password)
 
     await AuditService.registrar({
-      usuarioId: Number(user!.id),
+      usuarioId: user!.id,
       tabla: "gu_usuario",
       registroId: userId,
       accion: "resetear",

@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const ok = await AuthService.changePassword(Number(user!.id), oldPassword, newPassword)
+    const ok = await AuthService.changePassword(user!.id, oldPassword, newPassword)
 
     if (!ok) {
       return NextResponse.json(
@@ -35,9 +35,9 @@ export async function POST(request: NextRequest) {
     }
 
     await AuditService.registrar({
-      usuarioId: Number(user!.id),
+      usuarioId: user!.id,
       tabla: "gu_usuario",
-      registroId: Number(user!.id),
+      registroId: user!.id,
       accion: "actualizar",
       detalle: "Cambio de contraseña propio",
     })

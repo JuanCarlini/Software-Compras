@@ -96,7 +96,9 @@ export class AuthService {
           nombre: usuario.nombre,
           rol_id: usuario.rol_id,
           rol_nombre: rolNombreDe(usuario.gu_roles),
-          estado: usuario.estado
+          // gu_usuario.estado es nullable en la DB; la query ya filtró por 'activo',
+          // pero si alguna vez llega NULL, fail-closed.
+          estado: usuario.estado ?? 'inactivo'
         },
         token
       }
@@ -152,7 +154,7 @@ export class AuthService {
         nombre: usuario.nombre,
         rol_id: usuario.rol_id,
         rol_nombre: rolNombreDe(usuario.gu_roles),
-        estado: usuario.estado
+        estado: usuario.estado ?? 'inactivo'
       }
     } catch (error) {
       console.error('Error al obtener usuario:', error)

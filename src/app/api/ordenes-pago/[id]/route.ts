@@ -67,7 +67,7 @@ export async function PUT(
       : data.estado === "pagado" ? "actualizar"
       : "actualizar"
     await AuditService.registrar({
-      usuarioId: Number(user!.id),
+      usuarioId: user!.id,
       tabla: "gu_ordenesdepago",
       registroId: parseInt(id),
       accion,

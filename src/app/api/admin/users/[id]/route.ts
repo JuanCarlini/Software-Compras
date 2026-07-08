@@ -18,7 +18,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     const body = await request.json()
 
     // Evitar auto-lockout: un admin no puede desactivarse ni quitarse el rol a sí mismo
-    const esUnoMismo = String(user!.id) === String(userId)
+    const esUnoMismo = user!.id === userId
     if (esUnoMismo && (body.estado === "inactivo" || (body.rol_id && Number(body.rol_id) !== 1))) {
       return NextResponse.json(
         { error: "No podés desactivarte ni quitarte el rol de administrador a vos mismo" },
@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     })
 
     await AuditService.registrar({
-      usuarioId: Number(user!.id),
+      usuarioId: user!.id,
       tabla: "gu_usuario",
       registroId: userId,
       accion: "actualizar",
@@ -57,7 +57,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     const { id } = await params
     const userId = Number(id)
 
-    if (String(user!.id) === String(userId)) {
+    if (user!.id === userId) {
       return NextResponse.json(
         { error: "No podés darte de baja a vos mismo" },
         { status: 400 }
@@ -67,7 +67,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     await UsuarioService.update(userId, { estado: "inactivo" })
 
     await AuditService.registrar({
-      usuarioId: Number(user!.id),
+      usuarioId: user!.id,
       tabla: "gu_usuario",
       registroId: userId,
       accion: "eliminar",

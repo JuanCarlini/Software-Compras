@@ -35,7 +35,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
 
     await AuditService.registrar({
-      usuarioId: Number(user!.id),
+      usuarioId: user!.id,
       tabla: "gu_proveedores",
       registroId: Number(id),
       accion: "activar",

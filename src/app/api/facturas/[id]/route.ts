@@ -65,7 +65,7 @@ export async function PUT(
       : data.estado === "anulado" ? "anular"
       : "actualizar"
     await AuditService.registrar({
-      usuarioId: Number(user!.id),
+      usuarioId: user!.id,
       tabla: "gu_facturas",
       registroId: parseInt(id),
       accion,

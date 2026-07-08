@@ -65,7 +65,7 @@ export async function PUT(
       : data.estado === "rechazado" ? "rechazar"
       : "actualizar"
     await AuditService.registrar({
-      usuarioId: Number(user!.id),
+      usuarioId: user!.id,
       tabla: "gu_certificaciones",
       registroId: parseInt(id),
       accion,
