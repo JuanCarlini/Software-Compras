@@ -3,9 +3,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
 import { SearchBar } from "@/views/ui/search-bar"
-import { Input } from "@/views/ui/input"
-import { Label } from "@/views/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/views/ui/dialog"
 import { Eye, CheckCircle, XCircle, Loader2, DollarSign } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
@@ -18,11 +15,9 @@ import { useAuth } from "@/shared/auth-context"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 
 export function OrdenPagoList() {
-  const { orders, loading, error, aprobarOrder, pagarOrder, rechazarOrder } = useOrdensPago()
+  const { orders, loading, error, cambiarEstado, aprobarOrder, pagarOrder, rechazarOrder } = useOrdensPago()
   const { user } = useAuth()
   const [processingId, setProcessingId] = useState<number | null>(null)
-  const [pagoDialog, setPagoDialog] = useState<number | null>(null)
-  const [referenciaBancaria, setReferenciaBancaria] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
 
   // Verificar permisos
@@ -52,17 +47,23 @@ export function OrdenPagoList() {
     }
   }
 
-  const handlePagar = async (id: number) => {
-    if (!referenciaBancaria.trim()) {
-      alert("La referencia bancaria es requerida")
-      return
-    }
-    
+  // borrador -> "mandar a aprobar" (aplica fn_op_gate: Σcajas=Σfacturas=total); el resto
+  // son transiciones directas. Un 422 trae el mensaje del gate en el toast del hook.
+  const handleMandarAAprobar = async (id: number) => {
     try {
       setProcessingId(id)
-      await pagarOrder(id, referenciaBancaria)
-      setPagoDialog(null)
-      setReferenciaBancaria("")
+      await cambiarEstado(id, "en_aprobacion")
+    } catch (error) {
+      console.error("Error al mandar a aprobar:", error)
+    } finally {
+      setProcessingId(null)
+    }
+  }
+
+  const handlePagar = async (id: number) => {
+    try {
+      setProcessingId(id)
+      await pagarOrder(id)
     } catch (error) {
       console.error("Error al registrar pago:", error)
     } finally {
@@ -153,79 +154,47 @@ export function OrdenPagoList() {
                       </Link>
                     </Button>
                     
-                    {canModify && orden.estado === "borrador" && (
+                    {orden.estado === "borrador" && (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleAprobar(orden.id)}
+                        title="Mandar a aprobar"
+                        onClick={() => handleMandarAAprobar(orden.id)}
                         disabled={processingId === orden.id}
                       >
                         <CheckCircle className="h-4 w-4 text-blue-600" />
                       </Button>
                     )}
 
-                    {canModify && orden.estado === "aprobado" && (
-                      <Dialog 
-                        open={pagoDialog === orden.id} 
-                        onOpenChange={(open) => {
-                          if (open) {
-                            setPagoDialog(orden.id)
-                          } else {
-                            setPagoDialog(null)
-                            setReferenciaBancaria("")
-                          }
-                        }}
-                      >
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            disabled={processingId === orden.id}
-                          >
-                            <DollarSign className="h-4 w-4 text-green-600" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Registrar Pago</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <Label htmlFor="referencia">Referencia Bancaria</Label>
-                              <Input
-                                id="referencia"
-                                value={referenciaBancaria}
-                                onChange={(e) => setReferenciaBancaria(e.target.value)}
-                                placeholder="TRF-20250115-001"
-                              />
-                            </div>
-                            <div className="flex space-x-2">
-                              <Button 
-                                onClick={() => handlePagar(orden.id)}
-                                disabled={processingId === orden.id || !referenciaBancaria.trim()}
-                              >
-                                {processingId === orden.id ? "Procesando..." : "Registrar Pago"}
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                onClick={() => {
-                                  setPagoDialog(null)
-                                  setReferenciaBancaria("")
-                                }}
-                              >
-                                Cancelar
-                              </Button>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    )}
-                    
-                    {canModify && (orden.estado === "borrador" ||
-                      orden.estado === "aprobado") && (
+                    {canModify && orden.estado === "en_aprobacion" && (
                       <Button
                         variant="outline"
                         size="sm"
+                        title="Aprobar"
+                        onClick={() => handleAprobar(orden.id)}
+                        disabled={processingId === orden.id}
+                      >
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                      </Button>
+                    )}
+
+                    {canModify && orden.estado === "aprobado" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        title="Registrar pago"
+                        onClick={() => handlePagar(orden.id)}
+                        disabled={processingId === orden.id}
+                      >
+                        <DollarSign className="h-4 w-4 text-green-600" />
+                      </Button>
+                    )}
+
+                    {canModify && (orden.estado === "en_aprobacion" || orden.estado === "aprobado") && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        title="Rechazar"
                         onClick={() => handleRechazar(orden.id)}
                         disabled={processingId === orden.id}
                       >

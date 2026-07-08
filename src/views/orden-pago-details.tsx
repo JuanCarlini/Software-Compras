@@ -14,6 +14,7 @@ import { formatCurrency } from "@/shared/format-utils"
 import { StatusBadge } from "@/shared/status-badge"
 import { useAuth } from "@/shared/auth-context"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
+import { showErrorToast } from "@/shared/toast-helpers"
 import {
   Loader2,
   ArrowLeft,
@@ -74,58 +75,25 @@ export function OrdenPagoDetails() {
     }
   }, [id])
 
-  const handleAprobar = async () => {
+  // Transición de estado por la ruta propia. El gate fn_op_gate (Σcajas=Σfacturas=total,
+  // cajas misma moneda) se aplica al mandar a aprobar y devuelve 422 con su mensaje.
+  const cambiarEstado = async (nuevoEstado: string) => {
     if (!orden) return
     setProcessing(true)
     try {
-      const res = await fetch(`/api/ordenes-pago/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: 'aprobado' }),
+      const res = await fetch(`/api/ordenes-pago/${id}/estado`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado }),
       })
-      if (res.ok) {
-        setOrden(await res.json())
-      }
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Error al cambiar el estado")
+      setOrden(data)
     } catch (error) {
-      console.error("Error al aprobar:", error)
-    } finally {
-      setProcessing(false)
-    }
-  }
-
-  const handleRechazar = async () => {
-    if (!orden) return
-    setProcessing(true)
-    try {
-      const res = await fetch(`/api/ordenes-pago/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: 'rechazado' }),
-      })
-      if (res.ok) {
-        setOrden(await res.json())
-      }
-    } catch (error) {
-      console.error("Error al rechazar:", error)
-    } finally {
-      setProcessing(false)
-    }
-  }
-
-  const handleMarcarPagada = async () => {
-    if (!orden) return
-    setProcessing(true)
-    try {
-      const res = await fetch(`/api/ordenes-pago/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: 'pagado' }),
-      })
-      if (res.ok) {
-        setOrden(await res.json())
-      }
-    } catch (error) {
-      console.error("Error al marcar como pagada:", error)
+      showErrorToast(
+        "No se pudo cambiar el estado",
+        error instanceof Error ? error.message : "Error desconocido"
+      )
     } finally {
       setProcessing(false)
     }
@@ -273,38 +241,32 @@ export function OrdenPagoDetails() {
         </CardContent>
       </Card>
 
-      {/* Acciones - Solo para usuarios con permisos */}
-      {canModify && orden.estado === "borrador" && (
+      {/* Acciones según el estado. El circuito no saltea etapas:
+          borrador -> en_aprobacion (aplica fn_op_gate) -> aprobado -> pagado. */}
+      {orden.estado === "borrador" && (
         <Card>
-          <CardHeader>
-            <CardTitle>Acciones Disponibles</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle>Acciones</CardTitle></CardHeader>
+          <CardContent>
+            <Button onClick={() => cambiarEstado("en_aprobacion")} disabled={processing} className="w-full">
+              {processing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+              Mandar a aprobar
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {canModify && orden.estado === "en_aprobacion" && (
+        <Card>
+          <CardHeader><CardTitle>Aprobación</CardTitle></CardHeader>
           <CardContent>
             <div className="flex gap-3">
-              <Button
-                onClick={handleAprobar}
-                disabled={processing}
-                className="flex-1"
-              >
-                {processing ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                )}
-                Aprobar Orden
+              <Button onClick={() => cambiarEstado("aprobado")} disabled={processing} className="flex-1">
+                {processing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                Aprobar
               </Button>
-              <Button
-                variant="destructive"
-                onClick={handleRechazar}
-                disabled={processing}
-                className="flex-1"
-              >
-                {processing ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <XCircle className="h-4 w-4 mr-2" />
-                )}
-                Rechazar Orden
+              <Button variant="destructive" onClick={() => cambiarEstado("rechazado")} disabled={processing} className="flex-1">
+                {processing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <XCircle className="h-4 w-4 mr-2" />}
+                Rechazar
               </Button>
             </div>
           </CardContent>
@@ -313,22 +275,11 @@ export function OrdenPagoDetails() {
 
       {canModify && orden.estado === "aprobado" && (
         <Card>
-          <CardHeader>
-            <CardTitle>Marcar como Pagada</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle>Marcar como pagada</CardTitle></CardHeader>
           <CardContent>
-            <Button
-              onClick={handleMarcarPagada}
-              disabled={processing}
-              className="w-full"
-              size="lg"
-            >
-              {processing ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <DollarSign className="h-4 w-4 mr-2" />
-              )}
-              Confirmar Pago Realizado
+            <Button onClick={() => cambiarEstado("pagado")} disabled={processing} className="w-full" size="lg">
+              {processing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <DollarSign className="h-4 w-4 mr-2" />}
+              Confirmar pago realizado
             </Button>
           </CardContent>
         </Card>

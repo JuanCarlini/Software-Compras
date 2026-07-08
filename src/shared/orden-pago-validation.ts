@@ -1,23 +1,26 @@
 import { z } from "zod"
+import { ESTADOS_OP, MONEDAS } from "@/models/enums"
 
+// La OP nace vacía (solo cabecera): numero_op lo genera la DB, estado lo fija el server,
+// total_a_pagar arranca en 0 y lo suben las líneas de factura. Las facturas y las cajas
+// se cargan con sus propias rutas.
 export const CreateOrdenPagoSchema = z.object({
-  proveedor_id: z.number().min(1, "El proveedor es requerido"),
+  proveedor_id: z.number().int().positive("El proveedor es requerido"),
   fecha_op: z.string().min(1, "La fecha es requerida"),
-  total_pago: z.number().min(0.01, "El monto debe ser mayor a 0"),
-  // S2: 'estado' NO se acepta al crear — el server lo fija en 'pendiente'. (UpdateOrdenPagoSchema sí lo permite, gateado por rol.)
-  observaciones: z.string().nullable().optional(),
-  lineas: z.array(z.object({
-    factura_id: z.number().optional(),
-    concepto: z.string().min(1, "El concepto es requerido"),
-    monto: z.number().min(0.01, "El monto debe ser mayor a 0"),
-    forma_pago: z.string().min(1, "La forma de pago es requerida")
-  })).min(1, "Debe haber al menos una línea de pago")
+  moneda: z.enum(MONEDAS).optional(),
+  observaciones: z.string().nullish(),
 })
 
-export const UpdateOrdenPagoSchema = z.object({
-  estado: z.string().optional(),
-  observaciones: z.string().nullable().optional()
+export const AgregarFacturaSchema = z.object({
+  factura_id: z.number().int().positive(),
+  monto: z.number().positive("El monto debe ser mayor a 0"),
 })
+
+export const AgregarCajaSchema = z.object({
+  caja_id: z.number().int().positive(),
+  monto: z.number().positive("El monto debe ser mayor a 0"),
+})
+
+export const CambiarEstadoOPSchema = z.object({ estado: z.enum(ESTADOS_OP) })
 
 export type CreateOrdenPagoFormData = z.infer<typeof CreateOrdenPagoSchema>
-export type UpdateOrdenPagoFormData = z.infer<typeof UpdateOrdenPagoSchema>
