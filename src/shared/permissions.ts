@@ -6,6 +6,10 @@ export const ROLES_ESCRITURA: UserRole[] = [UserRole.ADMIN, UserRole.SUPERVISOR,
 export const ROLES_DESTRUCTIVO: UserRole[] = [UserRole.ADMIN, UserRole.SUPERVISOR] // borrar/anular/aprobar
 // ponytail: si el negocio quiere que 'usuario' borre sus borradores, agregar UserRole.USUARIO a ROLES_DESTRUCTIVO — un solo lugar.
 
+// Aprobar / rechazar / anular / pagar. Hoy es el mismo set que ROLES_DESTRUCTIVO, nombrado
+// por intención: si mañana 'usuario' puede borrar sus borradores pero no aprobar, se separan acá.
+export const ROLES_APROBACION: UserRole[] = [UserRole.ADMIN, UserRole.SUPERVISOR]
+
 /**
  * Verifica si un usuario tiene permiso para anular documentos
  * Solo supervisores y administradores pueden anular documentos
