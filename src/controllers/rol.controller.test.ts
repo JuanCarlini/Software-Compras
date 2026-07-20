@@ -73,3 +73,38 @@ describe("RolService — protección de roles del sistema", () => {
     expect(res[1]).toMatchObject({ nombre: "auditor", es_sistema: false, usuarios: 1 })
   })
 })
+
+describe("RolService — validación de permisos (RBAC)", () => {
+  it("create rechaza un permiso fuera del catálogo y no persiste", async () => {
+    repo.findByNombre.mockResolvedValue(null)
+    await expect(
+      RolService.create({ nombre: "auditor", permisos: ["ordenes_compra:ver", "fake:accion"] })
+    ).rejects.toThrow(/Permiso inválido/)
+    expect(repo.insert).not.toHaveBeenCalled()
+  })
+
+  it("create persiste un rol con permisos válidos", async () => {
+    repo.findByNombre.mockResolvedValue(null)
+    repo.insert.mockResolvedValue({ id: 7, nombre: "auditor" })
+    await RolService.create({ nombre: "auditor", permisos: ["ordenes_compra:ver"] })
+    expect(repo.insert).toHaveBeenCalledWith({
+      nombre: "auditor",
+      descripcion: null,
+      permisos: ["ordenes_compra:ver"],
+    })
+  })
+
+  it("update rechaza un permiso inválido en un rol no-sistema", async () => {
+    repo.findById.mockResolvedValue({ id: 5, nombre: "auditor" })
+    await expect(RolService.update(5, { permisos: ["nope:nope"] })).rejects.toThrow(/Permiso inválido/)
+    expect(repo.update).not.toHaveBeenCalled()
+  })
+
+  it("update ignora los permisos entrantes para el rol admin (anti auto-lockout)", async () => {
+    repo.findById.mockResolvedValue({ id: 1, nombre: "admin" })
+    repo.update.mockResolvedValue({ id: 1 })
+    await RolService.update(1, { permisos: ["ordenes_compra:ver"] })
+    // el payload NO incluye permisos para admin
+    expect(repo.update).toHaveBeenCalledWith(1, {})
+  })
+})

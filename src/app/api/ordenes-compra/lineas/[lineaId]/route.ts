@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { OrdenCompraService } from "@/controllers"
-import { requireRole } from "@/shared/permissions-server"
-import { ROLES_ESCRITURA } from "@/shared/permissions"
+import { requirePermission } from "@/shared/permissions-server"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
 import { z } from "zod"
@@ -22,7 +21,7 @@ const UpdateLineaSchema = z.object({
 // Recalcula los totales de la línea y de la cabecera. 422 si la OC ya no es editable.
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
-    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    const { error: authError } = await requirePermission("ordenes_compra", "crear")
     if (authError) return authError
 
     const lineaId = parseId((await params).lineaId)
@@ -42,7 +41,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
 // DELETE /api/ordenes-compra/lineas/[lineaId] - Eliminar una línea (recalcula la cabecera)
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    const { error: authError } = await requirePermission("ordenes_compra", "crear")
     if (authError) return authError
 
     const lineaId = parseId((await params).lineaId)

@@ -19,6 +19,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     const actualizado = await RolService.update(Number(id), {
       nombre: body.nombre,
       descripcion: body.descripcion,
+      permisos: body.permisos,
     })
 
     await AuditService.registrar({
@@ -32,7 +33,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     return NextResponse.json(actualizado)
   } catch (error: any) {
     const message = error?.message || "Error interno del servidor"
-    const esNegocio = message.includes("sistema") || message.includes("no encontrado")
+    const esNegocio = message.includes("sistema") || message.includes("no encontrado") || message.includes("inválido")
     return NextResponse.json({ error: message }, { status: esNegocio ? 400 : 500 })
   }
 }

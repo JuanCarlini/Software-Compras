@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { OrdenCompraService } from "@/controllers"
 import { UpdateOrdenCompraSchema } from "@/shared/orden-compra-validation"
-import { requireRole } from "@/shared/permissions-server"
-import { ROLES_DESTRUCTIVO, ROLES_ESCRITURA } from "@/shared/permissions"
+import { requirePermission } from "@/shared/permissions-server"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
 import { AuditService } from "@/lib/audit/audit.service"
@@ -13,6 +12,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { error: authError } = await requirePermission("ordenes_compra", "ver")
+    if (authError) return authError
+
     const id = parseId((await params).id)
 
     const orden = await OrdenCompraService.getById(id)
@@ -32,7 +34,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error: authError, user } = await requireRole(ROLES_ESCRITURA)
+    const { error: authError, user } = await requirePermission("ordenes_compra", "crear")
     if (authError) return authError
 
     const id = parseId((await params).id)
@@ -63,7 +65,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error: authError } = await requireRole(ROLES_DESTRUCTIVO)
+    const { error: authError } = await requirePermission("ordenes_compra", "borrar")
     if (authError) return authError
 
     const id = parseId((await params).id)

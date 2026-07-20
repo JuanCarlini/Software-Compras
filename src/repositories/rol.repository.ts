@@ -11,7 +11,7 @@ export class RolRepository {
     const supabase = createClient()
     const { data, error } = await supabase
       .from(TABLE)
-      .select("id, nombre, descripcion")
+      .select("id, nombre, descripcion, permisos")
       .order("id", { ascending: true })
 
     if (error) throw error
@@ -58,7 +58,7 @@ export class RolRepository {
     return count ?? 0
   }
 
-  static async insert(rol: { nombre: string; descripcion: string | null }): Promise<any> {
+  static async insert(rol: { nombre: string; descripcion: string | null; permisos?: string[] }): Promise<any> {
     const supabase = createClient()
     const { data, error } = await supabase.from(TABLE).insert(rol).select().single()
     if (error) throw error

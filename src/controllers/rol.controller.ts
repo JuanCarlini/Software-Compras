@@ -1,9 +1,16 @@
 import { RolRepository } from "@/repositories/rol.repository"
+import { esPermisoValido } from "@/shared/permissions-catalog"
 
-// Los 4 roles base están cableados a los permisos del código (shared/permissions.ts):
-// renombrarlos o borrarlos rompería el mapeo. Roles nuevos son válidos pero reciben
-// permisos de "usuario" por defecto (stringToUserRole cae en USUARIO si no matchea).
+// Los 4 roles del sistema están protegidos contra rename/delete. Sus permisos se siembran
+// replicando la autorización histórica; un rol nuevo arranca con los permisos que le asigne
+// el admin desde la matriz.
 const ROLES_SISTEMA = ["admin", "usuario", "supervisor", "readonly"]
+
+// Cada clave de permisos[] debe existir en el catálogo — nunca confiar en el body.
+function validarPermisos(permisos: string[]) {
+  const invalida = permisos.find((p) => !esPermisoValido(p))
+  if (invalida) throw new Error(`Permiso inválido: ${invalida}`)
+}
 
 // Reglas de negocio de roles. El I/O vive en RolRepository (A1).
 export class RolService {
@@ -24,17 +31,18 @@ export class RolService {
     }))
   }
 
-  static async create(data: { nombre: string; descripcion?: string }) {
+  static async create(data: { nombre: string; descripcion?: string; permisos?: string[] }) {
     const nombre = data.nombre.trim().toLowerCase()
 
     if (await RolRepository.findByNombre(nombre)) {
       throw new Error(`Ya existe un rol llamado "${nombre}"`)
     }
+    if (data.permisos) validarPermisos(data.permisos)
 
-    return RolRepository.insert({ nombre, descripcion: data.descripcion ?? null })
+    return RolRepository.insert({ nombre, descripcion: data.descripcion ?? null, permisos: data.permisos ?? [] })
   }
 
-  static async update(id: number, data: { nombre?: string; descripcion?: string }) {
+  static async update(id: number, data: { nombre?: string; descripcion?: string; permisos?: string[] }) {
     const rol = await RolRepository.findById(id)
     if (!rol) throw new Error("Rol no encontrado")
 
@@ -46,6 +54,12 @@ export class RolService {
     const payload: Record<string, unknown> = {}
     if (data.nombre) payload.nombre = data.nombre.trim().toLowerCase()
     if (data.descripcion !== undefined) payload.descripcion = data.descripcion
+    // Anti auto-lockout: el rol admin es intocable — pasa siempre por el short-circuit de
+    // tienePermiso, así que ignoramos cualquier `permisos` entrante para admin.
+    if (data.permisos !== undefined && rol.nombre !== "admin") {
+      validarPermisos(data.permisos)
+      payload.permisos = data.permisos
+    }
 
     return RolRepository.update(id, payload)
   }

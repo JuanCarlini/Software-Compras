@@ -44,3 +44,10 @@ const REQUIERE_APROBACION = new Set(["aprobado", "rechazado", "anulado", "pagado
 export function rolRequerido(destino: string): UserRole[] {
   return REQUIERE_APROBACION.has(destino) ? ROLES_APROBACION : ROLES_ESCRITURA
 }
+
+// Igual criterio que rolRequerido, pero en el vocabulario de permisos RBAC (modulo:accion):
+// aprobar/rechazar/anular/pagar → 'aprobar'; mandar-a-aprobar/volver-a-borrador → 'crear'.
+// Reusa el mismo REQUIERE_APROBACION para no duplicar el criterio.
+export function accionRequerida(destino: string): "aprobar" | "crear" {
+  return REQUIERE_APROBACION.has(destino) ? "aprobar" : "crear"
+}

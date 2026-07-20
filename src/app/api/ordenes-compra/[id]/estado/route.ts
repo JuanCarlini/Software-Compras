@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { OrdenCompraService } from "@/controllers"
 import { CambiarEstadoOCSchema } from "@/shared/orden-compra-validation"
-import { requireRole } from "@/shared/permissions-server"
-import { rolRequerido } from "@/shared/transiciones"
+import { requirePermission } from "@/shared/permissions-server"
+import { accionRequerida } from "@/shared/transiciones"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
 import { AuditService } from "@/lib/audit/audit.service"
@@ -29,8 +29,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const id = parseId((await params).id)
     const { estado } = CambiarEstadoOCSchema.parse(await request.json())
 
-    // El rol depende del DESTINO: mandar a aprobar es escritura; aprobar/anular, supervisor+.
-    const { error: authError, user } = await requireRole(rolRequerido(estado))
+    // El permiso depende del DESTINO: mandar a aprobar es 'crear'; aprobar/rechazar/anular, 'aprobar'.
+    const { error: authError, user } = await requirePermission("ordenes_compra", accionRequerida(estado))
     if (authError) return authError
 
     const oc = await OrdenCompraService.cambiarEstado(id, estado)

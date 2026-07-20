@@ -23,12 +23,12 @@ export async function POST(request: NextRequest) {
     const { error: authError, user } = await requireAdmin()
     if (authError) return authError
 
-    const { nombre, descripcion } = await request.json()
+    const { nombre, descripcion, permisos } = await request.json()
     if (!nombre?.trim()) {
       return NextResponse.json({ error: "El nombre del rol es requerido" }, { status: 400 })
     }
 
-    const nuevo = await RolService.create({ nombre, descripcion })
+    const nuevo = await RolService.create({ nombre, descripcion, permisos })
 
     await AuditService.registrar({
       usuarioId: user!.id,
@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error("Error en POST /api/admin/roles:", error)
     const message = error?.message || "Error interno del servidor"
-    return NextResponse.json({ error: message }, { status: message.includes("Ya existe") ? 409 : 500 })
+    const status = message.includes("Ya existe") ? 409 : message.includes("inválido") ? 400 : 500
+    return NextResponse.json({ error: message }, { status })
   }
 }

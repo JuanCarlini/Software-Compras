@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest"
 import {
   puedeTransicionar,
   rolRequerido,
+  accionRequerida,
   TRANSICIONES_APROBACION,
   TRANSICIONES_FACTURA,
   TRANSICIONES_OP,
@@ -53,5 +54,16 @@ describe("rolRequerido", () => {
   it("mandar a aprobar o finalizar alcanza con escritura", () => {
     expect(rolRequerido("en_aprobacion")).toBe(ROLES_ESCRITURA)
     expect(rolRequerido("finalizado")).toBe(ROLES_ESCRITURA)
+  })
+})
+
+describe("accionRequerida (permiso RBAC por destino)", () => {
+  it.each(["aprobado", "rechazado", "anulado"])("%s → 'aprobar'", (estado) => {
+    expect(accionRequerida(estado)).toBe("aprobar")
+  })
+
+  it("en_aprobacion / borrador → 'crear'", () => {
+    expect(accionRequerida("en_aprobacion")).toBe("crear")
+    expect(accionRequerida("borrador")).toBe("crear")
   })
 })

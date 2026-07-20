@@ -2,15 +2,16 @@ import { NextRequest, NextResponse } from "next/server"
 import { OrdenCompraService } from "@/controllers"
 import { CreateOrdenCompraSchema } from "@/shared/orden-compra-validation"
 import { AuditService } from "@/lib/audit/audit.service"
-import { requireRole } from "@/shared/permissions-server"
-import { ROLES_ESCRITURA } from "@/shared/permissions"
+import { requirePermission } from "@/shared/permissions-server"
 import { handleRouteError } from "@/shared/handle-route-error"
 
 // GET /api/ordenes-compra - Lista con el rollup de certificación (leído de v_oc_rollup).
-// La autenticación la hace el middleware (verifica la firma del JWT en todo /api);
-// no hay gate de rol porque 'readonly' puede leer.
+// Gateado por permiso: 'ordenes_compra:ver' (los 4 roles del sistema lo tienen por el seed).
 export async function GET() {
   try {
+    const { error: authError } = await requirePermission("ordenes_compra", "ver")
+    if (authError) return authError
+
     return NextResponse.json(await OrdenCompraService.getAll())
   } catch (error) {
     return handleRouteError(error, "GET /api/ordenes-compra")
@@ -20,7 +21,7 @@ export async function GET() {
 // POST /api/ordenes-compra - Crear nueva orden (nace en borrador, la DB le pone el número)
 export async function POST(request: NextRequest) {
   try {
-    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    const { error: authError } = await requirePermission("ordenes_compra", "crear")
     if (authError) return authError
 
     const validatedData = CreateOrdenCompraSchema.parse(await request.json())
