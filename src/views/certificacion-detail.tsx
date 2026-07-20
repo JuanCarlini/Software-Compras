@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { use } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
@@ -39,22 +39,22 @@ export function CertificacionDetail({ params }: Props) {
   const userRole = user ? stringToUserRole(user.rol) : null
   const canModify = userRole ? canAnularDocumento(userRole) : false
 
-  useEffect(() => {
-    const fetchCertificacion = async () => {
-      try {
-        const response = await fetch(`/api/certificaciones/${id}`)
-        if (!response.ok) throw new Error("Error al cargar certificación")
-        const data = await response.json()
-        setCert(data)
-      } catch (error) {
-        showErrorToast("Error", "No se pudo cargar la certificación")
-      } finally {
-        setLoading(false)
-      }
+  const fetchCertificacion = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/certificaciones/${id}`)
+      if (!response.ok) throw new Error("Error al cargar certificación")
+      const data = await response.json()
+      setCert(data)
+    } catch (error) {
+      showErrorToast("Error", "No se pudo cargar la certificación")
+    } finally {
+      setLoading(false)
     }
-
-    fetchCertificacion()
   }, [id])
+
+  useEffect(() => {
+    fetchCertificacion()
+  }, [fetchCertificacion])
 
   // Las transiciones tienen ruta propia: el PUT solo edita la cabecera. Un 422 trae el
   // mensaje del trigger en español (regla del 100%, OC no aprobada); un 409, una
@@ -71,7 +71,9 @@ export function CertificacionDetail({ params }: Props) {
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || "Error al actualizar estado")
 
-      setCert(data)
+      // El PATCH /estado devuelve solo la cabecera (sin lineas ni joins). Reconsultamos
+      // el detalle completo para no borrar las líneas ni los datos derivados de la vista.
+      await fetchCertificacion()
 
       const mensajes: Record<string, string> = {
         en_aprobacion: "Certificación enviada a aprobación",

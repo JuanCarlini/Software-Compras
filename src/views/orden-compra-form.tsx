@@ -22,8 +22,12 @@ interface ItemOrden {
   descripcion: string
   cantidad: number
   precio_unitario: number
+  iva_porcentaje: number
   subtotal: number
 }
+
+// Alícuotas de IVA vigentes en Argentina. Cada línea de OC elige la suya.
+const IVA_RATES = [0, 10.5, 21, 27] as const
 
 export function OrdenCompraForm() {
   const router = useRouter()
@@ -50,6 +54,7 @@ export function OrdenCompraForm() {
     descripcion: "",
     cantidad: "1",
     precio_unitario: "",
+    iva_porcentaje: "21",
   })
   const [selectedItem, setSelectedItem] = useState<Item | null>(null)  // NUEVO: Item completo
 
@@ -60,8 +65,8 @@ export function OrdenCompraForm() {
   }
 
   const calcularImpuestos = () => {
-    const subtotal = calcularSubtotal()
-    return subtotal * 0.21 // 21% de IVA
+    // Cada línea puede tener su propia alícuota → IVA por línea, no un 21% plano.
+    return items.reduce((sum, item) => sum + item.subtotal * (item.iva_porcentaje / 100), 0)
   }
 
   const calcularTotal = () => {
@@ -134,18 +139,20 @@ export function OrdenCompraForm() {
       descripcion: nuevoItem.descripcion,
       cantidad,
       precio_unitario: precioUnitario,
+      iva_porcentaje: parseFloat(nuevoItem.iva_porcentaje) || 0,
       subtotal,
     }
 
     setItems((prev) => [...prev, item])
 
-    // Reset form
+    // Reset form (el IVA vuelve al 21% por defecto)
     setNuevoItem({
       item_id: null,  // NUEVO
       producto: "",
       descripcion: "",
       cantidad: "1",
       precio_unitario: "",
+      iva_porcentaje: "21",
     })
     setSelectedItem(null)  // NUEVO
 
@@ -182,7 +189,7 @@ export function OrdenCompraForm() {
       // líneas para gu_lineasdeordenesdecompra (el orden_compra_id lo asigna el backend)
       const lineas = items.map((item) => {
         const totalNeto = item.subtotal
-        const iva = 21
+        const iva = item.iva_porcentaje
         const totalConIva = totalNeto * (1 + iva / 100)
 
         return {
@@ -330,7 +337,7 @@ export function OrdenCompraForm() {
 
             {/* Form para agregar item */}
             <div className="bg-muted p-4 rounded-lg mb-4">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                 <div className="md:col-span-2 space-y-2">
                   <Label>Producto / Servicio *</Label>
                   <ItemSelector
@@ -376,6 +383,25 @@ export function OrdenCompraForm() {
                   {/* TODO(F3): mostrar el precio del item PARA ESTE PROVEEDOR
                       (GET /api/items/[id]/precio?proveedorId=). El item ya no tiene precio propio. */}
                 </div>
+                <div className="space-y-2">
+                  <Label>IVA *</Label>
+                  <Select
+                    value={nuevoItem.iva_porcentaje}
+                    onValueChange={(value) => handleNuevoItemChange("iva_porcentaje", value)}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {IVA_RATES.map((rate) => (
+                        <SelectItem key={rate} value={String(rate)}>
+                          {rate}%
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="flex items-end">
                   <Button type="button" onClick={agregarItem} disabled={isLoading} className="w-full">
                     <Plus className="h-4 w-4 mr-1" />
@@ -402,7 +428,8 @@ export function OrdenCompraForm() {
                   <div className="col-span-4">Producto</div>
                   <div className="col-span-2 text-right">Cantidad</div>
                   <div className="col-span-2 text-right">P. Unitario</div>
-                  <div className="col-span-3 text-right">Subtotal</div>
+                  <div className="col-span-1 text-right">IVA</div>
+                  <div className="col-span-2 text-right">Subtotal</div>
                   <div className="col-span-1" />
                 </div>
                 {items.map((item) => (
@@ -413,7 +440,8 @@ export function OrdenCompraForm() {
                     </div>
                     <div className="col-span-2 text-right">{item.cantidad}</div>
                     <div className="col-span-2 text-right">{formatCurrency(item.precio_unitario)}</div>
-                    <div className="col-span-3 text-right font-medium">{formatCurrency(item.subtotal)}</div>
+                    <div className="col-span-1 text-right">{item.iva_porcentaje}%</div>
+                    <div className="col-span-2 text-right font-medium">{formatCurrency(item.subtotal)}</div>
                     <div className="col-span-1 flex justify-end">
                       <Button
                         type="button"
@@ -444,7 +472,7 @@ export function OrdenCompraForm() {
                   <span className="font-medium">{formatCurrency(calcularSubtotal())}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>IVA (21%):</span>
+                  <span>IVA:</span>
                   <span className="font-medium">{formatCurrency(calcularImpuestos())}</span>
                 </div>
                 <div className="flex justify-between pt-2 border-t text-lg font-bold">
