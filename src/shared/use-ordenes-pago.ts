@@ -17,11 +17,12 @@ async function api(path: string, init?: RequestInit) {
   return res.json()
 }
 
-function put(id: string | number, payload: unknown) {
-  return api(`/api/ordenes-pago/${id}`, {
-    method: "PUT",
+// Transición de estado: ruta propia (PATCH /estado), gateada por rol y por fn_op_gate.
+function patchEstado(id: string | number, estado: string) {
+  return api(`/api/ordenes-pago/${id}/estado`, {
+    method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ estado }),
   })
 }
 
@@ -59,23 +60,20 @@ export function useOrdensPago() {
     }
   }
 
-  const updateOrder = async (id: string | number, orderData: any) => {
+  // Cambio de estado genérico. El circuito no saltea etapas: borrador -> en_aprobacion
+  // (aplica fn_op_gate) -> aprobado -> pagado. Un 422 trae el mensaje del gate.
+  const cambiarEstado = async (id: string | number, estado: string) => {
     try {
-      const updatedOrder = await put(id, orderData)
-      if (updatedOrder) {
-        setOrders(prev =>
-          prev.map(order => order.id === Number(id) ? { ...order, ...updatedOrder } : order)
-        )
-
-        // Toast message específico según el estado
-        if (orderData.estado === 'aprobado') {
-          showSuccessToast(toastMessages.ordenPago.approved, `Orden #${updatedOrder.numero_op}`)
-        } else if (orderData.estado === 'pagado') {
-          showSuccessToast(toastMessages.ordenPago.paid, `Orden #${updatedOrder.numero_op}`)
-        } else {
-          showSuccessToast(toastMessages.ordenPago.updated, `Orden #${updatedOrder.numero_op}`)
-        }
-      }
+      const updatedOrder = await patchEstado(id, estado)
+      setOrders(prev =>
+        prev.map(order => order.id === Number(id) ? { ...order, ...updatedOrder } : order)
+      )
+      const msg =
+        estado === "aprobado" ? toastMessages.ordenPago.approved
+        : estado === "pagado" ? toastMessages.ordenPago.paid
+        : estado === "rechazado" ? toastMessages.ordenPago.rejected
+        : toastMessages.ordenPago.updated
+      showSuccessToast(msg, `Orden #${updatedOrder.numero_op}`)
       return updatedOrder
     } catch (err) {
       showErrorToast(toastMessages.ordenPago.error, err instanceof Error ? err.message : "Error desconocido")
@@ -83,55 +81,9 @@ export function useOrdensPago() {
     }
   }
 
-  const aprobarOrder = async (id: string | number) => {
-    try {
-      const updatedOrder = await put(id, { estado: 'aprobado' })
-      if (updatedOrder) {
-        setOrders(prev =>
-          prev.map(order => order.id === Number(id) ? { ...order, ...updatedOrder } : order)
-        )
-        showSuccessToast(toastMessages.ordenPago.approved, `Orden #${updatedOrder.numero_op}`)
-      }
-      return updatedOrder
-    } catch (err) {
-      showErrorToast(toastMessages.ordenPago.error, err instanceof Error ? err.message : "Error desconocido")
-      throw err
-    }
-  }
-
-  // Nota: gu_ordenesdepago no tiene columnas referencia_pago/fecha_pago — la referencia
-  // bancaria del diálogo es informativa hasta que exista la columna (candidato a migración)
-  const pagarOrder = async (id: string | number, _referencia?: string) => {
-    try {
-      const updatedOrder = await put(id, { estado: 'pagado' })
-      if (updatedOrder) {
-        setOrders(prev =>
-          prev.map(order => order.id === Number(id) ? { ...order, ...updatedOrder } : order)
-        )
-        showSuccessToast(toastMessages.ordenPago.paid, `Orden #${updatedOrder.numero_op}`)
-      }
-      return updatedOrder
-    } catch (err) {
-      showErrorToast(toastMessages.ordenPago.error, err instanceof Error ? err.message : "Error desconocido")
-      throw err
-    }
-  }
-
-  const rechazarOrder = async (id: string | number) => {
-    try {
-      const updatedOrder = await put(id, { estado: 'rechazado' })
-      if (updatedOrder) {
-        setOrders(prev =>
-          prev.map(order => order.id === Number(id) ? { ...order, ...updatedOrder } : order)
-        )
-        showSuccessToast(toastMessages.ordenPago.rejected, `Orden #${updatedOrder.numero_op}`)
-      }
-      return updatedOrder
-    } catch (err) {
-      showErrorToast(toastMessages.ordenPago.error, err instanceof Error ? err.message : "Error desconocido")
-      throw err
-    }
-  }
+  const aprobarOrder = (id: string | number) => cambiarEstado(id, "aprobado")
+  const pagarOrder = (id: string | number) => cambiarEstado(id, "pagado")
+  const rechazarOrder = (id: string | number) => cambiarEstado(id, "rechazado")
 
   const deleteOrder = async (id: string | number) => {
     try {
@@ -154,7 +106,7 @@ export function useOrdensPago() {
     error,
     refreshOrders: fetchOrders,
     createOrder,
-    updateOrder,
+    cambiarEstado,
     aprobarOrder,
     pagarOrder,
     rechazarOrder,

@@ -82,10 +82,10 @@ export function ProveedorDetails({ proveedor, onActivar, onSuspender }: Props) {
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">
+            <h1 className="text-3xl font-bold text-foreground">
               {proveedor.nombre || "Proveedor"}
             </h1>
-            <p className="text-slate-600">CUIT: {proveedor.cuit || "—"}</p>
+            <p className="text-muted-foreground">CUIT: {proveedor.cuit || "—"}</p>
           </div>
           {proveedor.estado && (
             <StatusBadge estado={proveedor.estado} showIcon />
@@ -140,21 +140,21 @@ export function ProveedorDetails({ proveedor, onActivar, onSuspender }: Props) {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-slate-700">
+                  <p className="text-sm font-medium text-muted-foreground">
                     Nombre de la Empresa
                   </p>
-                  <p className="text-slate-900">{proveedor.nombre || "—"}</p>
+                  <p className="text-foreground">{proveedor.nombre || "—"}</p>
                 </div>
                 <div>
-                    <p className="text-sm font-medium text-slate-700">CUIT</p>
-                    <p className="text-slate-900">{proveedor.cuit || "—"}</p>
+                    <p className="text-sm font-medium text-muted-foreground">CUIT</p>
+                    <p className="text-foreground">{proveedor.cuit || "—"}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-slate-700">Estado</p>
+                  <p className="text-sm font-medium text-muted-foreground">Estado</p>
                   {proveedor.estado ? (
                     <StatusBadge estado={proveedor.estado} showIcon />
                   ) : (
-                    <p className="text-slate-900">—</p>
+                    <p className="text-foreground">—</p>
                   )}
                 </div>
               </div>
@@ -172,9 +172,9 @@ export function ProveedorDetails({ proveedor, onActivar, onSuspender }: Props) {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center space-x-3">
-                    <Mail className="h-4 w-4 text-slate-600" />
+                    <Mail className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium text-slate-700">Email</p>
+                      <p className="text-sm font-medium text-muted-foreground">Email</p>
                       {proveedor.email ? (
                         <a
                           href={`mailto:${proveedor.email}`}
@@ -183,14 +183,14 @@ export function ProveedorDetails({ proveedor, onActivar, onSuspender }: Props) {
                           {proveedor.email}
                         </a>
                       ) : (
-                        <p className="text-slate-900">—</p>
+                        <p className="text-foreground">—</p>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <Phone className="h-4 w-4 text-slate-600" />
+                    <Phone className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium text-slate-700">Teléfono</p>
+                      <p className="text-sm font-medium text-muted-foreground">Teléfono</p>
                       {proveedor.telefono ? (
                         <a
                           href={`tel:${proveedor.telefono}`}
@@ -199,7 +199,7 @@ export function ProveedorDetails({ proveedor, onActivar, onSuspender }: Props) {
                           {proveedor.telefono}
                         </a>
                       ) : (
-                        <p className="text-slate-900">—</p>
+                        <p className="text-foreground">—</p>
                       )}
                     </div>
                   </div>
@@ -218,8 +218,8 @@ export function ProveedorDetails({ proveedor, onActivar, onSuspender }: Props) {
             <CardContent>
               <div className="space-y-3">
                 <div>
-                  <p className="text-sm font-medium text-slate-700">Dirección</p>
-                  <p className="text-slate-900">{proveedor.direccion || "—"}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Dirección</p>
+                  <p className="text-foreground">{proveedor.direccion || "—"}</p>
                 </div>
               </div>
             </CardContent>
@@ -235,10 +235,10 @@ export function ProveedorDetails({ proveedor, onActivar, onSuspender }: Props) {
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
-                <p className="text-sm font-medium text-slate-700">
+                <p className="text-sm font-medium text-muted-foreground">
                   Fecha de Creación
                 </p>
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-muted-foreground">
                   {formatDate(proveedor.created_at)}
                 </p>
               </div>

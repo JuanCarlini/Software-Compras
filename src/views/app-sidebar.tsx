@@ -76,21 +76,21 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar className="border-slate-200">
-      <SidebarHeader className="border-b border-slate-200 p-6">
+    <Sidebar className="border-border">
+      <SidebarHeader className="border-b border-border p-6">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">G1</span>
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-sm">G1</span>
           </div>
           <div>
-            <h2 className="font-semibold text-slate-900">Gestión Uno</h2>
-            <p className="text-xs text-slate-600">Sistema de Gestión</p>
+            <h2 className="font-semibold text-foreground">Gestión Uno</h2>
+            <p className="text-xs text-muted-foreground">Sistema de Gestión</p>
           </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-slate-600 font-medium">
+          <SidebarGroupLabel className="text-muted-foreground font-medium">
             Menú Principal
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -101,8 +101,8 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
-                      className={`text-slate-700 hover:bg-slate-100 hover:text-slate-900 ${
-                        isActive ? "bg-slate-100 text-slate-900 font-medium" : ""
+                      className={`text-muted-foreground hover:bg-accent hover:text-foreground ${
+                        isActive ? "bg-muted text-foreground font-medium" : ""
                       }`}
                     >
                       <Link href={item.url}>
@@ -120,7 +120,7 @@ export function AppSidebar() {
         {/* Sección de Administración - Solo para admins */}
         {userIsAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel className="text-red-600 font-medium">
+            <SidebarGroupLabel className="text-destructive font-medium">
               Administración
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -128,8 +128,8 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    className={`text-slate-700 hover:bg-red-50 hover:text-red-700 ${
-                      pathname === "/admin/usuarios" ? "bg-red-50 text-red-700 font-medium" : ""
+                    className={`text-muted-foreground hover:bg-destructive/10 hover:text-destructive ${
+                      pathname === "/admin/usuarios" ? "bg-destructive/10 text-destructive font-medium" : ""
                     }`}
                   >
                     <Link href="/admin/usuarios">
@@ -141,8 +141,8 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    className={`text-slate-700 hover:bg-red-50 hover:text-red-700 ${
-                      pathname === "/admin/auditoria" ? "bg-red-50 text-red-700 font-medium" : ""
+                    className={`text-muted-foreground hover:bg-destructive/10 hover:text-destructive ${
+                      pathname === "/admin/auditoria" ? "bg-destructive/10 text-destructive font-medium" : ""
                     }`}
                   >
                     <Link href="/admin/auditoria">
@@ -157,13 +157,13 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-slate-200 p-4">
+      <SidebarFooter className="border-t border-border p-4">
         <div className="space-y-2">
           {user && (
-            <div className="px-2 py-1 text-xs text-slate-600">
-              <p className="font-medium text-slate-900">{user.nombre}</p>
+            <div className="px-2 py-1 text-xs text-muted-foreground">
+              <p className="font-medium text-foreground">{user.nombre}</p>
               <p>{user.email}</p>
-              <p className="text-slate-500">Rol: {user.rol}</p>
+              <p className="text-muted-foreground">Rol: {user.rol}</p>
             </div>
           )}
           <Button

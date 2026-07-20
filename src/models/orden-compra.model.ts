@@ -1,82 +1,36 @@
-// src/models/orden-compra.ts
+import type { Database } from "@/lib/supabase/database.types"
 
-export type OcEstado = "borrador" | "en_aprobacion" | "aprobado" | "rechazado" | "anulado"
-export type MonedaOc = "ARS" | "USD" | "EUR" // ajustá a tu enum
+type T = Database["public"]["Tables"]
 
-export interface OrdenCompra {
-  id: number
-  numero_oc: string
-  proveedor_id: number
-  proyecto_id: number | null
-  fecha_oc: string            // YYYY-MM-DD
-  moneda: MonedaOc
-  total_neto: number
-  total_iva: number
-  total_con_iva: number
-  estado: OcEstado
-  observaciones: string | null
-  created_by: number | null
-  created_at: string
-  updated_at: string
+export type OrdenCompra = T["gu_ordenesdecompra"]["Row"]
+export type OrdenCompraLinea = T["gu_lineasdeordenesdecompra"]["Row"]
+
+// La app manda solo lo que la DB no genera: id/numero_oc/created_at/updated_at los pone
+// la DB, y `estado` lo fija el server en 'borrador' (S2). Los totales SÍ los calcula la app.
+export type CreateOrdenCompraData = Omit<
+  T["gu_ordenesdecompra"]["Insert"],
+  "id" | "numero_oc" | "estado" | "created_at" | "updated_at"
+>
+
+export type CreateOrdenCompraLinea = Omit<
+  T["gu_lineasdeordenesdecompra"]["Insert"],
+  "id" | "numero_loc"
+>
+
+// Línea con el item del catálogo resuelto (join a gu_items).
+export type OrdenCompraLineaConItem = OrdenCompraLinea & {
+  item: Pick<
+    T["gu_items"]["Row"],
+    "id" | "codigo" | "nombre" | "descripcion" | "unidad_medida" | "categoria"
+  > | null
 }
 
-export interface CreateOrdenCompraData {
-  numero_oc: string
-  proveedor_id: number
-  proyecto_id?: number | null
-  fecha_oc: string           // YYYY-MM-DD
-  moneda?: MonedaOc
-  total_neto: number
-  total_iva: number
-  total_con_iva: number
-  estado?: OcEstado
-  observaciones?: string | null
-}
-
-export interface OrdenCompraLinea {
-  id: number
-  orden_compra_id: number
-  item_id?: number | null          // NUEVO: FK a gu_items
-  item_codigo: string | null
-  descripcion: string
-  cantidad: number
-  precio_unitario_neto: number
-  iva_porcentaje: number
-  total_neto: number
-  total_con_iva: number
-  estado: string | null
-}
-
-export interface CreateOrdenCompraLinea {
-  orden_compra_id: number
-  item_id?: number | null          // NUEVO: FK a gu_items
-  item_codigo?: string | null
-  descripcion: string
-  cantidad: number
-  precio_unitario_neto: number
-  iva_porcentaje: number
-  total_neto: number
-  total_con_iva: number
-  estado?: string | null
-}
-
-// Interface extendida con información del item del catálogo
-export interface OrdenCompraLineaConItem extends OrdenCompraLinea {
-  item?: {
-    id: number
-    nombre: string
-    descripcion?: string | null
-    precio_sugerido?: number | null
-    unidad_medida?: string | null
-    categoria?: string | null
-  } | null
-}
-
-// Helper type para crear líneas con items del catálogo
+// Lo que manda la UI al agregar una línea. Si no manda precio, se hereda de
+// gu_item_proveedor_precio para el proveedor de la OC; si lo manda, se guarda ahí.
 export interface CreateLineaFromItem {
   item_id: number
   cantidad: number
-  precio_unitario_neto?: number    // Si no se provee, se usa precio_sugerido del item
-  iva_porcentaje?: number           // Default 21
-  descripcion?: string              // Opcional: para complementar info del item
+  precio_unitario_neto?: number
+  iva_porcentaje?: number
+  descripcion?: string
 }

@@ -1,16 +1,43 @@
+import type { TablesUpdate } from "@/lib/supabase/database.types"
 import { CertificacionRepository } from "@/repositories/certificacion.repository"
+import { OrdenCompraRepository } from "@/repositories/orden-compra.repository"
+import { HttpError } from "@/shared/http-error"
+import { totalesDeCertificacion } from "@/shared/totales"
+import { puedeTransicionar, TRANSICIONES_APROBACION } from "@/shared/transiciones"
+import type { CreateCertificacionLinea, EstadoAprobacion } from "@/models"
 
-// Reglas de negocio de certificaciones. El I/O vive en CertificacionRepository (A1):
-// acá quedan la generación del número, el aplanado de joins, la compensación
-// anti-huérfanas y el cálculo del saldo certificable.
+interface CreateCertificacionInput {
+  orden_compra_id: number
+  fecha_devengado?: string | null
+  observaciones?: string | null
+  lineas: CreateCertificacionLinea[]
+}
+
+// Reglas de negocio de certificaciones. El I/O vive en CertificacionRepository (A1).
+//
+// Lo que NO vive acá porque es de la DB (y por eso no es bypasseable):
+//   - numero_cert CE-N.s ............... fn_num_cert
+//   - avance_monto / % / iva / numero_lce  fn_lce_derive (input único: avance_unidades)
+//   - tope del 100% por unidades ....... fn_check_avance_100
+//   - "la OC tiene que estar aprobada" . fn_cert_oc_aprobada (+ hereda el proveedor)
+//   - avance disponible por línea ...... vista v_loc_rollup
+//   - estado de facturación ............ vista v_cert_rollup
+// Los chequeos equivalentes de abajo son PRE-validación: dan un error más claro y evitan
+// un round-trip, pero la garantía está en los triggers.
 export class CertificacionService {
   static async getAll() {
     const certs = await CertificacionRepository.findAllWithRelations()
+    if (certs.length === 0) return []
+
+    const rollups = await CertificacionRepository.findRollupsByIds(certs.map((c: any) => c.id))
+    const porId = new Map(rollups.map((r) => [r.certificacion_id, r]))
+
     return certs.map((cert: any) => ({
       ...cert,
-      proyecto_nombre: cert.gu_proyectos?.nombre,
-      proyecto_codigo: cert.gu_proyectos?.codigo,
       proveedor_nombre: cert.gu_proveedores?.nombre,
+      numero_oc: cert.gu_ordenesdecompra?.numero_oc,
+      estado_facturacion: porId.get(cert.id)?.estado_facturacion ?? "sin",
+      monto_facturado: Number(porId.get(cert.id)?.monto_facturado ?? 0),
     }))
   }
 
@@ -18,63 +45,90 @@ export class CertificacionService {
     const cert = await CertificacionRepository.findByIdWithRelations(id)
     if (!cert) return null
 
-    const lineas = await CertificacionRepository.findLineasByCertId(id)
+    const [lineas, rollups] = await Promise.all([
+      CertificacionRepository.findLineasByCertId(id),
+      CertificacionRepository.findRollupsByIds([id]),
+    ])
+
     return {
       ...cert,
-      proyecto_nombre: cert.gu_proyectos?.nombre,
-      proyecto_codigo: cert.gu_proyectos?.codigo,
       proveedor_nombre: cert.gu_proveedores?.nombre,
       proveedor_cuit: cert.gu_proveedores?.cuit,
       proveedor_email: cert.gu_proveedores?.email,
+      numero_oc: cert.gu_ordenesdecompra?.numero_oc,
+      moneda: cert.gu_ordenesdecompra?.moneda,
       lineas,
+      estado_facturacion: rollups[0]?.estado_facturacion ?? "sin",
+      monto_facturado: Number(rollups[0]?.monto_facturado ?? 0),
     }
   }
 
-  static async create(data: any) {
-    const { lineas, ...certData } = data
+  /**
+   * Crea la certificación contra UNA orden de compra aprobada.
+   * El proveedor lo hereda de la OC (no lo elige el cliente) y el número lo genera la DB.
+   * Las líneas solo llevan `avance_unidades`: el resto lo deriva fn_lce_derive.
+   */
+  static async create(payload: CreateCertificacionInput) {
+    const { orden_compra_id, lineas, ...certData } = payload
 
-    // Número automático CERT-YYYY-NNN (regla; el último número lo trae el repo)
-    const numero_cert = CertificacionService.siguienteNumero(await CertificacionRepository.findLastNumero())
+    if (!lineas || lineas.length === 0) {
+      throw new HttpError(422, "La certificación debe tener al menos una línea")
+    }
+
+    const oc = await OrdenCompraRepository.findById(orden_compra_id)
+    if (!oc) throw new HttpError(404, "Orden de compra no encontrada")
+    if (oc.estado !== "aprobado") {
+      throw new HttpError(
+        422,
+        `Solo se puede certificar contra una orden de compra aprobada (la OC ${oc.numero_oc} está en estado "${oc.estado}")`
+      )
+    }
 
     const nuevaCert = await CertificacionRepository.insert({
       ...certData,
-      numero_cert,
-      estado: "borrador", // S2: estado inicial fijado por el server, nunca por el cliente
+      orden_compra_id,
+      proveedor_id: oc.proveedor_id,
+      estado: "borrador",
     })
 
-    if (lineas && lineas.length > 0) {
-      try {
-        await CertificacionRepository.insertLineas(
-          lineas.map((linea: any) => ({ ...linea, certificacion_id: nuevaCert.id }))
-        )
-      } catch (e) {
-        // compensación: sin transacciones en el cliente, borramos la cabecera para
-        // no dejar una certificación huérfana si el trigger rechazó las líneas
-        await CertificacionRepository.deleteById(nuevaCert.id)
-        throw e
-      }
+    try {
+      await CertificacionRepository.insertLineas(
+        lineas.map((l) => ({
+          certificacion_id: nuevaCert.id,
+          linea_oc_id: l.linea_oc_id,
+          avance_unidades: l.avance_unidades,
+        }))
+      )
+      await CertificacionService.recalcularCabecera(nuevaCert.id)
+    } catch (e) {
+      // Sin transacción de cliente: si el trigger del 100% rechaza una línea, la cabecera
+      // quedaría huérfana. Se compensa y se propaga el error crudo (la ruta lo hace 422).
+      await CertificacionRepository.deleteById(nuevaCert.id)
+      throw e
     }
 
     return nuevaCert
   }
 
-  // CERT-YYYY-NNN: incrementa dentro del año en curso, reinicia en 001 al cambiar de año.
-  private static siguienteNumero(ultimo: string | null): string {
-    const year = new Date().getFullYear()
-    if (ultimo) {
-      const match = ultimo.match(/CERT-(\d{4})-(\d{3})/)
-      if (match) {
-        const lastYear = parseInt(match[1])
-        const lastNum = parseInt(match[2])
-        if (year === lastYear) {
-          return `CERT-${year}-${(lastNum + 1).toString().padStart(3, "0")}`
-        }
-      }
-    }
-    return `CERT-${year}-001`
+  // Los totales de la cabecera los suma la app, desde las líneas ya derivadas por el trigger.
+  static async recalcularCabecera(certId: number): Promise<void> {
+    const lineas = await CertificacionRepository.findLineasByCertId(certId)
+    await CertificacionRepository.update(certId, totalesDeCertificacion(lineas))
   }
 
-  static async update(id: number, data: any) {
+  // Pre-chequeo del grafo (409). Los gates de negocio son triggers y devuelven 422.
+  static async cambiarEstado(id: number, destino: EstadoAprobacion) {
+    const cert = await CertificacionRepository.findByIdWithRelations(id)
+    if (!cert) throw new HttpError(404, "Certificación no encontrada")
+
+    if (!puedeTransicionar(TRANSICIONES_APROBACION, cert.estado, destino)) {
+      throw new HttpError(409, `No se puede pasar de ${cert.estado} a ${destino}`)
+    }
+
+    return CertificacionRepository.updateEstado(id, destino)
+  }
+
+  static async update(id: number, data: TablesUpdate<"gu_certificaciones">) {
     return CertificacionRepository.update(id, data)
   }
 
@@ -83,46 +137,31 @@ export class CertificacionService {
   }
 
   /**
-   * Líneas de OCs aprobadas del proveedor con su saldo certificable.
-   * La regla del 100% la garantiza el trigger check_certificacion_max_100 en la DB;
-   * esto alimenta el formulario para que el usuario vea el disponible antes de enviar.
+   * Líneas certificables de una OC, con su saldo. El avance NO se recalcula en JS:
+   * lo publica v_loc_rollup (solo certificaciones aprobadas). Alimenta el formulario
+   * para que el usuario vea el disponible antes de enviar; el tope lo aplica el trigger.
    */
-  static async getLineasOCDisponibles(proveedorId: number) {
-    const lineasOC = await CertificacionRepository.findLineasOCAprobadas(proveedorId)
-    if (lineasOC.length === 0) return []
+  static async getLineasDisponibles(ordenCompraId: number) {
+    const lineas = await CertificacionRepository.findLineasDisponibles(ordenCompraId)
+    if (lineas.length === 0) return []
 
-    const ids = lineasOC.map((l: any) => l.id)
-    const certificado = await CertificacionRepository.findCertificadoByLineaOCIds(ids)
+    const rollups = await CertificacionRepository.findLocRollups(ordenCompraId)
+    const porLinea = new Map(rollups.map((r) => [r.linea_oc_id, r]))
 
-    const certificadoPorLinea = new Map<number, number>()
-    for (const c of certificado) {
-      certificadoPorLinea.set(
-        c.linea_oc_id,
-        (certificadoPorLinea.get(c.linea_oc_id) || 0) + Number(c.cantidad)
-      )
-    }
-
-    return lineasOC.map((l: any) => {
-      const cantidadCertificada = certificadoPorLinea.get(l.id) || 0
+    return lineas.map((l: any) => {
+      const rollup = porLinea.get(l.id)
       return {
         id: l.id,
+        numero_loc: l.numero_loc,
         descripcion: l.descripcion,
+        unidad_medida: l.unidad_medida,
         cantidad: Number(l.cantidad),
         precio_unitario_neto: Number(l.precio_unitario_neto),
         iva_porcentaje: Number(l.iva_porcentaje),
-        numero_oc: l.gu_ordenesdecompra?.numero_oc,
-        orden_compra_id: l.gu_ordenesdecompra?.id,
-        cantidad_certificada: cantidadCertificada,
-        cantidad_disponible: Number(l.cantidad) - cantidadCertificada,
+        cantidad_certificada: Number(rollup?.unidades_certificadas ?? 0),
+        cantidad_disponible: Number(rollup?.unidades_pendientes ?? l.cantidad),
+        estado_certificacion: rollup?.estado_certificacion ?? "sin",
       }
     })
-  }
-
-  static async getByProyecto(proyectoId: number) {
-    const certs = await CertificacionRepository.findByProyecto(proyectoId)
-    return certs.map((cert: any) => ({
-      ...cert,
-      proveedor_nombre: cert.gu_proveedores?.nombre,
-    }))
   }
 }

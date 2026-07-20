@@ -65,16 +65,17 @@ export function useDashboard() {
       // Calcular estadísticas de órdenes de pago
       const ordenesPagoStats = {
         total: ordenesPago.length,
-        pendientes: ordenesPago.filter(o => o.estado === 'pendiente').length,
+        pendientes: ordenesPago.filter(o => o.estado === 'borrador' || o.estado === 'en_aprobacion').length,
         aprobadas: ordenesPago.filter(o => o.estado === 'aprobado').length,
         vencidas: ordenesPago.filter(o => {
           if (!o.fecha_op) return false
           const hoy = new Date()
-          return new Date(o.fecha_op) < hoy && o.estado === 'pendiente'
+          const pendienteDePago = o.estado !== 'pagado' && o.estado !== 'anulado' && o.estado !== 'rechazado'
+          return new Date(o.fecha_op) < hoy && pendienteDePago
         }).length,
         montoTotal: ordenesPago
           .filter(o => o.estado === 'pagado')
-          .reduce((sum, o) => sum + (o.total_pago || 0), 0)
+          .reduce((sum, o) => sum + (o.total_a_pagar || 0), 0)
       }
 
       // Calcular estadísticas de proveedores

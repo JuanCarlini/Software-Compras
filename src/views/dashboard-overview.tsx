@@ -17,27 +17,7 @@ import {
 import { useDashboard } from "@/shared/use-dashboard"
 import { formatCurrency } from "@/shared/format-utils"
 import { formatDateShort } from "@/shared/date-utils"
-import { showSuccessToast, showInfoToast, showWarningToast, showErrorToast } from "@/shared/toast-helpers"
-
-const getEstadoBadge = (estado: string) => {
-  switch (estado.toLowerCase()) {
-    case 'pendiente':
-      return <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pendiente</Badge>
-    case 'aprobada':
-    case 'aprobado':
-      return <Badge variant="outline" className="bg-blue-100 text-blue-800">Aprobada</Badge>
-    case 'pagada':
-    case 'pagado':
-      return <Badge variant="outline" className="bg-green-100 text-green-800">Pagada</Badge>
-    case 'rechazada':
-    case 'rechazado':
-      return <Badge variant="outline" className="bg-red-100 text-red-800">Rechazada</Badge>
-    case 'activo':
-      return <Badge variant="outline" className="bg-green-100 text-green-800">Activo</Badge>
-    default:
-      return <Badge variant="outline">{estado}</Badge>
-  }
-}
+import { StatusBadge } from "@/shared/status-badge"
 
 const getTipoIcon = (tipo: string) => {
   switch (tipo) {
@@ -55,23 +35,6 @@ const getTipoIcon = (tipo: string) => {
 export function DashboardOverview() {
   const { stats, loading, error, refreshData } = useDashboard()
 
-  const handleTestNotification = (type: string) => {
-    switch (type) {
-      case 'success':
-        showSuccessToast("¡Operación completada!", "La acción se ejecutó correctamente")
-        break
-      case 'info':
-        showInfoToast("Información del sistema", "Datos del dashboard actualizados")
-        break
-      case 'warning':
-        showWarningToast("Atención requerida", `Hay ${stats?.ordenesPago.vencidas || 0} órdenes vencidas`)
-        break
-      case 'error':
-        showErrorToast("Error en el sistema", "Error de prueba del sistema de notificaciones")
-        break
-    }
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -85,7 +48,7 @@ export function DashboardOverview() {
     return (
       <Card>
         <CardContent className="text-center py-8">
-          <p className="text-red-600 mb-4">Error: {error}</p>
+          <p className="text-destructive mb-4">Error: {error}</p>
           <Button onClick={refreshData} variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
             Reintentar
@@ -99,7 +62,7 @@ export function DashboardOverview() {
     return (
       <Card>
         <CardContent className="text-center py-8">
-          <p className="text-slate-500">No hay datos disponibles</p>
+          <p className="text-muted-foreground">No hay datos disponibles</p>
         </CardContent>
       </Card>
     )
@@ -142,50 +105,13 @@ export function DashboardOverview() {
 
   return (
     <div className="space-y-6">
-      {/* Botones de prueba de notificaciones y refresh */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>🔔 Prueba de Notificaciones</CardTitle>
-            <Button onClick={refreshData} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Actualizar Dashboard
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex space-x-2">
-            <Button 
-              variant="default" 
-              size="sm"
-              onClick={() => handleTestNotification('success')}
-            >
-              ✅ Éxito
-            </Button>
-            <Button 
-              variant="secondary" 
-              size="sm"
-              onClick={() => handleTestNotification('info')}
-            >
-              ℹ️ Info
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => handleTestNotification('warning')}
-            >
-              ⚠️ Alerta
-            </Button>
-            <Button 
-              variant="destructive" 
-              size="sm"
-              onClick={() => handleTestNotification('error')}
-            >
-              ❌ Error
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Acción de refresco */}
+      <div className="flex justify-end">
+        <Button onClick={refreshData} variant="outline" size="sm">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Actualizar
+        </Button>
+      </div>
 
       {/* Estadísticas principales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -194,15 +120,15 @@ export function DashboardOverview() {
           return (
             <Card key={stat.title}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   {stat.title}
                 </CardTitle>
                 <IconComponent className={`h-4 w-4 ${stat.color}`} />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
-                <p className="text-xs text-slate-500 mt-1">{stat.change}</p>
-                <p className="text-xs text-slate-400 mt-1">{stat.details}</p>
+                <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
+                <p className="text-xs text-muted-foreground mt-1">{stat.details}</p>
               </CardContent>
             </Card>
           )
@@ -218,16 +144,16 @@ export function DashboardOverview() {
           <CardContent>
             <div className="space-y-4">
               {stats.actividadReciente.length === 0 ? (
-                <p className="text-slate-500 text-sm">No hay actividad reciente</p>
+                <p className="text-muted-foreground text-sm">No hay actividad reciente</p>
               ) : (
                 stats.actividadReciente.slice(0, 5).map((actividad) => (
                   <div key={`${actividad.tipo}-${actividad.id}`} className="flex items-center space-x-3">
                     {getTipoIcon(actividad.tipo)}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-slate-900 truncate">{actividad.descripcion}</p>
+                      <p className="text-sm text-foreground truncate">{actividad.descripcion}</p>
                       <div className="flex items-center space-x-2 mt-1">
-                        <p className="text-xs text-slate-500">{formatDateShort(actividad.fecha)}</p>
-                        {actividad.estado && getEstadoBadge(actividad.estado)}
+                        <p className="text-xs text-muted-foreground">{formatDateShort(actividad.fecha)}</p>
+                        {actividad.estado && <StatusBadge estado={actividad.estado} />}
                       </div>
                     </div>
                   </div>
@@ -246,15 +172,15 @@ export function DashboardOverview() {
             <div className="space-y-4">
               {/* Órdenes de pago vencidas */}
               {stats.ordenesPago.vencidas > 0 && (
-                <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-destructive/10 rounded-lg">
                   <div className="flex items-center space-x-2">
-                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                    <AlertTriangle className="h-4 w-4 text-destructive" />
                     <div>
-                      <p className="text-sm font-medium text-red-800">Órdenes Vencidas</p>
-                      <p className="text-xs text-red-600">{stats.ordenesPago.vencidas} órdenes de pago vencidas</p>
+                      <p className="text-sm font-medium text-destructive">Órdenes Vencidas</p>
+                      <p className="text-xs text-destructive">{stats.ordenesPago.vencidas} órdenes de pago vencidas</p>
                     </div>
                   </div>
-                  <Badge variant="outline" className="bg-red-100 text-red-800">
+                  <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
                     Urgente
                   </Badge>
                 </div>
@@ -262,15 +188,15 @@ export function DashboardOverview() {
 
               {/* Órdenes pendientes */}
               {stats.ordenesCompra.pendientes > 0 && (
-                <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-amber-500/10 rounded-lg">
                   <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-yellow-600" />
+                    <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                     <div>
-                      <p className="text-sm font-medium text-yellow-800">Órdenes Pendientes</p>
-                      <p className="text-xs text-yellow-600">{stats.ordenesCompra.pendientes} órdenes de compra por aprobar</p>
+                      <p className="text-sm font-medium text-amber-600 dark:text-amber-400">Órdenes Pendientes</p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400">{stats.ordenesCompra.pendientes} órdenes de compra por aprobar</p>
                     </div>
                   </div>
-                  <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                  <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
                     Pendiente
                   </Badge>
                 </div>
@@ -278,11 +204,11 @@ export function DashboardOverview() {
 
               {/* Si todo está bien */}
               {stats.ordenesPago.vencidas === 0 && stats.ordenesCompra.pendientes === 0 && (
-                <div className="flex items-center space-x-2 p-3 bg-green-50 rounded-lg">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                <div className="flex items-center space-x-2 p-3 bg-emerald-500/10 rounded-lg">
+                  <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                   <div>
-                    <p className="text-sm font-medium text-green-800">Todo al día</p>
-                    <p className="text-xs text-green-600">No hay elementos que requieran atención inmediata</p>
+                    <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Todo al día</p>
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400">No hay elementos que requieran atención inmediata</p>
                   </div>
                 </div>
               )}

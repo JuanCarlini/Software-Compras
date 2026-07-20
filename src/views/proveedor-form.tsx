@@ -105,7 +105,7 @@ export function ProveedorForm({ proveedor, isEditing = false }: Props) {
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div>
-            <h3 className="text-lg font-medium text-slate-900 mb-4">Información Básica</h3>
+            <h3 className="text-lg font-medium text-foreground mb-4">Información Básica</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="nombre">Nombre de la Empresa *</Label>
@@ -134,7 +134,7 @@ export function ProveedorForm({ proveedor, isEditing = false }: Props) {
           </div>
 
           <div>
-            <h3 className="text-lg font-medium text-slate-900 mb-4">Información de Contacto</h3>
+            <h3 className="text-lg font-medium text-foreground mb-4">Información de Contacto</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -164,7 +164,7 @@ export function ProveedorForm({ proveedor, isEditing = false }: Props) {
           </div>
 
           <div>
-            <h3 className="text-lg font-medium text-slate-900 mb-4">Ubicación</h3>
+            <h3 className="text-lg font-medium text-foreground mb-4">Ubicación</h3>
             <div className="space-y-2">
               <Label htmlFor="direccion">Dirección</Label>
               <Textarea

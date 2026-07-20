@@ -62,7 +62,7 @@ const roleColors: Record<string, string> = {
   admin: "text-red-600",
   supervisor: "text-blue-600",
   usuario: "text-green-600",
-  readonly: "text-gray-600",
+  readonly: "text-muted-foreground",
 }
 
 async function api(path: string, init?: RequestInit) {
@@ -260,8 +260,8 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Administración de Usuarios</h1>
-          <p className="text-slate-600 mt-2">
+          <h1 className="text-3xl font-bold text-foreground">Administración de Usuarios</h1>
+          <p className="text-muted-foreground mt-2">
             Alta, baja, roles y claves de los usuarios del sistema
           </p>
         </div>
@@ -283,23 +283,23 @@ export default function AdminUsersPage() {
               <div className="space-y-4">
                 {users.length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-slate-500">No hay usuarios registrados</p>
+                    <p className="text-muted-foreground">No hay usuarios registrados</p>
                   </div>
                 ) : (
                   users.map((userData) => {
                     const RoleIcon = roleIcons[userData.rol] || User
-                    const roleColor = roleColors[userData.rol] || "text-gray-600"
+                    const roleColor = roleColors[userData.rol] || "text-muted-foreground"
                     const esUnoMismo = userData.id.toString() === user?.id?.toString()
 
                     return (
                       <div
                         key={userData.id}
-                        className={`flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors ${userData.estado === "inactivo" ? "opacity-60" : ""}`}
+                        className={`flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors ${userData.estado === "inactivo" ? "opacity-60" : ""}`}
                       >
                         <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
                           <div>
-                            <p className="font-medium text-slate-900">{userData.nombre}</p>
-                            <p className="text-sm text-slate-500">{userData.email}</p>
+                            <p className="font-medium text-foreground">{userData.nombre}</p>
+                            <p className="text-sm text-muted-foreground">{userData.email}</p>
                             <div className="flex gap-1 mt-1">
                               {esUnoMismo && (
                                 <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Tú</span>
@@ -334,7 +334,7 @@ export default function AdminUsersPage() {
                               </SelectContent>
                             </Select>
                             {updatingUserId === userData.id && (
-                              <Loader2 className="h-4 w-4 animate-spin text-slate-500" />
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                             )}
                           </div>
 
@@ -391,14 +391,14 @@ export default function AdminUsersPage() {
             <CardContent>
               <div className="space-y-3">
                 {roles.map((rol) => (
-                  <div key={rol.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-lg">
+                  <div key={rol.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-slate-900">{rol.nombre}</p>
+                        <p className="font-medium text-foreground">{rol.nombre}</p>
                         {rol.es_sistema && <Badge variant="outline">sistema</Badge>}
                         <Badge variant="secondary">{rol.usuarios} usuario(s)</Badge>
                       </div>
-                      <p className="text-sm text-slate-500">{rol.descripcion}</p>
+                      <p className="text-sm text-muted-foreground">{rol.descripcion}</p>
                     </div>
                     <Button
                       variant="outline"
@@ -412,7 +412,7 @@ export default function AdminUsersPage() {
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-slate-500 mt-4">
+              <p className="text-xs text-muted-foreground mt-4">
                 Los roles del sistema (admin, supervisor, usuario, readonly) están vinculados a los permisos
                 del código y no pueden renombrarse ni eliminarse. Los roles nuevos reciben permisos de
                 &quot;usuario&quot; hasta que se les asigne un mapeo propio.
@@ -473,7 +473,7 @@ export default function AdminUsersPage() {
             <div>
               <Label>Nueva contraseña *</Label>
               <Input type="text" minLength={6} value={resetPass} onChange={(e) => setResetPass(e.target.value)} required />
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Se muestra en texto plano para que puedas comunicársela al usuario (mecanismo de recuperación de clave).
               </p>
             </div>

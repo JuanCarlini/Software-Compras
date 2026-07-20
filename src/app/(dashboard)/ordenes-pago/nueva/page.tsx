@@ -14,8 +14,8 @@ export default function NuevaOrdenPagoPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Nueva Orden de Pago</h1>
-          <p className="text-slate-600">Crear una nueva orden de pago a proveedor</p>
+          <h1 className="text-3xl font-bold text-foreground">Nueva Orden de Pago</h1>
+          <p className="text-muted-foreground">Crear una nueva orden de pago a proveedor</p>
         </div>
       </div>
       <OrdenPagoForm />

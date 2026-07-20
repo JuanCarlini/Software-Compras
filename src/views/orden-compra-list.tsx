@@ -16,7 +16,7 @@ import { useAuth } from "@/shared/auth-context"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 
 export function OrdenCompraList() {
-  const { orders, loading, error, updateOrder } = useOrders()
+  const { orders, loading, error, cambiarEstadoOrden } = useOrders()
   const { user } = useAuth()
   const [searchTerm, setSearchTerm] = useState("")
   const [updatingId, setUpdatingId] = useState<number | null>(null)
@@ -37,25 +37,18 @@ export function OrdenCompraList() {
     }
   )
 
-  const handleAprobar = async (id: number | string) => {
+  // El circuito no saltea etapas: de borrador se manda a aprobar, y recién de
+  // en_aprobacion se aprueba. Ir directo a 'aprobado' devuelve 409.
+  const handleTransicion = async (id: number | string, estado: string) => {
     try {
       setUpdatingId(Number(id))
-      await updateOrder(id, { estado: "aprobado" })
+      await cambiarEstadoOrden(id, estado)
     } catch (error) {
-      console.error("Error al aprobar orden:", error)
-      showErrorToast("Error al aprobar", error instanceof Error ? error.message : "Error desconocido")
-    } finally {
-      setUpdatingId(null)
-    }
-  }
-
-  const handleAnular = async (id: number | string) => {
-    try {
-      setUpdatingId(Number(id))
-      await updateOrder(id, { estado: "anulado" })
-    } catch (error) {
-      console.error("Error al anular orden:", error)
-      showErrorToast("Error al anular", error instanceof Error ? error.message : "Error desconocido")
+      console.error(`Error al pasar la orden a ${estado}:`, error)
+      showErrorToast(
+        "No se pudo cambiar el estado",
+        error instanceof Error ? error.message : "Error desconocido"
+      )
     } finally {
       setUpdatingId(null)
     }
@@ -76,7 +69,7 @@ export function OrdenCompraList() {
     return (
       <Card>
         <CardContent className="text-center py-8">
-          <p className="text-red-600">Error: {error}</p>
+          <p className="text-destructive">Error: {error}</p>
         </CardContent>
       </Card>
     )
@@ -106,7 +99,7 @@ export function OrdenCompraList() {
         <div className="space-y-4">
           {filteredOrders.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-slate-500">
+              <p className="text-muted-foreground">
                 {searchTerm
                   ? `No se encontraron órdenes que coincidan con "${searchTerm}"`
                   : "No hay órdenes de compra registradas"}
@@ -116,15 +109,15 @@ export function OrdenCompraList() {
             filteredOrders.map((orden: any) => (
               <div
                 key={orden.id}
-                className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors"
               >
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
                   {/* columna 1: número y fecha */}
                   <div>
-                    <p className="font-medium text-slate-900">
+                    <p className="font-medium text-foreground">
                       {orden.numero_oc ? `OC #${orden.numero_oc}` : `OC ID ${orden.id}`}
                     </p>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-muted-foreground">
                       {/* en la tabla la fecha es fecha_oc (date), no fecha_creacion */}
                       {orden.fecha_oc
                         ? new Date(orden.fecha_oc).toLocaleDateString("es-AR")
@@ -134,12 +127,12 @@ export function OrdenCompraList() {
 
                   {/* columna 2: proveedor (solo tenemos id) */}
                   <div>
-                    <p className="text-sm text-slate-900">
+                    <p className="text-sm text-foreground">
                       {orden.proveedor_nombre ||
                         (orden.proveedor_id ? `Proveedor #${orden.proveedor_id}` : "Sin proveedor")}
                     </p>
                     {orden.observaciones && (
-                      <p className="text-sm text-slate-500 line-clamp-1">
+                      <p className="text-sm text-muted-foreground line-clamp-1">
                         {orden.observaciones}
                       </p>
                     )}
@@ -147,7 +140,7 @@ export function OrdenCompraList() {
 
                   {/* columna 3: totales y estado */}
                   <div>
-                    <p className="font-medium text-slate-900">
+                    <p className="font-medium text-foreground">
                       {formatCurrency(orden.total_con_iva ?? orden.total_neto ?? 0)}
                     </p>
                     <StatusBadge estado={orden.estado} showIcon />
@@ -156,18 +149,22 @@ export function OrdenCompraList() {
                   {/* columna 4: acciones */}
                   <div className="flex items-center space-x-2">
                     <Button variant="outline" size="sm" asChild>
-                      <Link href={`/ordenes-compra/${orden.id}`}>
+                      <Link href={`/ordenes-compra/${orden.id}`} aria-label="Ver orden de compra">
                         <Eye className="h-4 w-4" />
                       </Link>
                     </Button>
 
-                    {/* solo si está en borrador y el usuario tiene permisos */}
-                    {canAnular && orden.estado === "borrador" && (
+                    {/* borrador -> "mandar a aprobar"; en_aprobacion -> "aprobar". */}
+                    {canAnular && (orden.estado === "borrador" || orden.estado === "en_aprobacion") && (
                       <>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleAprobar(orden.id)}
+                          title={orden.estado === "borrador" ? "Mandar a aprobar" : "Aprobar"}
+                          aria-label={orden.estado === "borrador" ? "Mandar a aprobar" : "Aprobar orden de compra"}
+                          onClick={() =>
+                            handleTransicion(orden.id, orden.estado === "borrador" ? "en_aprobacion" : "aprobado")
+                          }
                           disabled={updatingId === orden.id}
                         >
                           {updatingId === orden.id ? (
@@ -179,7 +176,9 @@ export function OrdenCompraList() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleAnular(orden.id)}
+                          title="Anular"
+                          aria-label="Anular orden de compra"
+                          onClick={() => handleTransicion(orden.id, "anulado")}
                           disabled={updatingId === orden.id}
                         >
                           {updatingId === orden.id ? (

@@ -13,8 +13,8 @@ export default function ReportesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Reportes</h1>
-        <p className="text-slate-600">Indicadores y métricas del sistema</p>
+        <h1 className="text-3xl font-bold text-foreground">Reportes</h1>
+        <p className="text-muted-foreground">Indicadores y métricas del sistema</p>
       </div>
 
       {loading ? (
@@ -27,13 +27,13 @@ export default function ReportesPage() {
       ) : error ? (
         <Card>
           <CardContent className="text-center py-8">
-            <p className="text-red-600">Error: {error}</p>
+            <p className="text-destructive">Error: {error}</p>
           </CardContent>
         </Card>
       ) : !estadisticas ? (
         <Card>
           <CardContent className="text-center py-8">
-            <p className="text-slate-500">No hay estadísticas disponibles</p>
+            <p className="text-muted-foreground">No hay estadísticas disponibles</p>
           </CardContent>
         </Card>
       ) : (

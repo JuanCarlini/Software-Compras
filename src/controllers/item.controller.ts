@@ -12,16 +12,22 @@ export class ItemService {
     return ItemRepository.findAll()
   }
 
+  // El repo arma un filtro `.or(...)` de PostgREST concatenando este texto. Ahí la coma
+  // termina el valor y el paréntesis cierra el grupo: sin sanear, `?query=x,id.gt.0`
+  // inyecta una condición OR extra. Los comodines de LIKE (% _) no son un vector.
   static async search(query: string): Promise<Item[]> {
-    return ItemRepository.search(query)
+    const limpio = query.replace(/[,()"\\]/g, " ").replace(/\s+/g, " ").trim()
+    if (!limpio) return []
+    return ItemRepository.search(limpio)
   }
 
   static async getById(id: number): Promise<Item | null> {
     return ItemRepository.findById(id)
   }
 
-  static async create(item: CreateItemDTO): Promise<Item> {
-    return ItemRepository.insert({ ...item, is_active: true })
+  // S2: is_active y created_by los fija el server (created_by sale del JWT), nunca el cliente.
+  static async create(item: Omit<CreateItemDTO, "created_by">, createdBy: number): Promise<Item> {
+    return ItemRepository.insert({ ...item, is_active: true, created_by: createdBy })
   }
 
   static async update(id: number, item: UpdateItemDTO): Promise<Item | null> {

@@ -36,16 +36,16 @@ export async function GET(request: NextRequest) {
 // POST /api/items - Crear nuevo item
 export async function POST(request: NextRequest) {
   try {
-    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    const { error: authError, user } = await requireRole(ROLES_ESCRITURA)
     if (authError) return authError
 
     const body = await request.json()
 
     // Validar datos de entrada
     const validatedData = CreateItemSchema.parse(body)
-    
-    // Crear el item
-    const nuevoItem = await ItemService.create(validatedData)
+
+    // Crear el item (created_by lo pone el server desde el JWT)
+    const nuevoItem = await ItemService.create(validatedData, user!.id)
     
     return NextResponse.json(nuevoItem, { status: 201 })
   } catch (error) {

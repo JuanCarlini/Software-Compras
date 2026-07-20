@@ -4,30 +4,26 @@ import { CreateOrdenCompraSchema } from "@/shared/orden-compra-validation"
 import { AuditService } from "@/lib/audit/audit.service"
 import { requireRole } from "@/shared/permissions-server"
 import { ROLES_ESCRITURA } from "@/shared/permissions"
+import { handleRouteError } from "@/shared/handle-route-error"
 
-// GET /api/ordenes-compra - Obtener todas las órdenes
+// GET /api/ordenes-compra - Lista con el rollup de certificación (leído de v_oc_rollup).
+// La autenticación la hace el middleware (verifica la firma del JWT en todo /api);
+// no hay gate de rol porque 'readonly' puede leer.
 export async function GET() {
   try {
-    const ordenes = await OrdenCompraService.getAll()
-    return NextResponse.json(ordenes || [])
+    return NextResponse.json(await OrdenCompraService.getAll())
   } catch (error) {
-    console.error("Error al obtener órdenes:", error)
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+    return handleRouteError(error, "GET /api/ordenes-compra")
   }
 }
 
-// POST /api/ordenes-compra - Crear nueva orden
+// POST /api/ordenes-compra - Crear nueva orden (nace en borrador, la DB le pone el número)
 export async function POST(request: NextRequest) {
   try {
     const { error: authError } = await requireRole(ROLES_ESCRITURA)
     if (authError) return authError
 
-    const body = await request.json()
-
-    // Validar datos de entrada
-    const validatedData = CreateOrdenCompraSchema.parse(body)
-    
-    // Crear la orden (cabecera + líneas)
+    const validatedData = CreateOrdenCompraSchema.parse(await request.json())
     const nuevaOrden = await OrdenCompraService.create(validatedData)
 
     await AuditService.registrarDesdeRequest({
@@ -39,19 +35,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(nuevaOrden, { status: 201 })
   } catch (error) {
-    console.error("Error al crear orden:", error)
-    
-    // Si es error de validación
-    if (error instanceof Error && error.name === "ZodError") {
-      return NextResponse.json(
-        { error: "Datos inválidos", details: error.message },
-        { status: 400 }
-      )
-    }
-    
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "POST /api/ordenes-compra")
   }
 }

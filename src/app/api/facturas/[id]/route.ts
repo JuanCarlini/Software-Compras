@@ -1,111 +1,53 @@
 import { NextRequest, NextResponse } from "next/server"
 import { FacturaService } from "@/controllers/factura.controller"
-import { requireAuth, requireRole } from "@/shared/permissions-server"
-import { canAnularDocumento, stringToUserRole, ROLES_DESTRUCTIVO } from "@/shared/permissions"
-import { UserRole } from "@/models"
+import { requireRole } from "@/shared/permissions-server"
+import { ROLES_DESTRUCTIVO } from "@/shared/permissions"
+import { parseId } from "@/shared/parse-id"
+import { handleRouteError } from "@/shared/handle-route-error"
 import { AuditService } from "@/lib/audit/audit.service"
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params
-    const factura = await FacturaService.getById(parseInt(id))
-    
-    if (!factura) {
-      return NextResponse.json(
-        { error: "Factura no encontrada" },
-        { status: 404 }
-      )
-    }
-    
-    return NextResponse.json(factura)
-  } catch (error) {
-    console.error("Error fetching factura:", error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
-  }
+interface Params {
+  params: Promise<{ id: string }>
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// GET /api/facturas/[id] - Cabecera + líneas + imputaciones + rollup de pago
+export async function GET(request: NextRequest, { params }: Params) {
   try {
-    // Verificar autenticación
-    const { error: authError, user } = await requireAuth()
-    if (authError) return authError
+    const id = parseId((await params).id)
 
-    const { id } = await params
-    const data = await request.json()
-
-    // Si se intenta anular, verificar permisos
-    const userRole = stringToUserRole(user!.rol)
-    if (data.estado === "anulado" && !canAnularDocumento(userRole)) {
-      return NextResponse.json(
-        { error: "No tienes permisos para anular facturas" },
-        { status: 403 }
-      )
-    }
-
-    const factura = await FacturaService.update(parseInt(id), data)
-
+    const factura = await FacturaService.getById(id)
     if (!factura) {
-      return NextResponse.json(
-        { error: "Error al actualizar factura" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Factura no encontrada" }, { status: 404 })
     }
-
-    const accion = data.estado === "aprobado" ? "aprobar"
-      : data.estado === "rechazado" ? "rechazar"
-      : data.estado === "anulado" ? "anular"
-      : "actualizar"
-    await AuditService.registrar({
-      usuarioId: Number(user!.id),
-      tabla: "gu_facturas",
-      registroId: parseInt(id),
-      accion,
-      detalle: `Factura ${factura.numero_factura ?? id}: ${accion}`,
-    })
 
     return NextResponse.json(factura)
   } catch (error) {
-    console.error("Error updating factura:", error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "GET /api/facturas/[id]")
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// DELETE /api/facturas/[id]
+export async function DELETE(request: NextRequest, { params }: Params) {
   try {
     const { error: authError } = await requireRole(ROLES_DESTRUCTIVO)
     if (authError) return authError
 
-    const { id } = await params
-    const success = await FacturaService.delete(parseInt(id))
-    
+    const id = parseId((await params).id)
+
+    const success = await FacturaService.delete(id)
     if (!success) {
-      return NextResponse.json(
-        { error: "Error al eliminar factura" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Factura no encontrada" }, { status: 404 })
     }
-    
-    return NextResponse.json({ success: true })
+
+    await AuditService.registrarDesdeRequest({
+      tabla: "gu_facturas",
+      registroId: id,
+      accion: "eliminar",
+      detalle: `Factura #${id} eliminada`,
+    })
+
+    return NextResponse.json({ message: "Factura eliminada correctamente" })
   } catch (error) {
-    console.error("Error deleting factura:", error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "DELETE /api/facturas/[id]")
   }
 }

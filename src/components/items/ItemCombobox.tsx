@@ -188,11 +188,8 @@ export function ItemCombobox({
                           </span>
                         )}
                         <div className="flex gap-2 text-xs text-muted-foreground mt-1">
-                          {item.precio_sugerido && (
-                            <span>
-                              ${item.precio_sugerido.toFixed(2)}
-                            </span>
-                          )}
+                          {/* El precio ya no vive en el item: es por proveedor (gu_item_proveedor_precio) */}
+                          <span>{item.codigo}</span>
                           {item.unidad_medida && (
                             <span>• {item.unidad_medida}</span>
                           )}

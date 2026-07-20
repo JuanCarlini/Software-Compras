@@ -14,9 +14,11 @@ export async function getAuthenticatedUser() {
     return null
   }
 
-  // El usuario ya viene con toda la información de gu_usuario
+  // El usuario ya viene con toda la información de gu_usuario.
+  // id es number (PK BIGINT) de punta a punta: stringificarlo acá rompía en silencio
+  // las comparaciones `usuario.id === user.id` de las rutas admin.
   return {
-    id: user.id.toString(), // Convertir a string para mantener compatibilidad
+    id: user.id,
     email: user.email,
     nombre: user.nombre,
     rol: user.rol_nombre?.toLowerCase() || 'usuario'

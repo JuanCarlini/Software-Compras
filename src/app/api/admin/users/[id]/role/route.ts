@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/shared/permissions-server"
-import { isAdmin } from "@/shared/permissions"
-import { UserRole } from "@/models"
+import { isAdmin, stringToUserRole } from "@/shared/permissions"
 import { createClient } from "@/lib/supabase/service"
 
 // PATCH /api/admin/users/[id]/role - Actualizar rol de un usuario (solo admin)
@@ -15,14 +14,15 @@ export async function PATCH(
     if (authError) return authError
 
     // Verificar que sea admin
-    if (!isAdmin(user!.rol as UserRole)) {
+    if (!isAdmin(stringToUserRole(user!.rol))) {
       return NextResponse.json(
         { error: "No tienes permisos para realizar esta acción" },
         { status: 403 }
       )
     }
 
-    const { id } = await params
+    const { id: idParam } = await params
+    const id = Number(idParam)
     const { rol } = await request.json()
 
     // Validar que el rol sea válido
@@ -64,18 +64,12 @@ export async function PATCH(
       .from('gu_roles')
       .select('id, nombre')
 
-    console.log("Todos los roles disponibles:", allRoles)
-    console.log("Rol buscado:", rol)
-
     // Obtener el rol_id correspondiente al nombre del rol (case-insensitive)
     const { data: roleData, error: roleError } = await supabase
       .from('gu_roles')
       .select('id, nombre')
       .ilike('nombre', rol)
       .maybeSingle()
-
-    console.log("Rol encontrado:", roleData)
-    console.log("Error al buscar rol:", roleError)
 
     if (roleError || !roleData) {
       return NextResponse.json(

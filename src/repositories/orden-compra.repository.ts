@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/service"
+import type { TablesUpdate } from "@/lib/supabase/database.types"
+import type { EstadoAprobacion, LocRollup, OcRollup } from "@/models"
 import {
   OrdenCompra,
   OrdenCompraLinea,
@@ -62,14 +64,40 @@ export class OrdenCompraRepository {
     return data || []
   }
 
-  static async update(id: string | number, payload: Partial<OrdenCompra>): Promise<OrdenCompra> {
+  static async update(id: number, payload: TablesUpdate<"gu_ordenesdecompra">): Promise<OrdenCompra> {
     const supabase = createClient()
     const { data, error } = await supabase.from(TABLE).update(payload).eq("id", id).select().single()
     if (error) throw error
     return data as OrdenCompra
   }
 
-  static async deleteById(id: string | number): Promise<boolean> {
+  // Transición de estado. El gate (fn_oc_gate: >=1 línea) es un trigger: si rebota,
+  // el error sube como P0001 y la ruta lo traduce a 422 con el mensaje de la DB.
+  static async updateEstado(id: number, estado: EstadoAprobacion): Promise<OrdenCompra> {
+    const supabase = createClient()
+    const { data, error } = await supabase.from(TABLE).update({ estado }).eq("id", id).select().single()
+    if (error) throw error
+    return data as OrdenCompra
+  }
+
+  // Rollups: los publica la vista v_oc_rollup (security_invoker). No se recalculan en JS.
+  static async findRollupsByIds(ids: number[]): Promise<OcRollup[]> {
+    if (ids.length === 0) return []
+    const supabase = createClient()
+    const { data, error } = await supabase.from("v_oc_rollup").select("*").in("orden_compra_id", ids)
+    if (error) throw error
+    return data ?? []
+  }
+
+  // Rollup por línea (unidades certificadas/pendientes) para el detalle de la OC.
+  static async findLocRollups(ordenId: number): Promise<LocRollup[]> {
+    const supabase = createClient()
+    const { data, error } = await supabase.from("v_loc_rollup").select("*").eq("orden_compra_id", ordenId)
+    if (error) throw error
+    return data ?? []
+  }
+
+  static async deleteById(id: number): Promise<boolean> {
     const supabase = createClient()
     const { error } = await supabase.from(TABLE).delete().eq("id", id)
     return !error
@@ -79,22 +107,12 @@ export class OrdenCompraRepository {
     const supabase = createClient()
     const { data, error } = await supabase
       .from(TABLE_LINEAS)
-      .select(`
-        *,
-        item:item_id (
-          id,
-          nombre,
-          descripcion,
-          precio_sugerido,
-          unidad_medida,
-          categoria
-        )
-      `)
+      .select("*, item:gu_items(id, codigo, nombre, descripcion, unidad_medida, categoria)")
       .eq("orden_compra_id", ordenId)
       .order("id", { ascending: true })
 
     if (error) throw error
-    return (data || []) as OrdenCompraLineaConItem[]
+    return (data ?? []) as unknown as OrdenCompraLineaConItem[]
   }
 
   // Línea por id (para recalcular totales en updateLine). Error/no encontrada -> null.

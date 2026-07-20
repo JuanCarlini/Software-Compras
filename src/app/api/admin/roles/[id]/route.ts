@@ -22,7 +22,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     })
 
     await AuditService.registrar({
-      usuarioId: Number(user!.id),
+      usuarioId: user!.id,
       tabla: "gu_roles",
       registroId: Number(id),
       accion: "actualizar",
@@ -47,7 +47,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     await RolService.delete(Number(id))
 
     await AuditService.registrar({
-      usuarioId: Number(user!.id),
+      usuarioId: user!.id,
       tabla: "gu_roles",
       registroId: Number(id),
       accion: "eliminar",

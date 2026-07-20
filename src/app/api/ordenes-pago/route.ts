@@ -4,30 +4,25 @@ import { CreateOrdenPagoSchema } from "@/shared/orden-pago-validation"
 import { AuditService } from "@/lib/audit/audit.service"
 import { requireRole } from "@/shared/permissions-server"
 import { ROLES_ESCRITURA } from "@/shared/permissions"
+import { handleRouteError } from "@/shared/handle-route-error"
 
-// GET /api/ordenes-pago - Obtener todas las órdenes de pago
+// GET /api/ordenes-pago - Lista (con el nombre del proveedor aplanado)
 export async function GET() {
   try {
-    const ordenes = await OrdenPagoService.getAll()
-    return NextResponse.json(ordenes || [])
+    return NextResponse.json(await OrdenPagoService.getAll())
   } catch (error) {
-    console.error("Error al obtener órdenes de pago:", error)
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+    return handleRouteError(error, "GET /api/ordenes-pago")
   }
 }
 
-// POST /api/ordenes-pago - Crear nueva orden de pago
+// POST /api/ordenes-pago - Crear la OP (vacía: nace en borrador con total 0).
+// Las facturas y las cajas se cargan con /[id]/facturas y /[id]/cajas.
 export async function POST(request: NextRequest) {
   try {
     const { error: authError } = await requireRole(ROLES_ESCRITURA)
     if (authError) return authError
 
-    const body = await request.json()
-
-    // Validar datos de entrada
-    const validatedData = CreateOrdenPagoSchema.parse(body)
-    
-    // Crear la orden
+    const validatedData = CreateOrdenPagoSchema.parse(await request.json())
     const nuevaOrden = await OrdenPagoService.create(validatedData)
 
     await AuditService.registrarDesdeRequest({
@@ -39,19 +34,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(nuevaOrden, { status: 201 })
   } catch (error) {
-    console.error("Error al crear orden de pago:", error)
-    
-    // Si es error de validación
-    if (error instanceof Error && error.name === "ZodError") {
-      return NextResponse.json(
-        { error: "Datos inválidos", details: error.message },
-        { status: 400 }
-      )
-    }
-    
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "POST /api/ordenes-pago")
   }
 }

@@ -67,7 +67,7 @@ export function OrdenCompraDetails({ ordenId }: Props) {
       <Card>
         <CardContent className="py-8 text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Cargando detalles de la orden...</p>
+          <p className="text-muted-foreground">Cargando detalles de la orden...</p>
         </CardContent>
       </Card>
     )
@@ -77,10 +77,10 @@ export function OrdenCompraDetails({ ordenId }: Props) {
     return (
       <Card>
         <CardContent className="py-8 text-center">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className="text-lg font-medium text-foreground mb-2">
             {error || "Orden no encontrada"}
           </h3>
-          <p className="text-gray-600 mb-4">
+          <p className="text-muted-foreground mb-4">
             No se pudo cargar la información de esta orden.
           </p>
           <Button variant="outline" onClick={() => window.history.back()}>
@@ -97,10 +97,10 @@ export function OrdenCompraDetails({ ordenId }: Props) {
         {/* Header */}
         <div className="flex items-start justify-between mb-6 pb-6 border-b">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">
+            <h2 className="text-2xl font-bold text-foreground">
               Orden de Compra {orden.numero_oc ?? `#${orden.id}`}
             </h2>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               Fecha: {orden.fecha_oc ? formatDateShort(orden.fecha_oc) : "—"}
             </p>
           </div>
@@ -111,13 +111,13 @@ export function OrdenCompraDetails({ ordenId }: Props) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
           {/* info general */}
           <div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">
+            <h3 className="text-lg font-semibold text-foreground mb-4">
               Información General
             </h3>
             <div className="space-y-3">
               <div>
-                <p className="text-sm text-slate-600">Proveedor:</p>
-                <p className="text-base text-slate-900">
+                <p className="text-sm text-muted-foreground">Proveedor:</p>
+                <p className="text-base text-foreground">
                   {proveedor?.nombre ??
                     (orden.proveedor_id
                       ? `Proveedor #${orden.proveedor_id}`
@@ -125,15 +125,15 @@ export function OrdenCompraDetails({ ordenId }: Props) {
                 </p>
               </div>
               <div>
-                <p className="text-sm text-slate-600">Moneda:</p>
-                <p className="text-base text-slate-900">
+                <p className="text-sm text-muted-foreground">Moneda:</p>
+                <p className="text-base text-foreground">
                   {orden.moneda ?? "ARS"}
                 </p>
               </div>
               {orden.observaciones && (
                 <div>
-                  <p className="text-sm text-slate-600">Observaciones:</p>
-                  <p className="text-base text-slate-900 whitespace-pre-wrap">
+                  <p className="text-sm text-muted-foreground">Observaciones:</p>
+                  <p className="text-base text-foreground whitespace-pre-wrap">
                     {orden.observaciones}
                   </p>
                 </div>
@@ -143,25 +143,25 @@ export function OrdenCompraDetails({ ordenId }: Props) {
 
           {/* totales */}
           <div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">
+            <h3 className="text-lg font-semibold text-foreground mb-4">
               Totales
             </h3>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-slate-600">Subtotal:</span>
-                <span className="text-base text-slate-900">
+                <span className="text-sm text-muted-foreground">Subtotal:</span>
+                <span className="text-base text-foreground">
                   {formatCurrency(Number(orden.total_neto ?? 0))}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-slate-600">Impuestos:</span>
-                <span className="text-base text-slate-900">
+                <span className="text-sm text-muted-foreground">Impuestos:</span>
+                <span className="text-base text-foreground">
                   {formatCurrency(Number(orden.total_iva ?? 0))}
                 </span>
               </div>
               <div className="flex justify-between pt-3 border-t">
-                <span className="text-lg font-bold text-slate-900">Total:</span>
-                <span className="text-lg font-bold text-slate-900">
+                <span className="text-lg font-bold text-foreground">Total:</span>
+                <span className="text-lg font-bold text-foreground">
                   {formatCurrency(Number(orden.total_con_iva ?? 0))}
                 </span>
               </div>
@@ -171,52 +171,52 @@ export function OrdenCompraDetails({ ordenId }: Props) {
 
         {/* líneas */}
         <div className="mt-8 pt-6 border-t">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">
+          <h3 className="text-lg font-semibold text-foreground mb-4">
             Items de la Orden ({lineas.length})
           </h3>
 
           {lineas.length === 0 ? (
-            <p className="text-slate-500">Esta orden no tiene líneas.</p>
+            <p className="text-muted-foreground">Esta orden no tiene líneas.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-slate-50 border-b">
+                <thead className="bg-muted border-b">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
                       Descripción
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
                       Código
                     </th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-slate-600">
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
                       Cantidad
                     </th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-slate-600">
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
                       P. Unitario
                     </th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-slate-600">
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
                       Subtotal
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {lineas.map((linea) => (
-                    <tr key={linea.id} className="hover:bg-slate-50">
+                    <tr key={linea.id} className="hover:bg-accent">
                       <td className="px-4 py-3">
-                        <p className="text-sm font-medium text-slate-900">
+                        <p className="text-sm font-medium text-foreground">
                           {linea.descripcion}
                         </p>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-900">
+                      <td className="px-4 py-3 text-sm text-foreground">
                         {linea.item_codigo ?? "—"}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-slate-900">
+                      <td className="px-4 py-3 text-right text-sm text-foreground">
                         {Number(linea.cantidad ?? 0)}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-slate-900">
+                      <td className="px-4 py-3 text-right text-sm text-foreground">
                         {formatCurrency(Number(linea.precio_unitario_neto ?? 0))}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-medium text-slate-900">
+                      <td className="px-4 py-3 text-right text-sm font-medium text-foreground">
                         {formatCurrency(Number(linea.total_neto ?? 0))}
                       </td>
                     </tr>

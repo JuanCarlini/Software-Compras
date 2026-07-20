@@ -1,15 +1,34 @@
 import { FacturaRepository } from "@/repositories/factura.repository"
+import { HttpError } from "@/shared/http-error"
+import { totalesDeLinea, totalesDeCabecera } from "@/shared/totales"
+import { puedeTransicionar, TRANSICIONES_FACTURA } from "@/shared/transiciones"
+import type { CreateFacturaData, CreateFacturaLinea, CreateImputacion, EstadoFactura } from "@/models"
 
-// Reglas de negocio de facturas. El I/O vive en FacturaRepository (A1): acá quedan
-// la generación del número, el aplanado de joins, el default de estado (S2) y el
-// orquestado de líneas + relaciones N:M con certificaciones.
+interface CreateFacturaInput extends CreateFacturaData {
+  lineas: CreateFacturaLinea[]
+  imputaciones?: CreateImputacion[]
+}
+
+// Reglas de negocio de facturas. El I/O vive en FacturaRepository (A1).
+//
+// De la DB (no bypasseable): numero_factura FACT-N (fn_num_fact); la regla de imputación
+// (fn_check_imputacion: solo certs aprobadas, y Σmonto_asignado ≤ Σtotal_con_iva de las
+// LFACT); el estado de pago (vista v_factura_rollup).
+// La app calcula: totales de línea, totales de cabecera y total_facturado.
 export class FacturaService {
   static async getAll() {
     const facturas = await FacturaRepository.findAllWithProveedor()
+    if (facturas.length === 0) return []
+
+    const rollups = await FacturaRepository.findRollupsByIds(facturas.map((f: any) => f.id))
+    const porId = new Map(rollups.map((r) => [r.factura_id, r]))
+
     return facturas.map((factura: any) => ({
       ...factura,
       proveedor_nombre: factura.gu_proveedores?.nombre,
       proveedor_cuit: factura.gu_proveedores?.cuit,
+      estado_pago: porId.get(factura.id)?.estado_pago ?? "sin",
+      monto_pagado: Number(porId.get(factura.id)?.monto_pagado ?? 0),
     }))
   }
 
@@ -17,8 +36,11 @@ export class FacturaService {
     const factura = await FacturaRepository.findByIdWithProveedor(id)
     if (!factura) return null
 
-    const lineas = await FacturaRepository.findLineasByFacturaId(id)
-    const certificaciones = await FacturaRepository.findCertificacionesByFacturaId(id)
+    const [lineas, imputaciones, rollups] = await Promise.all([
+      FacturaRepository.findLineasByFacturaId(id),
+      FacturaRepository.findImputaciones(id),
+      FacturaRepository.findRollupsByIds([id]),
+    ])
 
     return {
       ...factura,
@@ -27,7 +49,9 @@ export class FacturaService {
       proveedor_email: factura.gu_proveedores?.email,
       proveedor_direccion: factura.gu_proveedores?.direccion,
       lineas,
-      certificaciones: certificaciones.map((c: any) => c.gu_certificaciones),
+      imputaciones,
+      estado_pago: rollups[0]?.estado_pago ?? "sin",
+      monto_pagado: Number(rollups[0]?.monto_pagado ?? 0),
     }
   }
 
@@ -35,72 +59,114 @@ export class FacturaService {
     return FacturaRepository.findCertificacionesAprobadas(proveedorId)
   }
 
-  static async create(data: any) {
-    const { lineas, certificaciones_ids, ...facturaData } = data
+  /**
+   * Crea la factura: cabecera (borrador, sin número) → líneas con totales calculados →
+   * cabecera recalculada → imputaciones. El orden importa: fn_check_imputacion compara la
+   * suma imputada contra Σtotal_con_iva de las LFACT, así que las líneas van primero.
+   */
+  static async create(payload: CreateFacturaInput) {
+    const { lineas, imputaciones, ...facturaData } = payload
 
-    // Número automático FACT-YYYY-NNN (regla; el último número lo trae el repo)
-    const numero_factura = FacturaService.siguienteNumero(await FacturaRepository.findLastNumero())
+    if (!lineas || lineas.length === 0) {
+      throw new HttpError(422, "La factura debe tener al menos una línea")
+    }
 
-    const nuevaFactura = await FacturaRepository.insert({
-      ...facturaData,
-      numero_factura,
-      estado: "borrador", // S2: el estado inicial lo fija el server, nunca el cliente
-    })
+    const nuevaFactura = await FacturaRepository.insert({ ...facturaData, estado: "borrador" })
 
-    // Líneas de la factura
-    await FacturaRepository.insertLineas(
-      (lineas || []).map((linea: any) => ({ ...linea, factura_id: nuevaFactura.id }))
-    )
+    try {
+      await FacturaRepository.insertLineas(lineas.map((l) => FacturaService.armarLinea(nuevaFactura.id, l)))
+      await FacturaService.recalcularCabecera(nuevaFactura.id)
 
-    // Certificaciones asociadas (N:M)
-    await FacturaRepository.insertCertificacionRelations(
-      (certificaciones_ids || []).map((certId: number) => ({
-        factura_id: nuevaFactura.id,
-        certificacion_id: certId,
-      }))
-    )
+      if (imputaciones && imputaciones.length > 0) {
+        await FacturaRepository.insertImputaciones(
+          imputaciones.map((i) => ({
+            factura_id: nuevaFactura.id,
+            certificacion_id: i.certificacion_id,
+            monto_asignado: i.monto_asignado,
+          }))
+        )
+      }
+    } catch (e) {
+      // Sin transacción de cliente: compensamos para no dejar una factura huérfana.
+      await FacturaRepository.deleteById(nuevaFactura.id)
+      throw e
+    }
 
     return nuevaFactura
   }
 
-  // FACT-YYYY-NNN: incrementa dentro del año en curso, reinicia en 001 al cambiar de año.
-  // (Antes el default con tabla vacía estaba hardcodeado a 'FACT-2025-001' — P5; ahora usa el año corriente.)
-  private static siguienteNumero(ultimo: string | null): string {
-    const year = new Date().getFullYear()
-    if (ultimo) {
-      const match = ultimo.match(/FACT-(\d{4})-(\d{3})/)
-      if (match) {
-        const lastYear = parseInt(match[1])
-        const lastNum = parseInt(match[2])
-        if (year === lastYear) {
-          return `FACT-${year}-${(lastNum + 1).toString().padStart(3, "0")}`
-        }
-      }
+  // Los totales de la línea los calcula la app (la columna de precio es `precio_unitario`).
+  private static armarLinea(facturaId: number, l: CreateFacturaLinea): CreateFacturaLinea & { factura_id: number } {
+    const iva = l.iva_porcentaje ?? 21
+    const { total_neto, total_con_iva } = totalesDeLinea(l.cantidad ?? 0, l.precio_unitario ?? 0, iva)
+    return {
+      factura_id: facturaId,
+      descripcion: l.descripcion,
+      cantidad: l.cantidad,
+      precio_unitario: l.precio_unitario,
+      iva_porcentaje: iva,
+      total_neto,
+      total_con_iva,
     }
-    return `FACT-${year}-001`
   }
 
-  static async update(id: number, data: any) {
-    const { certificaciones_ids, ...facturaData } = data
+  // total_facturado = total_con_iva de las líneas: es lo que hay que pagar.
+  static async recalcularCabecera(facturaId: number): Promise<void> {
+    const lineas = await FacturaRepository.findLineasByFacturaId(facturaId)
+    const totales = totalesDeCabecera(lineas)
+    await FacturaRepository.update(facturaId, { ...totales, total_facturado: totales.total_con_iva })
+  }
 
-    const facturaActualizada = await FacturaRepository.update(id, facturaData)
-    if (!facturaActualizada) return null
+  // Imputar / desimputar: solo sobre una factura en borrador. El tope lo aplica el trigger.
+  static async imputar(facturaId: number, imputaciones: CreateImputacion[]) {
+    await FacturaService.getEditable(facturaId)
+    await FacturaRepository.insertImputaciones(
+      imputaciones.map((i) => ({
+        factura_id: facturaId,
+        certificacion_id: i.certificacion_id,
+        monto_asignado: i.monto_asignado,
+      }))
+    )
+  }
 
-    // Reemplazar certificaciones asociadas si se proporcionaron
-    if (certificaciones_ids !== undefined) {
-      await FacturaRepository.deleteCertificacionRelations(id)
-      await FacturaRepository.insertCertificacionRelations(
-        certificaciones_ids.map((certId: number) => ({
-          factura_id: id,
-          certificacion_id: certId,
-        }))
-      )
+  static async desimputar(facturaId: number, certificacionId: number): Promise<boolean> {
+    await FacturaService.getEditable(facturaId)
+    return FacturaRepository.deleteImputacion(facturaId, certificacionId)
+  }
+
+  /**
+   * FACT no tiene aprobación intermedia: borrador → finalizado (habilita pagar) → anulado.
+   * Pre-chequeo del grafo (409). Para finalizar exige ≥1 imputación (gap #5: NO hay trigger
+   * que lo garantice, así que esto es la única barrera — bypasseable con acceso directo).
+   */
+  static async cambiarEstado(id: number, destino: EstadoFactura) {
+    const factura = await FacturaRepository.findById(id)
+    if (!factura) throw new HttpError(404, "Factura no encontrada")
+
+    if (!puedeTransicionar(TRANSICIONES_FACTURA, factura.estado, destino)) {
+      throw new HttpError(409, `No se puede pasar de ${factura.estado} a ${destino}`)
     }
 
-    return facturaActualizada
+    if (destino === "finalizado") {
+      const imputaciones = await FacturaRepository.findImputaciones(id)
+      if (imputaciones.length === 0) {
+        throw new HttpError(422, "No se puede finalizar una factura sin certificaciones imputadas")
+      }
+    }
+
+    return FacturaRepository.updateEstado(id, destino)
   }
 
   static async delete(id: number) {
     return FacturaRepository.deleteById(id)
+  }
+
+  private static async getEditable(facturaId: number) {
+    const factura = await FacturaRepository.findById(facturaId)
+    if (!factura) throw new HttpError(404, "Factura no encontrada")
+    if (factura.estado !== "borrador") {
+      throw new HttpError(422, `No se pueden modificar las imputaciones de una factura en estado "${factura.estado}"`)
+    }
+    return factura
   }
 }

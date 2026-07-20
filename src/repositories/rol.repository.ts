@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/service"
+import type { TablesUpdate } from "@/lib/supabase/database.types"
 
 const TABLE = "gu_roles"
 
@@ -56,7 +57,7 @@ export class RolRepository {
     return data
   }
 
-  static async update(id: number, payload: Record<string, unknown>): Promise<any> {
+  static async update(id: number, payload: TablesUpdate<"gu_roles">): Promise<any> {
     const supabase = createClient()
     const { data, error } = await supabase.from(TABLE).update(payload).eq("id", id).select().single()
     if (error) throw error

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/shared/permissions-server"
-import { isAdmin } from "@/shared/permissions"
-import { UserRole } from "@/models"
+import { isAdmin, stringToUserRole } from "@/shared/permissions"
 import { createClient } from "@/lib/supabase/service"
+
+// Valores del enum audit_accion (columna gu_audit_log.accion). La bitácora
+// (gu_auditoria.accion) es texto libre y acepta cualquier filtro.
+const ACCIONES_CAMBIO = ["crear", "actualizar", "eliminar"] as const
+type AccionCambio = (typeof ACCIONES_CAMBIO)[number]
 
 // GET /api/admin/auditoria — consulta de auditoría (solo admin), con búsqueda combinada.
 // ?fuente=bitacora (gu_auditoria, operaciones con usuario) | cambios (gu_audit_log, historial de valores)
@@ -11,7 +15,7 @@ export async function GET(request: NextRequest) {
   try {
     const { error: authError, user } = await requireAuth()
     if (authError) return authError
-    if (!isAdmin(user!.rol as UserRole)) {
+    if (!isAdmin(stringToUserRole(user!.rol))) {
       return NextResponse.json(
         { error: "No tienes permisos para acceder a la auditoría" },
         { status: 403 }
@@ -29,6 +33,15 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient()
 
     if (fuente === "cambios") {
+      // El filtro se compara contra un enum de Postgres: un valor fuera del enum
+      // reventaba la query. Antes 400 que un 500 silencioso.
+      if (accion && !(ACCIONES_CAMBIO as readonly string[]).includes(accion)) {
+        return NextResponse.json(
+          { error: `Acción inválida para el control de cambios. Válidas: ${ACCIONES_CAMBIO.join(", ")}` },
+          { status: 400 }
+        )
+      }
+
       // Control de cambios: gu_audit_log (historial con valores anteriores/nuevos)
       let q = supabase
         .from("gu_audit_log")
@@ -38,7 +51,7 @@ export async function GET(request: NextRequest) {
 
       if (usuarioId) q = q.eq("usuario_id", Number(usuarioId))
       if (tabla) q = q.eq("tabla_afectada", tabla)
-      if (accion) q = q.eq("accion", accion)
+      if (accion) q = q.eq("accion", accion as AccionCambio)
       if (desde) q = q.gte("created_at", `${desde}T00:00:00`)
       if (hasta) q = q.lte("created_at", `${hasta}T23:59:59`)
 

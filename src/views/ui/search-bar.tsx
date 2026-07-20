@@ -24,7 +24,7 @@ export function SearchBar({
   return (
     <div className={`relative max-w-sm ${className}`}>
       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <Search className="h-4 w-4 text-slate-400" />
+        <Search className="h-4 w-4 text-muted-foreground" />
       </div>
       <Input
         type="text"
@@ -39,7 +39,7 @@ export function SearchBar({
             variant="ghost"
             size="sm"
             onClick={handleClear}
-            className="h-7 w-7 p-0 text-slate-400 hover:text-slate-600"
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-muted-foreground"
           >
             <X className="h-4 w-4" />
           </Button>

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/service"
+import type { TablesInsert, TablesUpdate } from "@/lib/supabase/database.types"
 import { Proveedor } from "@/models"
 
 const TABLE = "gu_proveedores"
@@ -32,7 +33,7 @@ export class ProveedorRepository {
     return data as Proveedor
   }
 
-  static async insert(proveedor: Partial<Proveedor>): Promise<Proveedor> {
+  static async insert(proveedor: TablesInsert<"gu_proveedores">): Promise<Proveedor> {
     const supabase = createClient()
     const { data, error } = await supabase
       .from(TABLE)
@@ -44,7 +45,7 @@ export class ProveedorRepository {
     return data as Proveedor
   }
 
-  static async update(id: number, proveedor: Partial<Proveedor>): Promise<Proveedor | null> {
+  static async update(id: number, proveedor: TablesUpdate<"gu_proveedores">): Promise<Proveedor | null> {
     const supabase = createClient()
     const { data, error } = await supabase
       .from(TABLE)

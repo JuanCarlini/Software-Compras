@@ -16,8 +16,6 @@ export async function GET(request: NextRequest) {
       return authError
     }
 
-    console.log("Usuario autenticado:", user)
-
     // Verificar que sea admin
     if (!isAdmin(user!.rol as UserRole)) {
       console.error("Usuario no es admin:", user!.rol)
@@ -52,8 +50,6 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       )
     }
-
-    console.log("Usuarios obtenidos:", guUsers?.length || 0)
 
     // Mapear usuarios a formato simple con rol desde gu_roles
     const mappedUsers = (guUsers || []).map(u => ({
@@ -103,7 +99,7 @@ export async function POST(request: NextRequest) {
     const nuevo = await UsuarioService.create({ nombre, email, password, rol_id: Number(rol_id) })
 
     await AuditService.registrar({
-      usuarioId: Number(user!.id),
+      usuarioId: user!.id,
       tabla: "gu_usuario",
       registroId: nuevo.id,
       accion: "crear",

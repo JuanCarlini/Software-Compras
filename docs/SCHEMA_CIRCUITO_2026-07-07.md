@@ -60,20 +60,30 @@ Circuito: `OC → Certificación (CE) → Factura (FACT) → Orden de Pago (OP)`
 
 Todo nace en `borrador`. Las transiciones son UPDATE de `estado`. Los gates son triggers → **pre-validá en el service y traducí el error a 422** con el mismo mensaje.
 
-- **OC**: `borrador → en_aprobacion` (gate `fn_oc_gate`: ≥1 línea) → `aprobado` (habilita certificar) · `rechazado`→`borrador` · `anulado`.
-- **CE**: requiere **OC aprobada**. `borrador → en_aprobacion` (gate `fn_check_avance_100`, ver abajo) → `aprobado` (habilita facturar) · `rechazado`/`anulado`.
+- **OC**: `borrador → en_aprobacion` (gate `fn_oc_gate`: ≥1 línea) → `aprobado` (habilita certificar) · `rechazado`→`borrador` · `anulado`. **Las líneas solo se tocan en `borrador`/`rechazado`** (`fn_loc_oc_editable`).
+- **CE**: requiere **OC aprobada** (`fn_cert_oc_aprobada`, que además hereda/valida el proveedor de la OC). `borrador → en_aprobacion` (gate `fn_check_avance_100`, ver abajo) → `aprobado` (habilita facturar) · `rechazado`/`anulado`.
 - **FACT**: requiere **certs aprobadas**. `borrador → finalizado` (sin aprobación) → habilita pagar · `anulado`. La regla de imputación se chequea al insertar en la puente (ver abajo).
-- **OP**: requiere **facturas finalizadas**. `borrador → en_aprobacion` (gate `fn_op_gate`) → `aprobado` → `pagado` · `rechazado`/`anulado`.
+- **OP**: requiere **facturas finalizadas** (`fn_lop_factura_pagable`, que además valida proveedor y moneda). `borrador → en_aprobacion` (gate `fn_op_gate`) → `aprobado` → `pagado` · `rechazado`/`anulado`. **Las líneas de factura solo se tocan en `borrador`/`rechazado`.**
 
 ### Mensajes exactos de los triggers (mapear a **422**)
+
+Todos salen como `SQLSTATE P0001`; `src/shared/handle-route-error.ts` los devuelve **tal cual** con status 422.
+
 | Trigger | Cuándo salta | Mensaje (`%` = valores) |
 |---|---|---|
 | `fn_check_avance_100` | INSERT/UPDATE de LCE | `No se puede certificar más del 100% de la línea de OC: cantidad %, ya certificado %, se intentó %` (y `La línea de OC % no existe`) |
 | `fn_check_imputacion` | INSERT/UPDATE de `gu_facturas_certificaciones` | `Solo se pueden imputar certificaciones aprobadas` · `La suma imputada a certificaciones (%) no puede superar el total de líneas de factura (%)` |
 | `fn_oc_gate` | OC `borrador→en_aprobacion` | `La OC debe tener al menos una línea para mandarse a aprobar` |
 | `fn_op_gate` | OP `borrador→en_aprobacion` | `Todas las cajas deben ser de la moneda de la OP (%)` · `El total de las cajas (%) debe igualar el total a pagar (%)` · `El total de las facturas (%) debe igualar el total a pagar (%)` |
+| **`fn_cert_oc_aprobada`** *(2026-07-08)* | INSERT de CE / UPDATE de `orden_compra_id`,`proveedor_id` | `La orden de compra % no existe` · `Solo se puede certificar contra una orden de compra aprobada (la OC % está en estado "%")` · `El proveedor de la certificación (%) no coincide con el de la orden de compra (%)` |
+| **`fn_lop_factura_pagable`** *(2026-07-08)* | INSERT/UPDATE/DELETE de LOP | `No se pueden modificar las facturas de una orden de pago en estado "%"` · `La factura % no existe` · `Solo se pueden pagar facturas finalizadas (la factura % está en estado "%")` · `La factura % es en % y la orden de pago es en %` · `La factura % es del proveedor % y la orden de pago es del proveedor %` |
+| **`fn_loc_oc_editable`** *(2026-07-08)* | INSERT/UPDATE/DELETE de LOC | `No se pueden modificar las líneas de una orden de compra en estado "%"` |
 
 `fn_check_avance_100` acumula por **unidades** por LOC (excluye CE `anulado`/`rechazado`, usa `FOR UPDATE`). La imputación exige cert `aprobado` **y** Σ`monto_asignado` de la factura ≤ Σ`total_con_iva` de sus LFACT.
+
+**`gu_certificaciones.proveedor_id`**: si se manda `NULL`, `fn_cert_oc_aprobada` lo rellena desde la OC; si se manda un valor distinto al de la OC, rebota. (La columna es `NOT NULL`, pero eso se chequea *después* de los `BEFORE` triggers.)
+
+**Sigue sin trigger (solo pre-validación de app, bypasseable):** finalizar una factura sin imputaciones; modificar las líneas de una CE ya aprobada.
 
 ---
 

@@ -2,275 +2,231 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Input } from "@/views/ui/input"
 import { Label } from "@/views/ui/label"
-import { Textarea } from "@/views/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/views/ui/select"
 import { Alert, AlertDescription } from "@/views/ui/alert"
-import { Loader2, DollarSign, Calendar, Building2 } from "lucide-react"
+import { Loader2, AlertCircle } from "lucide-react"
 import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
+import { formatCurrency } from "@/shared/format-utils"
+
+// Reescrito para el circuito CCIP (2026-07-08). La OP paga N facturas FINALIZADAS del mismo
+// proveedor y reparte el total en N cajas de la misma moneda. Regla dura (fn_op_gate, en la
+// DB): Σcajas = Σfacturas = total_a_pagar, y todas las cajas de la moneda de la OP; se valida
+// al mandar a aprobar. Este form crea la OP y carga facturas + cajas en un POST secuencial;
+// después redirige al detalle. TODO(frontend): el wizard real va aparte.
 
 export function OrdenPagoForm() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [facturas, setFacturas] = useState<any[]>([])
-  const [loadingData, setLoadingData] = useState(true)
   const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const [formData, setFormData] = useState({
-    factura_id: "",
-    fecha_pago: new Date().toISOString().split('T')[0],
-    metodo_pago: "transferencia",
-    referencia: "",
-    observaciones: "",
-  })
+  const [proveedores, setProveedores] = useState<any[]>([])
+  const [facturas, setFacturas] = useState<any[]>([])
+  const [cajas, setCajas] = useState<any[]>([])
 
-  const [facturaSeleccionada, setFacturaSeleccionada] = useState<any>(null)
+  const [proveedorId, setProveedorId] = useState("")
+  const [moneda, setMoneda] = useState("ARS")
+  const [fechaOp, setFechaOp] = useState(new Date().toISOString().slice(0, 10))
+
+  // facturaId -> monto a pagar de esa factura (texto)
+  const [pagos, setPagos] = useState<Record<number, string>>({})
+  // cajaId -> monto desde esa caja (texto)
+  const [repartos, setRepartos] = useState<Record<number, string>>({})
 
   useEffect(() => {
-    fetchFacturas()
+    fetch("/api/proveedores").then((r) => (r.ok ? r.json() : [])).then(setProveedores).catch(() => {})
+    fetch("/api/cajas").then((r) => (r.ok ? r.json() : [])).then(setCajas).catch(() => {})
   }, [])
 
-  const fetchFacturas = async () => {
-    try {
-      setLoadingData(true)
-      const response = await fetch('/api/facturas')
-      if (!response.ok) throw new Error('Error al cargar facturas')
-      const data = await response.json()
-      
-      // Filtrar solo facturas aprobadas
-      const facturasAprobadas = data.filter((f: any) => f.estado === 'aprobado')
-      setFacturas(facturasAprobadas)
-    } catch (error) {
-      console.error("Error al cargar datos:", error)
-      setError("No se pudieron cargar los datos")
-    } finally {
-      setLoadingData(false)
-    }
-  }
-
+  // Facturas finalizadas del proveedor (las únicas pagables — fn_lop_factura_pagable).
   useEffect(() => {
-    if (formData.factura_id) {
-      const factura = facturas.find((f: any) => String(f.id) === formData.factura_id)
-      setFacturaSeleccionada(factura)
+    if (!proveedorId) {
+      setFacturas([])
+      setPagos({})
+      return
     }
-  }, [formData.factura_id, facturas])
+    fetch("/api/facturas")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: any[]) =>
+        setFacturas(data.filter((f) => f.proveedor_id === Number(proveedorId) && f.estado === "finalizado"))
+      )
+      .catch(() => setFacturas([]))
+    setPagos({})
+  }, [proveedorId])
+
+  const cajasDeLaMoneda = cajas.filter((c) => c.moneda === moneda)
+  const totalFacturas = Object.values(pagos).reduce((a, v) => a + (Number(v) || 0), 0)
+  const totalCajas = Object.values(repartos).reduce((a, v) => a + (Number(v) || 0), 0)
+  const sumasCoinciden = Math.abs(totalFacturas - totalCajas) < 0.01 && totalFacturas > 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 
-    if (!formData.factura_id) {
-      setError("Por favor selecciona una factura")
-      return
+    if (!proveedorId) return setError("Elegí un proveedor")
+    const facturasPayload = Object.entries(pagos).filter(([, m]) => Number(m) > 0)
+    if (facturasPayload.length === 0) return setError("Cargá el monto de al menos una factura")
+    // Pre-validación de la regla dura; el gate fn_op_gate es el que la garantiza.
+    if (!sumasCoinciden) {
+      return setError(
+        `El total de las cajas (${formatCurrency(totalCajas)}) debe igualar el de las facturas (${formatCurrency(totalFacturas)})`
+      )
     }
 
-    if (!facturaSeleccionada) {
-      setError("Factura no encontrada")
-      return
-    }
-
+    setLoading(true)
     try {
-      setIsLoading(true)
+      // 1) crear la OP vacía
+      let res = await fetch("/api/ordenes-pago", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proveedor_id: Number(proveedorId), fecha_op: fechaOp, moneda }),
+      })
+      const body = await res.json()
+      if (!res.ok) throw new Error(body.error || "Error al crear la orden de pago")
+      const opId = body.id
 
-      const pagoData = {
-        proveedor_id: facturaSeleccionada.proveedor_id,
-        fecha_op: formData.fecha_pago,
-        total_pago: facturaSeleccionada.total_con_iva,
-        estado: "pendiente",
-        observaciones: formData.observaciones || null,
-        lineas: [{
-          factura_id: parseInt(formData.factura_id),
-          concepto: `Pago de ${facturaSeleccionada.numero_factura}`,
-          monto: facturaSeleccionada.total_con_iva,
-          forma_pago: formData.metodo_pago
-        }]
+      // 2) agregar facturas (fn_lop_factura_pagable valida cada una)
+      for (const [facturaId, monto] of facturasPayload) {
+        res = await fetch(`/api/ordenes-pago/${opId}/facturas`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ factura_id: Number(facturaId), monto: Number(monto) }),
+        })
+        if (!res.ok) throw new Error((await res.json()).error || "Error al agregar una factura")
       }
 
-      const response = await fetch('/api/ordenes-pago', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pagoData)
-      })
+      // 3) repartir en cajas
+      for (const [cajaId, monto] of Object.entries(repartos).filter(([, m]) => Number(m) > 0)) {
+        res = await fetch(`/api/ordenes-pago/${opId}/cajas`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ caja_id: Number(cajaId), monto: Number(monto) }),
+        })
+        if (!res.ok) throw new Error((await res.json()).error || "Error al agregar una caja")
+      }
 
-      if (!response.ok) throw new Error('Error al crear orden de pago')
-      
-      showSuccessToast("Éxito", "Orden de pago creada correctamente")
-      router.push("/ordenes-pago")
+      showSuccessToast("Orden de pago creada", body.numero_op)
+      router.push(`/ordenes-pago/${opId}`)
     } catch (err) {
-      console.error("Error:", err)
-      setError("Error al crear la orden de pago")
-      showErrorToast("Error", "No se pudo crear la orden de pago")
+      const mensaje = err instanceof Error ? err.message : "Error desconocido"
+      setError(mensaje)
+      showErrorToast("No se pudo crear la orden de pago", mensaje)
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
-  }
-
-  if (loadingData) {
-    return (
-      <Card>
-        <CardContent className="py-8 text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Cargando datos...</p>
-        </CardContent>
-      </Card>
-    )
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Nueva Orden de Pago</CardTitle>
-        <p className="text-sm text-slate-600 mt-2">
-          Crear una orden de pago para una factura aprobada
-        </p>
-      </CardHeader>
-      <CardContent>
-        {error && (
-          <Alert className="mb-6" variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label>Factura *</Label>
-            <Select
-              required
-              disabled={isLoading || facturas.length === 0}
-              value={formData.factura_id}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, factura_id: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue 
-                  placeholder={
-                    facturas.length === 0 
-                      ? "No hay facturas aprobadas" 
-                      : "Selecciona una factura"
-                  } 
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {facturas.map((factura: any) => (
-                  <SelectItem key={factura.id} value={String(factura.id)}>
-                    {factura.numero_factura} - {factura.proveedor_nombre} - ${factura.total_con_iva?.toFixed(2)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {facturaSeleccionada && (
-              <div className="mt-2 p-3 bg-blue-50 rounded-md">
-                <p className="text-sm text-blue-900">
-                  <strong>Proveedor:</strong> {facturaSeleccionada.proveedor_nombre}
-                </p>
-                <p className="text-sm text-blue-900">
-                  <strong>Monto a pagar:</strong> ${facturaSeleccionada.total_con_iva?.toFixed(2)}
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Nueva orden de pago</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label>
-                <Calendar className="inline h-4 w-4 mr-1" />
-                Fecha de Pago *
-              </Label>
-              <Input
-                type="date"
-                required
-                disabled={isLoading}
-                value={formData.fecha_pago}
-                onChange={(e) => setFormData(prev => ({ ...prev, fecha_pago: e.target.value }))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Método de Pago *</Label>
-              <Select
-                required
-                disabled={isLoading}
-                value={formData.metodo_pago}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, metodo_pago: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Label>Proveedor *</Label>
+              <Select value={proveedorId} onValueChange={setProveedorId} disabled={loading}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar proveedor" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="transferencia">Transferencia Bancaria</SelectItem>
-                  <SelectItem value="efectivo">Efectivo</SelectItem>
-                  <SelectItem value="cheque">Cheque</SelectItem>
-                  <SelectItem value="retencion">Retención</SelectItem>
+                  {proveedores.map((p) => (
+                    <SelectItem key={p.id} value={String(p.id)}>{p.nombre}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label>Moneda</Label>
+              <Select value={moneda} onValueChange={setMoneda} disabled={loading}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {["ARS", "USD", "EUR"].map((m) => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="fecha_op">Fecha</Label>
+              <Input id="fecha_op" type="date" value={fechaOp} onChange={(e) => setFechaOp(e.target.value)} disabled={loading} />
+            </div>
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="space-y-2">
-            <Label>Referencia / Número de Operación</Label>
-            <Input
-              placeholder="Ej: Transferencia #123456, Cheque #789"
-              disabled={isLoading}
-              value={formData.referencia}
-              onChange={(e) => setFormData(prev => ({ ...prev, referencia: e.target.value }))}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Descripción / Observaciones</Label>
-            <Textarea
-              placeholder="Observaciones adicionales sobre el pago..."
-              rows={3}
-              disabled={isLoading}
-              value={formData.observaciones}
-              onChange={(e) => setFormData(prev => ({ ...prev, observaciones: e.target.value }))}
-            />
-          </div>
-
-          {facturaSeleccionada && (
-            <div className="p-4 bg-slate-50 rounded-lg border">
-              <h3 className="font-medium mb-3">Resumen del Pago</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Factura:</span>
-                  <span className="font-medium">{facturaSeleccionada.numero_factura}</span>
+      {proveedorId && (
+        <Card>
+          <CardHeader><CardTitle>Facturas a pagar (finalizadas)</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {facturas.length === 0 && (
+              <p className="text-sm text-muted-foreground">Este proveedor no tiene facturas finalizadas.</p>
+            )}
+            {facturas.map((f) => (
+              <div key={f.id} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end border-b pb-2">
+                <div className="md:col-span-2">
+                  <p className="font-mono text-sm">{f.numero_factura}</p>
+                  <p className="text-xs text-muted-foreground">Total: {formatCurrency(f.total_facturado)} {f.moneda}</p>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Proveedor:</span>
-                  <span className="font-medium">{facturaSeleccionada.proveedor_nombre}</span>
-                </div>
-                <div className="flex justify-between pt-2 border-t">
-                  <span className="text-slate-600">Monto Total:</span>
-                  <span className="text-lg font-bold text-green-600">
-                    <DollarSign className="inline h-4 w-4" />
-                    ${facturaSeleccionada.total_con_iva?.toFixed(2)}
-                  </span>
+                <div className="space-y-1">
+                  <Label>Monto a pagar</Label>
+                  <Input type="number" min="0" step="0.01" value={pagos[f.id] ?? ""} onChange={(e) => setPagos((p) => ({ ...p, [f.id]: e.target.value }))} disabled={loading} placeholder="0" />
                 </div>
               </div>
+            ))}
+            <div className="flex justify-end text-sm">
+              Total facturas: <strong className="ml-2">{formatCurrency(totalFacturas)}</strong>
             </div>
-          )}
+          </CardContent>
+        </Card>
+      )}
 
-          <div className="flex gap-4 pt-4 border-t">
-            <Button 
-              type="submit" 
-              disabled={isLoading || !facturaSeleccionada || facturas.length === 0}
-            >
-              {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {isLoading ? "Procesando..." : "Registrar Pago"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => router.push("/ordenes-pago")}
-              disabled={isLoading}
-            >
-              Cancelar
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+      {proveedorId && (
+        <Card>
+          <CardHeader><CardTitle>Repartir en cajas ({moneda})</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {cajasDeLaMoneda.length === 0 && (
+              <p className="text-sm text-muted-foreground">No hay cajas en {moneda}. Creá una en el catálogo.</p>
+            )}
+            {cajasDeLaMoneda.map((c) => (
+              <div key={c.id} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end border-b pb-2">
+                <div className="md:col-span-2">
+                  <p className="font-medium text-sm">{c.nombre}</p>
+                  <p className="text-xs text-muted-foreground">{c.tipo}{c.entidad ? ` · ${c.entidad}` : ""}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label>Monto</Label>
+                  <Input type="number" min="0" step="0.01" value={repartos[c.id] ?? ""} onChange={(e) => setRepartos((p) => ({ ...p, [c.id]: e.target.value }))} disabled={loading} placeholder="0" />
+                </div>
+              </div>
+            ))}
+            <div className="flex justify-end text-sm">
+              <span className={!sumasCoinciden && totalCajas > 0 ? "text-red-600" : ""}>
+                Total cajas: <strong>{formatCurrency(totalCajas)}</strong>
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="flex justify-end gap-3">
+        <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={loading || !sumasCoinciden}>
+          {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          Crear orden de pago
+        </Button>
+      </div>
+    </form>
   )
 }

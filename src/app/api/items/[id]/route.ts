@@ -3,43 +3,26 @@ import { ItemService } from "@/controllers"
 import { UpdateItemSchema } from "@/shared/item-validation"
 import { requireRole } from "@/shared/permissions-server"
 import { ROLES_ESCRITURA } from "@/shared/permissions"
-import { z } from "zod"
+import { parseId } from "@/shared/parse-id"
+import { handleRouteError } from "@/shared/handle-route-error"
 
 interface Params {
-  params: Promise<{
-    id: string
-  }>
+  params: Promise<{ id: string }>
 }
 
 // GET /api/items/[id] - Obtener un item por ID
 export async function GET(request: NextRequest, { params }: Params) {
   try {
-    const { id } = await params
-    const itemId = parseInt(id)
-    
-    if (isNaN(itemId)) {
-      return NextResponse.json(
-        { error: "ID inválido" },
-        { status: 400 }
-      )
-    }
+    const itemId = parseId((await params).id)
 
     const item = await ItemService.getById(itemId)
-    
     if (!item) {
-      return NextResponse.json(
-        { error: "Item no encontrado" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Item no encontrado" }, { status: 404 })
     }
-    
+
     return NextResponse.json(item)
   } catch (error) {
-    console.error("Error al obtener item:", error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "GET /api/items/[id]")
   }
 }
 
@@ -49,46 +32,17 @@ export async function PUT(request: NextRequest, { params }: Params) {
     const { error: authError } = await requireRole(ROLES_ESCRITURA)
     if (authError) return authError
 
-    const { id } = await params
-    const itemId = parseInt(id)
-    
-    if (isNaN(itemId)) {
-      return NextResponse.json(
-        { error: "ID inválido" },
-        { status: 400 }
-      )
+    const itemId = parseId((await params).id)
+    const validatedData = UpdateItemSchema.parse(await request.json())
+
+    const itemActualizado = await ItemService.update(itemId, validatedData)
+    if (!itemActualizado) {
+      return NextResponse.json({ error: "Item no encontrado" }, { status: 404 })
     }
 
-    const body = await request.json()
-    
-    // Validar datos de entrada
-    const validatedData = UpdateItemSchema.parse(body)
-    
-    const itemActualizado = await ItemService.update(itemId, validatedData)
-    
-    if (!itemActualizado) {
-      return NextResponse.json(
-        { error: "Item no encontrado" },
-        { status: 404 }
-      )
-    }
-    
     return NextResponse.json(itemActualizado)
   } catch (error) {
-    console.error("Error al actualizar item:", error)
-    
-    // Si es error de validación de Zod
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Datos inválidos", details: error.errors },
-        { status: 400 }
-      )
-    }
-    
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "PUT /api/items/[id]")
   }
 }
 
@@ -98,46 +52,26 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     const { error: authError } = await requireRole(ROLES_ESCRITURA)
     if (authError) return authError
 
-    const { id } = await params
-    const itemId = parseInt(id)
-    
-    if (isNaN(itemId)) {
-      return NextResponse.json(
-        { error: "ID inválido" },
-        { status: 400 }
-      )
-    }
+    const itemId = parseId((await params).id)
 
-    // Verificar si el item está en uso
-    const enUso = await ItemService.isInUse(itemId)
-    
-    if (enUso) {
+    // Un item usado en alguna OC no se borra: se marca inactivo
+    if (await ItemService.isInUse(itemId)) {
       return NextResponse.json(
-        { 
+        {
           error: "No se puede eliminar el item porque está siendo utilizado en órdenes de compra",
-          suggestion: "Puedes marcarlo como inactivo en su lugar"
+          suggestion: "Puedes marcarlo como inactivo en su lugar",
         },
-        { status: 409 } // Conflict
+        { status: 409 }
       )
     }
 
     const success = await ItemService.softDelete(itemId)
-    
     if (!success) {
-      return NextResponse.json(
-        { error: "Item no encontrado" },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Item no encontrado" }, { status: 404 })
     }
-    
-    return NextResponse.json({ 
-      message: "Item marcado como inactivo correctamente" 
-    })
+
+    return NextResponse.json({ message: "Item marcado como inactivo correctamente" })
   } catch (error) {
-    console.error("Error al eliminar item:", error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "DELETE /api/items/[id]")
   }
 }

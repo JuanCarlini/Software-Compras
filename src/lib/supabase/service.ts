@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import type { Database } from './database.types'
 
 // Cliente de datos SERVER-ONLY con service_role (bypasea RLS).
 // Es la única puerta legítima a la base desde que RLS niega todo al rol anon:
@@ -18,7 +19,7 @@ export function createClient() {
     )
   }
 
-  return createSupabaseClient(url, serviceKey, {
+  return createSupabaseClient<Database>(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 }

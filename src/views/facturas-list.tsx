@@ -1,18 +1,22 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/views/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
-import { Badge } from "@/views/ui/badge"
-import { Plus, Receipt, Calendar, Building2 } from "lucide-react"
+import { Button } from "@/views/ui/button"
+import { SearchBar } from "@/views/ui/search-bar"
+import { SearchStats } from "@/views/ui/search-stats"
+import { Eye, Loader2 } from "lucide-react"
+import Link from "next/link"
+import { searchWithScore } from "@/shared/search-utils"
+import { formatCurrency } from "@/shared/format-utils"
 import { showErrorToast } from "@/shared/toast-helpers"
 import { StatusBadge } from "@/shared/status-badge"
 
 export function FacturasList() {
   const [facturas, setFacturas] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
     fetchFacturas()
@@ -24,91 +28,119 @@ export function FacturasList() {
       if (!response.ok) throw new Error('Error al cargar facturas')
       const data = await response.json()
       setFacturas(data)
+      setError(null)
     } catch (error) {
-      showErrorToast("Error", "No se pudieron cargar las facturas")
+      const msg = error instanceof Error ? error.message : "No se pudieron cargar las facturas"
+      setError(msg)
+      showErrorToast("Error", msg)
     } finally {
       setLoading(false)
     }
   }
 
+  const filteredFacturas = searchWithScore(
+    facturas,
+    searchTerm,
+    ["numero_factura", "proveedor_nombre", "estado"],
+    { numero_factura: 3, proveedor_nombre: 2, estado: 2 }
+  )
+
   if (loading) {
-    return <div className="text-center py-8">Cargando facturas...</div>
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Cargando facturas...</span>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="text-center py-8">
+          <p className="text-destructive">Error: {error}</p>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex gap-4">
-          <Button onClick={() => router.push('/facturas/nueva')}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nueva Factura
-          </Button>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Facturas ({filteredFacturas.length})</CardTitle>
+          <SearchBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Buscar por número, proveedor, estado..."
+            className="w-80"
+          />
         </div>
-      </div>
+      </CardHeader>
+      <CardContent>
+        <SearchStats
+          totalItems={facturas.length}
+          filteredItems={filteredFacturas.length}
+          searchTerm={searchTerm}
+          entityName="factura"
+        />
 
-      {facturas.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Receipt className="h-12 w-12 text-slate-400 mb-4" />
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">
-              No hay facturas
-            </h3>
-            <p className="text-slate-600 mb-4">
-              Comienza creando tu primera factura
-            </p>
-            <Button onClick={() => router.push('/facturas/nueva')}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Factura
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {facturas.map((factura) => (
-            <Card 
-              key={factura.id}
-              className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => router.push(`/facturas/${factura.id}`)}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-xl mb-2">
-                      {factura.numero_factura}
-                    </CardTitle>
-                    <div className="flex flex-col gap-2 text-sm text-slate-600">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4" />
-                        <span>{factura.proveedor_nombre || 'Sin proveedor'}</span>
-                        {factura.proveedor_cuit && (
-                          <Badge variant="outline" className="ml-2">
-                            {factura.proveedor_cuit}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span>{new Date(factura.fecha_factura).toLocaleDateString('es-AR')}</span>
-                      </div>
-                    </div>
+        <div className="space-y-4">
+          {filteredFacturas.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                {searchTerm
+                  ? `No se encontraron facturas que coincidan con "${searchTerm}"`
+                  : "No hay facturas registradas"}
+              </p>
+            </div>
+          ) : (
+            filteredFacturas.map((factura: any) => (
+              <div
+                key={factura.id}
+                className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors"
+              >
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="font-medium text-foreground">{factura.numero_factura}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {factura.fecha_emision
+                        ? new Date(factura.fecha_emision).toLocaleDateString("es-AR")
+                        : "—"}
+                    </p>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
+
+                  <div>
+                    <p className="text-sm text-foreground">
+                      {factura.proveedor_nombre || "Sin proveedor"}
+                    </p>
+                    {factura.proveedor_cuit && (
+                      <p className="text-sm text-muted-foreground">CUIT: {factura.proveedor_cuit}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <p className="font-medium text-foreground">
+                      {formatCurrency(factura.total_con_iva ?? 0)}
+                    </p>
                     <StatusBadge estado={factura.estado} showIcon />
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-slate-900">
-                        ${factura.total_con_iva?.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                      </div>
-                      <div className="text-sm text-slate-600">
-                        Total con IVA
-                      </div>
-                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/facturas/${factura.id}`} aria-label="Ver factura">
+                        <Eye className="h-4 w-4" />
+                      </Link>
+                    </Button>
                   </div>
                 </div>
-              </CardHeader>
-            </Card>
-          ))}
+              </div>
+            ))
+          )}
         </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   )
 }
