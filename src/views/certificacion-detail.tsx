@@ -240,40 +240,43 @@ export function CertificacionDetail({ params }: Props) {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {cert.lineas?.map((linea: any) => (
-              <div key={linea.id} className="border rounded-lg p-4">
-                <div className="grid grid-cols-12 gap-4">
-                  <div className="col-span-5">
-                    <div className="font-semibold">{linea.descripcion}</div>
-                    {linea.gu_lineasdeordenesdecompra?.gu_ordenesdecompra?.numero_oc ? (
-                      <div className="text-xs text-muted-foreground mt-1">
-                        OC {linea.gu_lineasdeordenesdecompra.gu_ordenesdecompra.numero_oc} · {linea.gu_lineasdeordenesdecompra.descripcion}
-                      </div>
-                    ) : (
-                      <div className="text-xs text-muted-foreground mt-1">Línea libre (sin OC)</div>
-                    )}
-                  </div>
-                  <div className="col-span-2 text-right">
-                    <div className="text-sm text-muted-foreground">Cantidad</div>
-                    <div>{Number(linea.cantidad ?? 0)}</div>
-                  </div>
-                  <div className="col-span-2 text-right">
-                    <div className="text-sm text-muted-foreground">Precio Unit.</div>
-                    <div>${Number(linea.precio_unitario ?? 0).toFixed(2)}</div>
-                  </div>
-                  <div className="col-span-1 text-right">
-                    <div className="text-sm text-muted-foreground">IVA</div>
-                    <div>{Number(linea.iva_porcentaje ?? 0)}%</div>
-                  </div>
-                  <div className="col-span-2 text-right">
-                    <div className="text-sm text-muted-foreground">Total</div>
-                    <div className="font-semibold">
-                      ${Number(linea.total_con_iva ?? 0).toFixed(2)}
+            {cert.lineas?.map((linea: any) => {
+              // Modelo CCIP: la LCE deriva del avance por unidades; el precio/desc vienen
+              // de la línea de OC. avance_monto es NETO → total con IVA = neto * (1 + iva%).
+              const ocLinea = linea.gu_lineasdeordenesdecompra
+              const iva = Number(linea.iva_porcentaje ?? 0)
+              const totalConIva = Number(linea.avance_monto ?? 0) * (1 + iva / 100)
+              return (
+                <div key={linea.id} className="border rounded-lg p-4">
+                  <div className="grid grid-cols-12 gap-4">
+                    <div className="col-span-5">
+                      <div className="font-semibold">{ocLinea?.descripcion ?? linea.numero_lce}</div>
+                      {linea.linea_oc_id && ocLinea?.numero_loc ? (
+                        <div className="text-xs text-muted-foreground mt-1">Línea {ocLinea.numero_loc}</div>
+                      ) : (
+                        <div className="text-xs text-muted-foreground mt-1">Línea libre (sin OC)</div>
+                      )}
+                    </div>
+                    <div className="col-span-2 text-right">
+                      <div className="text-sm text-muted-foreground">Cantidad</div>
+                      <div>{Number(linea.avance_unidades ?? 0)}</div>
+                    </div>
+                    <div className="col-span-2 text-right">
+                      <div className="text-sm text-muted-foreground">Precio Unit.</div>
+                      <div>${Number(ocLinea?.precio_unitario_neto ?? 0).toFixed(2)}</div>
+                    </div>
+                    <div className="col-span-1 text-right">
+                      <div className="text-sm text-muted-foreground">IVA</div>
+                      <div>{iva}%</div>
+                    </div>
+                    <div className="col-span-2 text-right">
+                      <div className="text-sm text-muted-foreground">Total</div>
+                      <div className="font-semibold">${totalConIva.toFixed(2)}</div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           <div className="mt-6 pt-4 border-t">

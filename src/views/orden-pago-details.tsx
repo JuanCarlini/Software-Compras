@@ -1,14 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-// TODO(F6): la OP ahora es borrador -> en_aprobacion -> aprobado -> pagado.
-// Los botones de abajo siguen el flujo viejo (pendiente -> aprobado -> pagado):
-// hay que rehacerlos contra PATCH /api/ordenes-pago/[id]/estado.
-import { OrdenPago } from "@/models"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
-import { Separator } from "@/views/ui/separator"
 import { formatDateShort } from "@/shared/date-utils"
 import { formatCurrency } from "@/shared/format-utils"
 import { StatusBadge } from "@/shared/status-badge"
@@ -21,18 +16,20 @@ import {
   CheckCircle,
   XCircle,
   DollarSign,
+  Building2,
   Calendar,
-  User,
-  FileText
+  Receipt,
+  Wallet,
 } from "lucide-react"
 
+// La OP paga N facturas y reparte el total en N cajas de la misma moneda (modelo CCIP).
+// Flujo: borrador -> en_aprobacion (aplica fn_op_gate: Σcajas=Σfacturas=total) -> aprobado -> pagado.
 export function OrdenPagoDetails() {
   const params = useParams()
   const router = useRouter()
   const id = params.id as string
   const { user } = useAuth()
-  const [orden, setOrden] = useState<OrdenPago | null>(null)
-  const [proveedor, setProveedor] = useState<any>(null)
+  const [orden, setOrden] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [processing, setProcessing] = useState(false)
@@ -41,42 +38,28 @@ export function OrdenPagoDetails() {
   const userRole = user ? stringToUserRole(user.rol) : null
   const canModify = userRole ? canAnularDocumento(userRole) : false
 
-  useEffect(() => {
-    const fetchOrden = async () => {
-      try {
-        setLoading(true)
-        const res = await fetch(`/api/ordenes-pago/${id}`)
-        if (!res.ok) {
-          setError("Orden no encontrada")
-          setOrden(null)
-        } else {
-          const data = await res.json()
-          setOrden(data)
-
-          // Cargar proveedor
-          if (data.proveedor_id) {
-            const provRes = await fetch(`/api/proveedores/${data.proveedor_id}`)
-            setProveedor(provRes.ok ? await provRes.json() : null)
-          }
-
-          setError(null)
-        }
-      } catch (error) {
-        console.error('Error cargando orden:', error)
-        setError("Error al cargar la orden")
+  const fetchOrden = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/ordenes-pago/${id}`)
+      if (!res.ok) {
+        setError("Orden no encontrada")
         setOrden(null)
-      } finally {
-        setLoading(false)
+      } else {
+        setOrden(await res.json())
+        setError(null)
       }
-    }
-
-    if (id) {
-      fetchOrden()
+    } catch (e) {
+      setError("Error al cargar la orden")
+      setOrden(null)
+    } finally {
+      setLoading(false)
     }
   }, [id])
 
-  // Transición de estado por la ruta propia. El gate fn_op_gate (Σcajas=Σfacturas=total,
-  // cajas misma moneda) se aplica al mandar a aprobar y devuelve 422 con su mensaje.
+  useEffect(() => {
+    if (id) fetchOrden()
+  }, [fetchOrden, id])
+
   const cambiarEstado = async (nuevoEstado: string) => {
     if (!orden) return
     setProcessing(true)
@@ -88,7 +71,8 @@ export function OrdenPagoDetails() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Error al cambiar el estado")
-      setOrden(data)
+      // El PATCH /estado devuelve solo la cabecera; reconsultamos facturas + cajas.
+      await fetchOrden()
     } catch (error) {
       showErrorToast(
         "No se pudo cambiar el estado",
@@ -114,8 +98,8 @@ export function OrdenPagoDetails() {
     return (
       <Card>
         <CardContent className="py-8 text-center">
-          <p className="text-red-600">{error || "Orden no encontrada"}</p>
-          <Button className="mt-4" onClick={() => router.back()}>
+          <p className="text-destructive">{error || "Orden no encontrada"}</p>
+          <Button className="mt-4" onClick={() => router.push("/ordenes-pago")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Volver
           </Button>
@@ -124,166 +108,157 @@ export function OrdenPagoDetails() {
     )
   }
 
+  const moneda = orden.moneda
+  const facturas: any[] = orden.facturas ?? []
+  const cajas: any[] = orden.cajas ?? []
+
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header: volver + acciones según estado */}
       <div className="flex items-center justify-between">
-        <Button variant="outline" size="sm" onClick={() => router.back()}>
+        <Button variant="ghost" size="sm" onClick={() => router.push("/ordenes-pago")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Volver
         </Button>
-        <div className="flex items-center gap-3">
-          <StatusBadge estado={orden.estado} showIcon />
-        </div>
+
+        {canModify && (
+          <div className="flex gap-2">
+            {orden.estado === "borrador" && (
+              <Button onClick={() => cambiarEstado("en_aprobacion")} disabled={processing}>
+                {processing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                Mandar a aprobar
+              </Button>
+            )}
+            {orden.estado === "en_aprobacion" && (
+              <>
+                <Button
+                  onClick={() => cambiarEstado("aprobado")}
+                  disabled={processing}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Aprobar
+                </Button>
+                <Button variant="destructive" onClick={() => cambiarEstado("rechazado")} disabled={processing}>
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Rechazar
+                </Button>
+              </>
+            )}
+            {orden.estado === "aprobado" && (
+              <Button
+                onClick={() => cambiarEstado("pagado")}
+                disabled={processing}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <DollarSign className="h-4 w-4 mr-2" />
+                Confirmar pago
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Información Principal */}
+      {/* Cabecera */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-2xl">Orden de Pago</CardTitle>
-              <p className="text-lg font-mono text-muted-foreground mt-1">{orden.numero_op}</p>
+              <CardTitle className="text-3xl mb-2">{orden.numero_op}</CardTitle>
+              <StatusBadge estado={orden.estado} showIcon />
             </div>
             <div className="text-right">
-              <p className="text-sm text-muted-foreground">Monto Total</p>
-              <p className="text-3xl font-bold text-foreground">
-                {formatCurrency(orden.total_a_pagar)}
-              </p>
+              <div className="text-3xl font-bold text-green-600">
+                {formatCurrency(orden.total_a_pagar, moneda)}
+              </div>
+              <div className="text-sm text-muted-foreground">Total a pagar</div>
             </div>
           </div>
         </CardHeader>
-        
-        <Separator />
-        
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Columna Izquierda */}
-            <div className="space-y-6">
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex items-start gap-3">
+              <Building2 className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center">
-                  <User className="h-4 w-4 mr-2" />
-                  Información del Proveedor
-                </h3>
-                <div className="space-y-2 pl-6">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Proveedor:</span>
-                    <span className="font-medium">{proveedor?.nombre || `ID: ${orden.proveedor_id}`}</span>
-                  </div>
-                  {proveedor?.cuit && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">CUIT:</span>
-                      <span className="font-medium">{proveedor.cuit}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Fechas
-                </h3>
-                <div className="space-y-2 pl-6">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Fecha de Orden:</span>
-                    <span className="font-medium">{formatDateShort(orden.fecha_op)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Creado:</span>
-                    <span className="font-medium">
-                      {orden.created_at ? formatDateShort(orden.created_at) : "—"}
-                    </span>
-                  </div>
-                </div>
+                <div className="text-sm text-muted-foreground">Proveedor</div>
+                <div className="font-semibold">{orden.proveedor_nombre ?? `ID: ${orden.proveedor_id}`}</div>
+                {orden.proveedor_cuit && (
+                  <div className="text-sm text-muted-foreground">CUIT: {orden.proveedor_cuit}</div>
+                )}
               </div>
             </div>
-
-            {/* Columna Derecha */}
-            <div className="space-y-6">
+            <div className="flex items-start gap-3">
+              <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center">
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  Detalles del Pago
-                </h3>
-                <div className="space-y-2 pl-6">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total a Pagar:</span>
-                    <span className="text-xl font-bold text-green-600">
-                      {formatCurrency(orden.total_a_pagar)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Estado:</span>
-                    <StatusBadge estado={orden.estado} showIcon />
-                  </div>
-                </div>
+                <div className="text-sm text-muted-foreground">Fecha de la orden</div>
+                <div className="font-semibold">{orden.fecha_op ? formatDateShort(orden.fecha_op) : "—"}</div>
               </div>
-
-              {orden.observaciones && (
-                <>
-                  <Separator />
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Observaciones
-                    </h3>
-                    <p className="text-sm text-foreground pl-6 bg-muted p-3 rounded-md">
-                      {orden.observaciones}
-                    </p>
-                  </div>
-                </>
-              )}
             </div>
           </div>
+
+          {orden.observaciones && (
+            <div>
+              <div className="text-sm text-muted-foreground">Observaciones</div>
+              <div className="text-sm">{orden.observaciones}</div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Acciones según el estado. El circuito no saltea etapas:
-          borrador -> en_aprobacion (aplica fn_op_gate) -> aprobado -> pagado. */}
-      {orden.estado === "borrador" && (
-        <Card>
-          <CardHeader><CardTitle>Acciones</CardTitle></CardHeader>
-          <CardContent>
-            <Button onClick={() => cambiarEstado("en_aprobacion")} disabled={processing} className="w-full">
-              {processing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}
-              Mandar a aprobar
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {canModify && orden.estado === "en_aprobacion" && (
-        <Card>
-          <CardHeader><CardTitle>Aprobación</CardTitle></CardHeader>
-          <CardContent>
-            <div className="flex gap-3">
-              <Button onClick={() => cambiarEstado("aprobado")} disabled={processing} className="flex-1">
-                {processing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}
-                Aprobar
-              </Button>
-              <Button variant="destructive" onClick={() => cambiarEstado("rechazado")} disabled={processing} className="flex-1">
-                {processing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <XCircle className="h-4 w-4 mr-2" />}
-                Rechazar
-              </Button>
+      {/* Facturas pagadas */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Receipt className="h-5 w-5" />
+            Facturas pagadas
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {facturas.length === 0 ? (
+            <p className="text-muted-foreground">No hay facturas asociadas</p>
+          ) : (
+            <div className="space-y-2">
+              {facturas.map((f) => (
+                <div key={f.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="font-semibold">
+                    {f.gu_facturas?.numero_factura ?? `Factura #${f.factura_id}`}
+                  </div>
+                  <div className="font-medium">{formatCurrency(f.monto, f.gu_facturas?.moneda ?? moneda)}</div>
+                </div>
+              ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
 
-      {canModify && orden.estado === "aprobado" && (
-        <Card>
-          <CardHeader><CardTitle>Marcar como pagada</CardTitle></CardHeader>
-          <CardContent>
-            <Button onClick={() => cambiarEstado("pagado")} disabled={processing} className="w-full" size="lg">
-              {processing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <DollarSign className="h-4 w-4 mr-2" />}
-              Confirmar pago realizado
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      {/* Medios de pago (cajas) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wallet className="h-5 w-5" />
+            Medios de pago
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {cajas.length === 0 ? (
+            <p className="text-muted-foreground">No hay cajas asociadas</p>
+          ) : (
+            <div className="space-y-2">
+              {cajas.map((c) => (
+                <div key={c.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <div className="font-semibold">{c.gu_cajas?.nombre ?? `Caja #${c.caja_id}`}</div>
+                    {c.gu_cajas?.tipo && (
+                      <div className="text-xs text-muted-foreground capitalize">{c.gu_cajas.tipo}</div>
+                    )}
+                  </div>
+                  <div className="font-medium">{formatCurrency(c.monto, c.gu_cajas?.moneda ?? moneda)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

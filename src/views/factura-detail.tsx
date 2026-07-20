@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { use } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
@@ -39,22 +39,22 @@ export function FacturaDetail({ params }: Props) {
   const userRole = user ? stringToUserRole(user.rol) : null
   const canModify = userRole ? canAnularDocumento(userRole) : false
 
-  useEffect(() => {
-    const fetchFactura = async () => {
-      try {
-        const response = await fetch(`/api/facturas/${id}`)
-        if (!response.ok) throw new Error("Error al cargar factura")
-        const data = await response.json()
-        setFactura(data)
-      } catch (error) {
-        showErrorToast("Error", "No se pudo cargar la factura")
-      } finally {
-        setLoading(false)
-      }
+  const fetchFactura = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/facturas/${id}`)
+      if (!response.ok) throw new Error("Error al cargar factura")
+      const data = await response.json()
+      setFactura(data)
+    } catch (error) {
+      showErrorToast("Error", "No se pudo cargar la factura")
+    } finally {
+      setLoading(false)
     }
-
-    fetchFactura()
   }, [id])
+
+  useEffect(() => {
+    fetchFactura()
+  }, [fetchFactura])
 
   // FACT no tiene aprobación intermedia: borrador -> finalizado (habilita pagar) | anulado.
   // Finalizar exige >=1 imputación; un 422 trae ese mensaje o el del trigger de imputación.
@@ -70,7 +70,9 @@ export function FacturaDetail({ params }: Props) {
       const updated = await response.json()
       if (!response.ok) throw new Error(updated.error || "Error al actualizar factura")
 
-      setFactura(updated)
+      // El PATCH /estado devuelve solo la cabecera (sin lineas ni imputaciones).
+      // Reconsultamos el detalle completo para no borrar esas secciones.
+      await fetchFactura()
       showSuccessToast("Éxito", nuevoEstado === "finalizado" ? "Factura finalizada" : "Factura anulada")
     } catch (error) {
       showErrorToast(
