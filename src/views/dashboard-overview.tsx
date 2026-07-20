@@ -17,7 +17,6 @@ import {
 import { useDashboard } from "@/shared/use-dashboard"
 import { formatCurrency } from "@/shared/format-utils"
 import { formatDateShort } from "@/shared/date-utils"
-import { showSuccessToast, showInfoToast, showWarningToast, showErrorToast } from "@/shared/toast-helpers"
 import { StatusBadge } from "@/shared/status-badge"
 
 const getTipoIcon = (tipo: string) => {
@@ -35,23 +34,6 @@ const getTipoIcon = (tipo: string) => {
 
 export function DashboardOverview() {
   const { stats, loading, error, refreshData } = useDashboard()
-
-  const handleTestNotification = (type: string) => {
-    switch (type) {
-      case 'success':
-        showSuccessToast("¡Operación completada!", "La acción se ejecutó correctamente")
-        break
-      case 'info':
-        showInfoToast("Información del sistema", "Datos del dashboard actualizados")
-        break
-      case 'warning':
-        showWarningToast("Atención requerida", `Hay ${stats?.ordenesPago.vencidas || 0} órdenes vencidas`)
-        break
-      case 'error':
-        showErrorToast("Error en el sistema", "Error de prueba del sistema de notificaciones")
-        break
-    }
-  }
 
   if (loading) {
     return (
@@ -123,50 +105,13 @@ export function DashboardOverview() {
 
   return (
     <div className="space-y-6">
-      {/* Botones de prueba de notificaciones y refresh */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>🔔 Prueba de Notificaciones</CardTitle>
-            <Button onClick={refreshData} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Actualizar Dashboard
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex space-x-2">
-            <Button 
-              variant="default" 
-              size="sm"
-              onClick={() => handleTestNotification('success')}
-            >
-              ✅ Éxito
-            </Button>
-            <Button 
-              variant="secondary" 
-              size="sm"
-              onClick={() => handleTestNotification('info')}
-            >
-              ℹ️ Info
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => handleTestNotification('warning')}
-            >
-              ⚠️ Alerta
-            </Button>
-            <Button 
-              variant="destructive" 
-              size="sm"
-              onClick={() => handleTestNotification('error')}
-            >
-              ❌ Error
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Acción de refresco */}
+      <div className="flex justify-end">
+        <Button onClick={refreshData} variant="outline" size="sm">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Actualizar
+        </Button>
+      </div>
 
       {/* Estadísticas principales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

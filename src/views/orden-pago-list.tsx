@@ -10,6 +10,7 @@ import { useOrdensPago } from "@/shared/use-ordenes-pago"
 import { formatCurrency } from "@/shared/format-utils"
 import { formatDateShort } from "@/shared/date-utils"
 import { searchWithScore } from "@/shared/search-utils"
+import { SearchStats } from "@/views/ui/search-stats"
 import { StatusBadge } from "@/shared/status-badge"
 import { useAuth } from "@/shared/auth-context"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
@@ -117,6 +118,13 @@ export function OrdenPagoList() {
         </div>
       </CardHeader>
       <CardContent>
+        <SearchStats
+          totalItems={orders.length}
+          filteredItems={filteredOrders.length}
+          searchTerm={searchTerm}
+          entityName="orden de pago"
+        />
+
         <div className="space-y-4">
           {filteredOrders.length === 0 ? (
             <div className="text-center py-8">

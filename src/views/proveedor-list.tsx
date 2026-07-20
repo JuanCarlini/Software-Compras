@@ -9,6 +9,7 @@ import { useState } from "react"
 import { useProveedores } from "@/shared/use-proveedores"
 import { EstadoProveedor } from "@/models"
 import { searchWithScore } from "@/shared/search-utils"
+import { SearchStats } from "@/views/ui/search-stats"
 import { StatusBadge } from "@/shared/status-badge"
 import { useAuth } from "@/shared/auth-context"
 import { canModificarProveedor, stringToUserRole } from "@/shared/permissions"
@@ -94,6 +95,13 @@ export function ProveedorList() {
         </div>
       </CardHeader>
       <CardContent>
+        <SearchStats
+          totalItems={proveedores.length}
+          filteredItems={filteredProveedores.length}
+          searchTerm={searchTerm}
+          entityName="proveedor"
+        />
+
         <div className="space-y-4">
           {filteredProveedores.length === 0 ? (
             <div className="text-center py-8">
