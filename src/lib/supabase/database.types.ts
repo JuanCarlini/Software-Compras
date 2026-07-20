@@ -859,18 +859,21 @@ export type Database = {
           descripcion: string | null
           id: number
           nombre: string
+          permisos: string[]
         }
         Insert: {
           creado_en?: string | null
           descripcion?: string | null
           id?: never
           nombre: string
+          permisos?: string[]
         }
         Update: {
           creado_en?: string | null
           descripcion?: string | null
           id?: never
           nombre?: string
+          permisos?: string[]
         }
         Relationships: []
       }
