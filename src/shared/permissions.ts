@@ -64,3 +64,18 @@ export function stringToUserRole(rol: string): UserRole {
       return UserRole.USUARIO
   }
 }
+
+// RBAC real (PERM-04/05). Chequeo PURO de permisos, sin DB: 'admin' pasa siempre
+// (short-circuit anti auto-lockout — no se puede lockear al sistema editando permisos);
+// el resto por membership en su array `modulo:accion`. La resolución del array (I/O contra
+// gu_roles.permisos) vive en requirePermission/rol.repository; acá solo la decisión, para
+// poder testearla sin Supabase. Es la única fuente de verdad del "puede o no".
+export function tienePermiso(
+  rolNombre: string,
+  permisos: string[],
+  modulo: string,
+  accion: string
+): boolean {
+  if (rolNombre.toLowerCase() === "admin") return true
+  return permisos.includes(`${modulo}:${accion}`)
+}
