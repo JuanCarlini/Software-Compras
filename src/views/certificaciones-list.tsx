@@ -1,11 +1,15 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/views/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
+import { Button } from "@/views/ui/button"
 import { Badge } from "@/views/ui/badge"
-import { Plus, FileText, Calendar, Building2, Loader2 } from "lucide-react"
+import { SearchBar } from "@/views/ui/search-bar"
+import { SearchStats } from "@/views/ui/search-stats"
+import { Eye, Loader2 } from "lucide-react"
+import Link from "next/link"
+import { searchWithScore } from "@/shared/search-utils"
+import { formatCurrency } from "@/shared/format-utils"
 import { showErrorToast } from "@/shared/toast-helpers"
 import { StatusBadge } from "@/shared/status-badge"
 
@@ -13,7 +17,7 @@ export function CertificacionesList() {
   const [certificaciones, setCertificaciones] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
+  const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
     fetchCertificaciones()
@@ -34,6 +38,13 @@ export function CertificacionesList() {
       setLoading(false)
     }
   }
+
+  const filteredCertificaciones = searchWithScore(
+    certificaciones,
+    searchTerm,
+    ["numero_cert", "numero_oc", "proveedor_nombre", "estado"],
+    { numero_cert: 3, numero_oc: 2, proveedor_nombre: 2, estado: 2 }
+  )
 
   if (loading) {
     return (
@@ -57,84 +68,85 @@ export function CertificacionesList() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex gap-4">
-          <Button onClick={() => router.push('/certificaciones/nueva')}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nueva Certificación
-          </Button>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Certificaciones ({filteredCertificaciones.length})</CardTitle>
+          <SearchBar
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Buscar por número, OC, proveedor..."
+            className="w-80"
+          />
         </div>
-      </div>
+      </CardHeader>
+      <CardContent>
+        <SearchStats
+          totalItems={certificaciones.length}
+          filteredItems={filteredCertificaciones.length}
+          searchTerm={searchTerm}
+          entityName="certificación"
+        />
 
-      {certificaciones.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              No hay certificaciones
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              Comienza creando tu primera certificación
-            </p>
-            <Button onClick={() => router.push('/certificaciones/nueva')}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Certificación
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {certificaciones.map((cert) => (
-            <Card 
-              key={cert.id}
-              className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => router.push(`/certificaciones/${cert.id}`)}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-xl mb-2">
-                      {cert.numero_cert}
-                    </CardTitle>
-                    <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        {/* La CE cuelga de una OC, ya no de un proyecto. */}
-                        <Building2 className="h-4 w-4" />
-                        <span>{cert.numero_oc || 'Sin OC'}</span>
-                        {cert.estado_facturacion && (
-                          <Badge variant="outline" className="ml-2">
-                            Facturación: {cert.estado_facturacion}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        <span>{cert.proveedor_nombre || 'Sin proveedor'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span>{new Date(cert.fecha_cert).toLocaleDateString('es-AR')}</span>
-                      </div>
+        <div className="space-y-4">
+          {filteredCertificaciones.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                {searchTerm
+                  ? `No se encontraron certificaciones que coincidan con "${searchTerm}"`
+                  : "No hay certificaciones registradas"}
+              </p>
+            </div>
+          ) : (
+            filteredCertificaciones.map((cert: any) => (
+              <div
+                key={cert.id}
+                className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors"
+              >
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="font-medium text-foreground">{cert.numero_cert}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {cert.fecha_cert
+                        ? new Date(cert.fecha_cert).toLocaleDateString("es-AR")
+                        : "—"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-foreground">
+                      {cert.proveedor_nombre || "Sin proveedor"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{cert.numero_oc || "Sin OC"}</p>
+                  </div>
+
+                  <div>
+                    <p className="font-medium text-foreground">
+                      {formatCurrency(cert.total_con_iva ?? 0)}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge estado={cert.estado} showIcon />
+                      {cert.estado_facturacion && (
+                        <Badge variant="outline" className="font-normal">
+                          Fact.: {cert.estado_facturacion}
+                        </Badge>
+                      )}
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <StatusBadge estado={cert.estado} showIcon />
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-foreground">
-                        ${cert.total_con_iva?.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Total con IVA
-                      </div>
-                    </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`/certificaciones/${cert.id}`} aria-label="Ver certificación">
+                        <Eye className="h-4 w-4" />
+                      </Link>
+                    </Button>
                   </div>
                 </div>
-              </CardHeader>
-            </Card>
-          ))}
+              </div>
+            ))
+          )}
         </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   )
 }
