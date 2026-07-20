@@ -1,7 +1,8 @@
 import { UserRole } from "@/models"
 import { NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth/auth.cookies"
-import { isAdmin, stringToUserRole } from "@/shared/permissions"
+import { isAdmin, stringToUserRole, tienePermiso } from "@/shared/permissions"
+import { RolRepository } from "@/repositories/rol.repository"
 
 /**
  * Obtiene el usuario autenticado desde el servidor
@@ -77,6 +78,33 @@ export async function requireRole(rolesPermitidos: UserRole[]) {
   if (error) return { error, user: null }
 
   if (!rolesPermitidos.includes(stringToUserRole(user!.rol))) {
+    return {
+      error: NextResponse.json(
+        { error: "No tenés permisos para realizar esta acción" },
+        { status: 403 }
+      ),
+      user: null
+    }
+  }
+
+  return { error: null, user }
+}
+
+/**
+ * RBAC real (PERM-04): autoriza por PERMISO del rol (`modulo:accion`), no por grupo de rol
+ * hardcodeado. Resuelve los permisos del rol frescos por request (sin staleness de JWT ni
+ * re-login) y delega la decisión a `tienePermiso` (admin short-circuit + membership, PERM-05).
+ * Mismo shape { error, user } que requireRole. Solo para API Routes.
+ */
+export async function requirePermission(modulo: string, accion: string) {
+  const { error, user } = await requireAuth()
+  if (error) return { error, user: null }
+
+  // ponytail: admin igual pega la query y el short-circuit vive en tienePermiso (una sola
+  // fuente de verdad). La lectura por nombre es un lookup indexado inocuo; si algún día pesa,
+  // un isAdmin early-return antes de la query lo evita.
+  const permisos = await RolRepository.findPermisosByNombre(user!.rol)
+  if (!tienePermiso(user!.rol, permisos, modulo, accion)) {
     return {
       error: NextResponse.json(
         { error: "No tenés permisos para realizar esta acción" },

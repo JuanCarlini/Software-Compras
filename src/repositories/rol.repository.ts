@@ -31,6 +31,14 @@ export class RolRepository {
     return (data as { id: number } | null) ?? null
   }
 
+  // Permisos (claves `modulo:accion`) de un rol por nombre. Fuente para requirePermission
+  // (RBAC). Rol inexistente o sin permisos → []. Única capa con .from() (A1).
+  static async findPermisosByNombre(nombre: string): Promise<string[]> {
+    const supabase = createClient()
+    const { data } = await supabase.from(TABLE).select("permisos").eq("nombre", nombre).maybeSingle()
+    return data?.permisos ?? []
+  }
+
   // rol_id de todos los usuarios, para contar cuántos hay por rol (usado en getAll)
   static async findAllUsuarioRolIds(): Promise<number[]> {
     const supabase = createClient()
