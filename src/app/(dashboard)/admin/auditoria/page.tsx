@@ -91,8 +91,8 @@ export default function AuditoriaPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Auditoría</h1>
-        <p className="text-slate-600">Bitácora de operaciones y control de cambios del sistema (T06)</p>
+        <h1 className="text-3xl font-bold text-foreground">Auditoría</h1>
+        <p className="text-muted-foreground">Bitácora de operaciones y control de cambios del sistema (T06)</p>
       </div>
 
       <Card>
@@ -173,15 +173,15 @@ export default function AuditoriaPage() {
                 </TableHeader>
                 <TableBody>
                   {filas.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center text-slate-500 py-8">Sin registros para los filtros aplicados</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Sin registros para los filtros aplicados</TableCell></TableRow>
                   ) : filas.map((f) => (
                     <TableRow key={f.id}>
                       <TableCell className="whitespace-nowrap">{formatDateTime(f.fecha)}</TableCell>
                       <TableCell>{f.usuario}</TableCell>
                       <TableCell><Badge variant="outline">{f.accion}</Badge></TableCell>
-                      <TableCell className="text-slate-600">{f.tabla}</TableCell>
-                      <TableCell className="text-slate-600">#{f.registro_id}</TableCell>
-                      <TableCell className="text-slate-600">{f.detalle}</TableCell>
+                      <TableCell className="text-muted-foreground">{f.tabla}</TableCell>
+                      <TableCell className="text-muted-foreground">#{f.registro_id}</TableCell>
+                      <TableCell className="text-muted-foreground">{f.detalle}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -206,15 +206,15 @@ export default function AuditoriaPage() {
                 </TableHeader>
                 <TableBody>
                   {filas.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} className="text-center text-slate-500 py-8">Sin registros para los filtros aplicados</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Sin registros para los filtros aplicados</TableCell></TableRow>
                   ) : filas.map((f) => (
                     <TableRow key={f.id}>
                       <TableCell className="whitespace-nowrap">{formatDateTime(f.fecha)}</TableCell>
                       <TableCell>{f.usuario}</TableCell>
                       <TableCell><Badge variant="outline">{f.accion}</Badge></TableCell>
-                      <TableCell className="text-slate-600">{f.tabla}</TableCell>
-                      <TableCell className="text-slate-600">#{f.registro_id}</TableCell>
-                      <TableCell className="text-slate-600 text-xs max-w-md truncate" title={diffCampos(f.datos_anteriores, f.datos_nuevos)}>
+                      <TableCell className="text-muted-foreground">{f.tabla}</TableCell>
+                      <TableCell className="text-muted-foreground">#{f.registro_id}</TableCell>
+                      <TableCell className="text-muted-foreground text-xs max-w-md truncate" title={diffCampos(f.datos_anteriores, f.datos_nuevos)}>
                         {diffCampos(f.datos_anteriores, f.datos_nuevos)}
                       </TableCell>
                     </TableRow>

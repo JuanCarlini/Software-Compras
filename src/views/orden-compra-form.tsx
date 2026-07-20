@@ -323,13 +323,13 @@ export function OrdenCompraForm() {
 
           {/* Items */}
           <div className="border-t pt-6">
-            <h3 className="text-lg font-medium text-slate-900 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
               <ShoppingCart className="h-5 w-5" />
               Items de la Orden
             </h3>
 
             {/* Form para agregar item */}
-            <div className="bg-slate-50 p-4 rounded-lg mb-4">
+            <div className="bg-muted p-4 rounded-lg mb-4">
               <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div className="md:col-span-2 space-y-2">
                   <Label>Producto / Servicio *</Label>
@@ -406,7 +406,7 @@ export function OrdenCompraForm() {
             {/* lista de items */}
             {items.length > 0 ? (
               <div className="space-y-2">
-                <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-slate-100 rounded-t font-medium text-sm">
+                <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-muted rounded-t font-medium text-sm">
                   <div className="col-span-4">Producto</div>
                   <div className="col-span-2 text-right">Cantidad</div>
                   <div className="col-span-2 text-right">P. Unitario</div>
@@ -414,10 +414,10 @@ export function OrdenCompraForm() {
                   <div className="col-span-1" />
                 </div>
                 {items.map((item) => (
-                  <div key={item.id} className="grid grid-cols-12 gap-2 px-4 py-3 border rounded hover:bg-slate-50">
+                  <div key={item.id} className="grid grid-cols-12 gap-2 px-4 py-3 border rounded hover:bg-accent">
                     <div className="col-span-4">
                       <p className="font-medium">{item.producto}</p>
-                      {item.descripcion && <p className="text-sm text-slate-600">{item.descripcion}</p>}
+                      {item.descripcion && <p className="text-sm text-muted-foreground">{item.descripcion}</p>}
                     </div>
                     <div className="col-span-2 text-right">{item.cantidad}</div>
                     <div className="col-span-2 text-right">{formatCurrency(item.precio_unitario)}</div>
@@ -437,7 +437,7 @@ export function OrdenCompraForm() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-slate-500 border-2 border-dashed rounded">
+              <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded">
                 No hay items agregados. Usa el formulario de arriba para agregarlos.
               </div>
             )}
@@ -445,7 +445,7 @@ export function OrdenCompraForm() {
 
           {/* Totales */}
           {items.length > 0 && (
-            <div className="bg-slate-50 p-4 rounded-lg">
+            <div className="bg-muted p-4 rounded-lg">
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Total Neto:</span>

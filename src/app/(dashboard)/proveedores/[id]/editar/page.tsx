@@ -66,7 +66,7 @@ export default function EditarProveedorPage() {
     return (
       <Card>
         <CardContent className="text-center py-8">
-          <p className="text-slate-500">Proveedor no encontrado</p>
+          <p className="text-muted-foreground">Proveedor no encontrado</p>
         </CardContent>
       </Card>
     )
@@ -81,8 +81,8 @@ export default function EditarProveedorPage() {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Editar Proveedor</h1>
-          <p className="text-slate-600">Modifica la información del proveedor {proveedor.nombre}</p>
+          <h1 className="text-3xl font-bold text-foreground">Editar Proveedor</h1>
+          <p className="text-muted-foreground">Modifica la información del proveedor {proveedor.nombre}</p>
         </div>
       </div>
       

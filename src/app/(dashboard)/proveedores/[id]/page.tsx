@@ -91,7 +91,7 @@ export default function ProveedorDetailsPage() {
     return (
       <Card>
         <CardContent className="text-center py-8">
-          <p className="text-slate-500">Proveedor no encontrado</p>
+          <p className="text-muted-foreground">Proveedor no encontrado</p>
         </CardContent>
       </Card>
     )

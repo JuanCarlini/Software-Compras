@@ -46,7 +46,7 @@ export function ReportesDashboard() {
     return (
       <Card>
         <CardContent className="text-center py-8">
-          <p className="text-slate-500">No hay datos disponibles</p>
+          <p className="text-muted-foreground">No hay datos disponibles</p>
         </CardContent>
       </Card>
     )
@@ -126,7 +126,7 @@ export function ReportesDashboard() {
           </CardHeader>
           <CardContent>
             {estadisticas.ordenes_por_estado.length === 0 ? (
-              <p className="text-center text-slate-500 py-4">No hay datos disponibles</p>
+              <p className="text-center text-muted-foreground py-4">No hay datos disponibles</p>
             ) : (
               <div className="space-y-4">
                 {estadisticas.ordenes_por_estado.map((item, index) => (
@@ -136,11 +136,11 @@ export function ReportesDashboard() {
                         {index + 1}
                       </div>
                       <div>
-                        <p className="font-medium text-slate-900 capitalize">{item.estado}</p>
-                        <p className="text-sm text-slate-600">{item.cantidad} órdenes</p>
+                        <p className="font-medium text-foreground capitalize">{item.estado}</p>
+                        <p className="text-sm text-muted-foreground">{item.cantidad} órdenes</p>
                       </div>
                     </div>
-                    <div className="w-24 bg-slate-200 rounded-full h-2">
+                    <div className="w-24 bg-muted rounded-full h-2">
                       <div 
                         className="bg-blue-600 h-2 rounded-full" 
                         style={{ 
@@ -165,7 +165,7 @@ export function ReportesDashboard() {
           </CardHeader>
           <CardContent>
             {estadisticas.top_proveedores.length === 0 ? (
-              <p className="text-center text-slate-500 py-4">No hay datos disponibles</p>
+              <p className="text-center text-muted-foreground py-4">No hay datos disponibles</p>
             ) : (
               <div className="space-y-4">
                 {estadisticas.top_proveedores.map((item, index) => {
@@ -185,7 +185,7 @@ export function ReportesDashboard() {
                         </Badge>
                         <div>
                           <p className="font-medium">{item.nombre}</p>
-                          <p className="text-sm text-slate-600">{item.total_ordenes} órdenes</p>
+                          <p className="text-sm text-muted-foreground">{item.total_ordenes} órdenes</p>
                         </div>
                       </div>
                       <div className="text-right">
@@ -214,12 +214,12 @@ export function ReportesDashboard() {
                     <span className="text-sm font-medium capitalize">{item.mes}</span>
                     <div className="text-right">
                       <span className="text-sm font-medium">{item.cantidad} órdenes</span>
-                      <span className="text-xs text-slate-500 ml-2">
+                      <span className="text-xs text-muted-foreground ml-2">
                         {formatCurrency(item.monto)}
                       </span>
                     </div>
                   </div>
-                  <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div className="w-full bg-muted rounded-full h-2">
                     <div 
                       className="bg-green-600 h-2 rounded-full transition-all" 
                       style={{ 

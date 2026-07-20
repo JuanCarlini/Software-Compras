@@ -142,7 +142,7 @@ export function FacturaDetail({ params }: Props) {
                   minimumFractionDigits: 2,
                 })}
               </div>
-              <div className="text-sm text-slate-600">Total con IVA</div>
+              <div className="text-sm text-muted-foreground">Total con IVA</div>
             </div>
           </div>
         </CardHeader>
@@ -150,9 +150,9 @@ export function FacturaDetail({ params }: Props) {
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <Building2 className="h-5 w-5 text-slate-400 mt-0.5" />
+                <Building2 className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
-                  <div className="text-sm text-slate-600">Proveedor</div>
+                  <div className="text-sm text-muted-foreground">Proveedor</div>
                   <div className="font-semibold">{factura.proveedor_nombre ?? "—"}</div>
                   {factura.proveedor_cuit && (
                     <Badge variant="outline" className="mt-1">
@@ -160,10 +160,10 @@ export function FacturaDetail({ params }: Props) {
                     </Badge>
                   )}
                   {factura.proveedor_email && (
-                    <div className="text-sm text-slate-600 mt-1">{factura.proveedor_email}</div>
+                    <div className="text-sm text-muted-foreground mt-1">{factura.proveedor_email}</div>
                   )}
                   {factura.proveedor_direccion && (
-                    <div className="text-sm text-slate-600">{factura.proveedor_direccion}</div>
+                    <div className="text-sm text-muted-foreground">{factura.proveedor_direccion}</div>
                   )}
                 </div>
               </div>
@@ -171,9 +171,9 @@ export function FacturaDetail({ params }: Props) {
 
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <Calendar className="h-5 w-5 text-slate-400 mt-0.5" />
+                <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
-                  <div className="text-sm text-slate-600">Fecha de emisión</div>
+                  <div className="text-sm text-muted-foreground">Fecha de emisión</div>
                   <div className="font-semibold">
                     {factura.fecha_emision
                       ? new Date(factura.fecha_emision).toLocaleDateString("es-AR")
@@ -186,9 +186,9 @@ export function FacturaDetail({ params }: Props) {
 
           <div>
             <h3 className="text-lg font-semibold mb-3">Resumen Financiero</h3>
-            <div className="bg-slate-50 p-4 rounded-lg space-y-2">
+            <div className="bg-muted p-4 rounded-lg space-y-2">
               <div className="flex justify-between">
-                <span className="text-slate-600">Subtotal (Neto)</span>
+                <span className="text-muted-foreground">Subtotal (Neto)</span>
                 <span className="font-semibold">
                   ${Number(factura.total_neto ?? 0).toLocaleString("es-AR", {
                     minimumFractionDigits: 2,
@@ -196,7 +196,7 @@ export function FacturaDetail({ params }: Props) {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">IVA</span>
+                <span className="text-muted-foreground">IVA</span>
                 <span className="font-semibold">
                   ${Number(factura.total_iva ?? 0).toLocaleString("es-AR", {
                     minimumFractionDigits: 2,
@@ -229,17 +229,17 @@ export function FacturaDetail({ params }: Props) {
               {factura.imputaciones.map((imp: any) => (
                 <div
                   key={imp.certificacion_id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50 cursor-pointer"
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent cursor-pointer"
                   onClick={() => router.push(`/certificaciones/${imp.certificacion_id}`)}
                 >
                   <div>
                     <div className="font-semibold">{imp.gu_certificaciones?.numero_cert}</div>
-                    <div className="text-sm text-slate-600">
+                    <div className="text-sm text-muted-foreground">
                       Certificado: ${Number(imp.gu_certificaciones?.total_con_iva ?? 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs text-slate-500">Imputado</div>
+                    <div className="text-xs text-muted-foreground">Imputado</div>
                     <div className="text-sm font-medium mt-1">
                       ${Number(imp.monto_asignado ?? 0).toLocaleString("es-AR", {
                         minimumFractionDigits: 2,
@@ -259,22 +259,22 @@ export function FacturaDetail({ params }: Props) {
         </CardHeader>
         <CardContent>
           {!factura.lineas || factura.lineas.length === 0 ? (
-            <p className="text-slate-600">No hay líneas registradas</p>
+            <p className="text-muted-foreground">No hay líneas registradas</p>
           ) : (
             <div className="space-y-4">
               {factura.lineas.map((linea: any, index: number) => (
-                <div key={linea.id ?? index} className="border rounded-lg p-4 bg-slate-50">
+                <div key={linea.id ?? index} className="border rounded-lg p-4 bg-muted">
                   <div className="grid grid-cols-5 gap-4">
                     <div className="col-span-2">
-                      <div className="text-sm text-slate-600">Descripción</div>
+                      <div className="text-sm text-muted-foreground">Descripción</div>
                       <div className="font-medium">{linea.descripcion}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-slate-600">Cantidad</div>
+                      <div className="text-sm text-muted-foreground">Cantidad</div>
                       <div className="font-medium">{linea.cantidad}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-slate-600">Precio Unitario</div>
+                      <div className="text-sm text-muted-foreground">Precio Unitario</div>
                       <div className="font-medium">
                         ${Number(linea.precio_unitario ?? 0).toLocaleString("es-AR", {
                           minimumFractionDigits: 2,
@@ -282,13 +282,13 @@ export function FacturaDetail({ params }: Props) {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm text-slate-600">Total</div>
+                      <div className="text-sm text-muted-foreground">Total</div>
                       <div className="font-bold text-green-600">
                         ${Number(linea.total_con_iva ?? 0).toLocaleString("es-AR", {
                           minimumFractionDigits: 2,
                         })}
                       </div>
-                      <div className="text-xs text-slate-600">IVA: {linea.iva_porcentaje}%</div>
+                      <div className="text-xs text-muted-foreground">IVA: {linea.iva_porcentaje}%</div>
                     </div>
                   </div>
                 </div>

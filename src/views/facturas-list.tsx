@@ -49,11 +49,11 @@ export function FacturasList() {
       {facturas.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Receipt className="h-12 w-12 text-slate-400 mb-4" />
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">
+            <Receipt className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               No hay facturas
             </h3>
-            <p className="text-slate-600 mb-4">
+            <p className="text-muted-foreground mb-4">
               Comienza creando tu primera factura
             </p>
             <Button onClick={() => router.push('/facturas/nueva')}>
@@ -76,7 +76,7 @@ export function FacturasList() {
                     <CardTitle className="text-xl mb-2">
                       {factura.numero_factura}
                     </CardTitle>
-                    <div className="flex flex-col gap-2 text-sm text-slate-600">
+                    <div className="flex flex-col gap-2 text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
                         <Building2 className="h-4 w-4" />
                         <span>{factura.proveedor_nombre || 'Sin proveedor'}</span>
@@ -99,10 +99,10 @@ export function FacturasList() {
                   <div className="flex flex-col items-end gap-2">
                     <StatusBadge estado={factura.estado} showIcon />
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-slate-900">
+                      <div className="text-2xl font-bold text-foreground">
                         ${factura.total_con_iva?.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                       </div>
-                      <div className="text-sm text-slate-600">
+                      <div className="text-sm text-muted-foreground">
                         Total con IVA
                       </div>
                     </div>

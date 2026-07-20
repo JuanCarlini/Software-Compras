@@ -97,7 +97,7 @@ export function ProveedorList() {
         <div className="space-y-4">
           {filteredProveedores.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-slate-500">
+              <p className="text-muted-foreground">
                 {searchTerm
                   ? `No se encontraron proveedores que coincidan con "${searchTerm}"`
                   : "No hay proveedores registrados"}
@@ -107,7 +107,7 @@ export function ProveedorList() {
             filteredProveedores.map((proveedor) => (
               <div
                 key={proveedor.id}
-                className="border border-slate-200 rounded-lg p-4 hover:bg-slate-50 transition-colors"
+                className="border border-border rounded-lg p-4 hover:bg-accent transition-colors"
               >
                 <div className="flex items-start justify-between gap-4">
                   {/* columnas */}
@@ -115,12 +115,12 @@ export function ProveedorList() {
                     {/* Información Principal */}
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
-                        <Building2 className="h-4 w-4 text-slate-600" />
-                        <h3 className="font-medium text-slate-900">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <h3 className="font-medium text-foreground">
                           {proveedor.nombre || "—"}
                         </h3>
                       </div>
-                      <p className="text-sm text-slate-600">
+                      <p className="text-sm text-muted-foreground">
                         CUIT: {proveedor.cuit || "—"}
                       </p>
                       {proveedor.estado && (
@@ -131,14 +131,14 @@ export function ProveedorList() {
                     {/* Información de Contacto */}
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
-                        <Mail className="h-4 w-4 text-slate-600" />
-                        <span className="text-sm text-slate-700">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-foreground">
                           {proveedor.email || "Sin email"}
                         </span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Phone className="h-4 w-4 text-slate-600" />
-                        <span className="text-sm text-slate-700">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-foreground">
                           {proveedor.telefono || "Sin teléfono"}
                         </span>
                       </div>
@@ -147,8 +147,8 @@ export function ProveedorList() {
                     {/* Ubicación / Dirección */}
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4 text-slate-600" />
-                        <span className="text-sm text-slate-700">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-foreground">
                           {proveedor.direccion || "Sin dirección"}
                         </span>
                       </div>

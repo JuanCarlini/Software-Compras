@@ -20,7 +20,7 @@ export default async function OrdenCompraDetailPage({ params }: Props) {
           </Link>
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Detalle de Orden de Compra</h1>
+          <h1 className="text-3xl font-bold text-foreground">Detalle de Orden de Compra</h1>
         </div>
       </div>
       

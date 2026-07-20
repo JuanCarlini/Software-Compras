@@ -99,7 +99,7 @@ export function OrdenCompraList() {
         <div className="space-y-4">
           {filteredOrders.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-slate-500">
+              <p className="text-muted-foreground">
                 {searchTerm
                   ? `No se encontraron órdenes que coincidan con "${searchTerm}"`
                   : "No hay órdenes de compra registradas"}
@@ -109,15 +109,15 @@ export function OrdenCompraList() {
             filteredOrders.map((orden: any) => (
               <div
                 key={orden.id}
-                className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors"
               >
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
                   {/* columna 1: número y fecha */}
                   <div>
-                    <p className="font-medium text-slate-900">
+                    <p className="font-medium text-foreground">
                       {orden.numero_oc ? `OC #${orden.numero_oc}` : `OC ID ${orden.id}`}
                     </p>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-muted-foreground">
                       {/* en la tabla la fecha es fecha_oc (date), no fecha_creacion */}
                       {orden.fecha_oc
                         ? new Date(orden.fecha_oc).toLocaleDateString("es-AR")
@@ -127,12 +127,12 @@ export function OrdenCompraList() {
 
                   {/* columna 2: proveedor (solo tenemos id) */}
                   <div>
-                    <p className="text-sm text-slate-900">
+                    <p className="text-sm text-foreground">
                       {orden.proveedor_nombre ||
                         (orden.proveedor_id ? `Proveedor #${orden.proveedor_id}` : "Sin proveedor")}
                     </p>
                     {orden.observaciones && (
-                      <p className="text-sm text-slate-500 line-clamp-1">
+                      <p className="text-sm text-muted-foreground line-clamp-1">
                         {orden.observaciones}
                       </p>
                     )}
@@ -140,7 +140,7 @@ export function OrdenCompraList() {
 
                   {/* columna 3: totales y estado */}
                   <div>
-                    <p className="font-medium text-slate-900">
+                    <p className="font-medium text-foreground">
                       {formatCurrency(orden.total_con_iva ?? orden.total_neto ?? 0)}
                     </p>
                     <StatusBadge estado={orden.estado} showIcon />

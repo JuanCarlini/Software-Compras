@@ -120,7 +120,7 @@ export function OrdenPagoList() {
         <div className="space-y-4">
           {filteredOrders.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-slate-500">
+              <p className="text-muted-foreground">
                 {searchTerm 
                   ? `No se encontraron órdenes que coincidan con "${searchTerm}"`
                   : "No hay órdenes de pago registradas"
@@ -131,18 +131,18 @@ export function OrdenPagoList() {
             filteredOrders.map((orden) => (
               <div 
                 key={orden.id}
-                className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors"
               >
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-5 gap-4">
                   <div>
-                    <p className="font-medium text-slate-900">Orden #{orden.numero_op}</p>
-                    <p className="text-sm text-slate-500">{formatDateShort(orden.fecha_op)}</p>
+                    <p className="font-medium text-foreground">Orden #{orden.numero_op}</p>
+                    <p className="text-sm text-muted-foreground">{formatDateShort(orden.fecha_op)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-slate-900">{orden.proveedor_nombre}</p>
+                    <p className="text-sm text-foreground">{orden.proveedor_nombre}</p>
                   </div>
                   <div>
-                    <p className="font-medium text-slate-900">{formatCurrency(orden.total_a_pagar)}</p>
+                    <p className="font-medium text-foreground">{formatCurrency(orden.total_a_pagar)}</p>
                   </div>
                   <div>
                     <StatusBadge estado={orden.estado} showIcon />

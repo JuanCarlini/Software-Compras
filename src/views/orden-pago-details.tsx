@@ -104,7 +104,7 @@ export function OrdenPagoDetails() {
       <Card>
         <CardContent className="py-8 text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Cargando detalles de la orden de pago...</p>
+          <p className="text-muted-foreground">Cargando detalles de la orden de pago...</p>
         </CardContent>
       </Card>
     )
@@ -143,11 +143,11 @@ export function OrdenPagoDetails() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-2xl">Orden de Pago</CardTitle>
-              <p className="text-lg font-mono text-slate-600 mt-1">{orden.numero_op}</p>
+              <p className="text-lg font-mono text-muted-foreground mt-1">{orden.numero_op}</p>
             </div>
             <div className="text-right">
-              <p className="text-sm text-slate-600">Monto Total</p>
-              <p className="text-3xl font-bold text-slate-900">
+              <p className="text-sm text-muted-foreground">Monto Total</p>
+              <p className="text-3xl font-bold text-foreground">
                 {formatCurrency(orden.total_a_pagar)}
               </p>
             </div>
@@ -161,18 +161,18 @@ export function OrdenPagoDetails() {
             {/* Columna Izquierda */}
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-medium text-slate-500 mb-3 flex items-center">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center">
                   <User className="h-4 w-4 mr-2" />
                   Información del Proveedor
                 </h3>
                 <div className="space-y-2 pl-6">
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Proveedor:</span>
+                    <span className="text-muted-foreground">Proveedor:</span>
                     <span className="font-medium">{proveedor?.nombre || `ID: ${orden.proveedor_id}`}</span>
                   </div>
                   {proveedor?.cuit && (
                     <div className="flex justify-between">
-                      <span className="text-slate-600">CUIT:</span>
+                      <span className="text-muted-foreground">CUIT:</span>
                       <span className="font-medium">{proveedor.cuit}</span>
                     </div>
                   )}
@@ -182,17 +182,17 @@ export function OrdenPagoDetails() {
               <Separator />
 
               <div>
-                <h3 className="text-sm font-medium text-slate-500 mb-3 flex items-center">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center">
                   <Calendar className="h-4 w-4 mr-2" />
                   Fechas
                 </h3>
                 <div className="space-y-2 pl-6">
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Fecha de Orden:</span>
+                    <span className="text-muted-foreground">Fecha de Orden:</span>
                     <span className="font-medium">{formatDateShort(orden.fecha_op)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Creado:</span>
+                    <span className="text-muted-foreground">Creado:</span>
                     <span className="font-medium">
                       {orden.created_at ? formatDateShort(orden.created_at) : "—"}
                     </span>
@@ -204,19 +204,19 @@ export function OrdenPagoDetails() {
             {/* Columna Derecha */}
             <div className="space-y-6">
               <div>
-                <h3 className="text-sm font-medium text-slate-500 mb-3 flex items-center">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center">
                   <DollarSign className="h-4 w-4 mr-2" />
                   Detalles del Pago
                 </h3>
                 <div className="space-y-2 pl-6">
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Total a Pagar:</span>
+                    <span className="text-muted-foreground">Total a Pagar:</span>
                     <span className="text-xl font-bold text-green-600">
                       {formatCurrency(orden.total_a_pagar)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Estado:</span>
+                    <span className="text-muted-foreground">Estado:</span>
                     <StatusBadge estado={orden.estado} showIcon />
                   </div>
                 </div>
@@ -226,11 +226,11 @@ export function OrdenPagoDetails() {
                 <>
                   <Separator />
                   <div>
-                    <h3 className="text-sm font-medium text-slate-500 mb-3 flex items-center">
+                    <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center">
                       <FileText className="h-4 w-4 mr-2" />
                       Observaciones
                     </h3>
-                    <p className="text-sm text-slate-700 pl-6 bg-slate-50 p-3 rounded-md">
+                    <p className="text-sm text-foreground pl-6 bg-muted p-3 rounded-md">
                       {orden.observaciones}
                     </p>
                   </div>

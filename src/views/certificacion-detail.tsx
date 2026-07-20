@@ -170,7 +170,7 @@ export function CertificacionDetail({ params }: Props) {
                   minimumFractionDigits: 2,
                 })}
               </div>
-              <div className="text-sm text-slate-600">Total con IVA</div>
+              <div className="text-sm text-muted-foreground">Total con IVA</div>
             </div>
           </div>
         </CardHeader>
@@ -178,10 +178,10 @@ export function CertificacionDetail({ params }: Props) {
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <Building2 className="h-5 w-5 text-slate-400 mt-0.5" />
+                <Building2 className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
                   {/* La CE ya no cuelga de un proyecto: cuelga de UNA orden de compra. */}
-                  <div className="text-sm text-slate-600">Orden de compra</div>
+                  <div className="text-sm text-muted-foreground">Orden de compra</div>
                   <div className="font-semibold">{cert.numero_oc ?? "—"}</div>
                   {cert.estado_facturacion && (
                     <Badge variant="outline" className="mt-1">
@@ -192,12 +192,12 @@ export function CertificacionDetail({ params }: Props) {
               </div>
 
               <div className="flex items-start gap-3">
-                <User className="h-5 w-5 text-slate-400 mt-0.5" />
+                <User className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
-                  <div className="text-sm text-slate-600">Proveedor</div>
+                  <div className="text-sm text-muted-foreground">Proveedor</div>
                   <div className="font-semibold">{cert.proveedor_nombre ?? "—"}</div>
                   {cert.proveedor_cuit && (
-                    <div className="text-sm text-slate-600">
+                    <div className="text-sm text-muted-foreground">
                       CUIT: {cert.proveedor_cuit}
                     </div>
                   )}
@@ -207,9 +207,9 @@ export function CertificacionDetail({ params }: Props) {
 
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <Calendar className="h-5 w-5 text-slate-400 mt-0.5" />
+                <Calendar className="h-5 w-5 text-muted-foreground mt-0.5" />
                 <div>
-                  <div className="text-sm text-slate-600">Fecha de Certificación</div>
+                  <div className="text-sm text-muted-foreground">Fecha de Certificación</div>
                   <div className="font-semibold">
                     {cert.fecha_cert
                       ? new Date(cert.fecha_cert).toLocaleDateString("es-AR")
@@ -220,9 +220,9 @@ export function CertificacionDetail({ params }: Props) {
 
               {cert.observaciones && (
                 <div className="flex items-start gap-3">
-                  <FileText className="h-5 w-5 text-slate-400 mt-0.5" />
+                  <FileText className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <div className="text-sm text-slate-600">Observaciones</div>
+                    <div className="text-sm text-muted-foreground">Observaciones</div>
                     <div className="text-sm">{cert.observaciones}</div>
                   </div>
                 </div>
@@ -244,27 +244,27 @@ export function CertificacionDetail({ params }: Props) {
                   <div className="col-span-5">
                     <div className="font-semibold">{linea.descripcion}</div>
                     {linea.gu_lineasdeordenesdecompra?.gu_ordenesdecompra?.numero_oc ? (
-                      <div className="text-xs text-slate-500 mt-1">
+                      <div className="text-xs text-muted-foreground mt-1">
                         OC {linea.gu_lineasdeordenesdecompra.gu_ordenesdecompra.numero_oc} · {linea.gu_lineasdeordenesdecompra.descripcion}
                       </div>
                     ) : (
-                      <div className="text-xs text-slate-400 mt-1">Línea libre (sin OC)</div>
+                      <div className="text-xs text-muted-foreground mt-1">Línea libre (sin OC)</div>
                     )}
                   </div>
                   <div className="col-span-2 text-right">
-                    <div className="text-sm text-slate-600">Cantidad</div>
+                    <div className="text-sm text-muted-foreground">Cantidad</div>
                     <div>{Number(linea.cantidad ?? 0)}</div>
                   </div>
                   <div className="col-span-2 text-right">
-                    <div className="text-sm text-slate-600">Precio Unit.</div>
+                    <div className="text-sm text-muted-foreground">Precio Unit.</div>
                     <div>${Number(linea.precio_unitario ?? 0).toFixed(2)}</div>
                   </div>
                   <div className="col-span-1 text-right">
-                    <div className="text-sm text-slate-600">IVA</div>
+                    <div className="text-sm text-muted-foreground">IVA</div>
                     <div>{Number(linea.iva_porcentaje ?? 0)}%</div>
                   </div>
                   <div className="col-span-2 text-right">
-                    <div className="text-sm text-slate-600">Total</div>
+                    <div className="text-sm text-muted-foreground">Total</div>
                     <div className="font-semibold">
                       ${Number(linea.total_con_iva ?? 0).toFixed(2)}
                     </div>
@@ -277,13 +277,13 @@ export function CertificacionDetail({ params }: Props) {
           <div className="mt-6 pt-4 border-t">
             <div className="flex justify-end space-x-8">
               <div className="text-right">
-                <div className="text-sm text-slate-600">Total Neto</div>
+                <div className="text-sm text-muted-foreground">Total Neto</div>
                 <div className="text-xl font-bold">
                   ${Number(cert.total_neto ?? 0).toFixed(2)}
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-sm text-slate-600">Total con IVA</div>
+                <div className="text-sm text-muted-foreground">Total con IVA</div>
                 <div className="text-2xl font-bold text-green-600">
                   ${Number(cert.total_con_iva ?? 0).toFixed(2)}
                 </div>

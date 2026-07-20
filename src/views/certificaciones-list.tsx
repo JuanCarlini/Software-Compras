@@ -49,11 +49,11 @@ export function CertificacionesList() {
       {certificaciones.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <FileText className="h-12 w-12 text-slate-400 mb-4" />
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">
+            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               No hay certificaciones
             </h3>
-            <p className="text-slate-600 mb-4">
+            <p className="text-muted-foreground mb-4">
               Comienza creando tu primera certificación
             </p>
             <Button onClick={() => router.push('/certificaciones/nueva')}>
@@ -76,7 +76,7 @@ export function CertificacionesList() {
                     <CardTitle className="text-xl mb-2">
                       {cert.numero_cert}
                     </CardTitle>
-                    <div className="flex flex-col gap-2 text-sm text-slate-600">
+                    <div className="flex flex-col gap-2 text-sm text-muted-foreground">
                       <div className="flex items-center gap-2">
                         {/* La CE cuelga de una OC, ya no de un proyecto. */}
                         <Building2 className="h-4 w-4" />
@@ -100,10 +100,10 @@ export function CertificacionesList() {
                   <div className="flex flex-col items-end gap-2">
                     <StatusBadge estado={cert.estado} showIcon />
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-slate-900">
+                      <div className="text-2xl font-bold text-foreground">
                         ${cert.total_con_iva?.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                       </div>
-                      <div className="text-sm text-slate-600">
+                      <div className="text-sm text-muted-foreground">
                         Total con IVA
                       </div>
                     </div>

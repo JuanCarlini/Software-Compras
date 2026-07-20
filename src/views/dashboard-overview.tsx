@@ -99,7 +99,7 @@ export function DashboardOverview() {
     return (
       <Card>
         <CardContent className="text-center py-8">
-          <p className="text-slate-500">No hay datos disponibles</p>
+          <p className="text-muted-foreground">No hay datos disponibles</p>
         </CardContent>
       </Card>
     )
@@ -194,15 +194,15 @@ export function DashboardOverview() {
           return (
             <Card key={stat.title}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   {stat.title}
                 </CardTitle>
                 <IconComponent className={`h-4 w-4 ${stat.color}`} />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
-                <p className="text-xs text-slate-500 mt-1">{stat.change}</p>
-                <p className="text-xs text-slate-400 mt-1">{stat.details}</p>
+                <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
+                <p className="text-xs text-muted-foreground mt-1">{stat.details}</p>
               </CardContent>
             </Card>
           )
@@ -218,15 +218,15 @@ export function DashboardOverview() {
           <CardContent>
             <div className="space-y-4">
               {stats.actividadReciente.length === 0 ? (
-                <p className="text-slate-500 text-sm">No hay actividad reciente</p>
+                <p className="text-muted-foreground text-sm">No hay actividad reciente</p>
               ) : (
                 stats.actividadReciente.slice(0, 5).map((actividad) => (
                   <div key={`${actividad.tipo}-${actividad.id}`} className="flex items-center space-x-3">
                     {getTipoIcon(actividad.tipo)}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-slate-900 truncate">{actividad.descripcion}</p>
+                      <p className="text-sm text-foreground truncate">{actividad.descripcion}</p>
                       <div className="flex items-center space-x-2 mt-1">
-                        <p className="text-xs text-slate-500">{formatDateShort(actividad.fecha)}</p>
+                        <p className="text-xs text-muted-foreground">{formatDateShort(actividad.fecha)}</p>
                         {actividad.estado && getEstadoBadge(actividad.estado)}
                       </div>
                     </div>
