@@ -46,4 +46,17 @@ Fuente: `docs/superpowers/specs/2026-07-20-roles-permisos-design.md`.
 
 ## Traceability
 
-(Se completa al crear el roadmap — mapeo REQ-ID → fase.)
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| PERM-01 | Phase 1 | Pending |
+| PERM-02 | Phase 1 | Pending (schema aplicado por sesión externa Supabase) |
+| PERM-03 | Phase 1 | Pending (seed aplicado por sesión externa Supabase) |
+| PERM-04 | Phase 1 | Pending |
+| PERM-05 | Phase 1 | Pending |
+| PERM-09 | Phase 1 | Pending |
+| PERM-06 | Phase 2 | Pending |
+| PERM-07 | Phase 2 | Pending |
+| PERM-08 | Phase 2 | Pending |
+| PERM-10 | Phase 2 | Pending |
+
+**Cobertura: 10/10 requirements v1 mapeados. Sin huérfanos, sin duplicados.**
