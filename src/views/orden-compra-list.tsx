@@ -149,7 +149,7 @@ export function OrdenCompraList() {
                   {/* columna 4: acciones */}
                   <div className="flex items-center space-x-2">
                     <Button variant="outline" size="sm" asChild>
-                      <Link href={`/ordenes-compra/${orden.id}`}>
+                      <Link href={`/ordenes-compra/${orden.id}`} aria-label="Ver orden de compra">
                         <Eye className="h-4 w-4" />
                       </Link>
                     </Button>
@@ -161,6 +161,7 @@ export function OrdenCompraList() {
                           variant="outline"
                           size="sm"
                           title={orden.estado === "borrador" ? "Mandar a aprobar" : "Aprobar"}
+                          aria-label={orden.estado === "borrador" ? "Mandar a aprobar" : "Aprobar orden de compra"}
                           onClick={() =>
                             handleTransicion(orden.id, orden.estado === "borrador" ? "en_aprobacion" : "aprobado")
                           }
@@ -176,6 +177,7 @@ export function OrdenCompraList() {
                           variant="outline"
                           size="sm"
                           title="Anular"
+                          aria-label="Anular orden de compra"
                           onClick={() => handleTransicion(orden.id, "anulado")}
                           disabled={updatingId === orden.id}
                         >

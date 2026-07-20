@@ -343,14 +343,6 @@ export function OrdenCompraForm() {
                         producto: item?.nombre || "",
                       }))
                     }}
-                    onPriceAutoFill={(price) => {
-                      if (price) {
-                        setNuevoItem((prev) => ({
-                          ...prev,
-                          precio_unitario: price.toString(),
-                        }))
-                      }
-                    }}
                     disabled={isLoading}
                     placeholder="Buscar o crear item..."
                   />

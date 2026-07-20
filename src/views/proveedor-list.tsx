@@ -158,13 +158,13 @@ export function ProveedorList() {
                   {/* Acciones */}
                   <div className="flex items-center space-x-2">
                     <Button variant="outline" size="sm" asChild>
-                      <Link href={`/proveedores/${proveedor.id}`}>
+                      <Link href={`/proveedores/${proveedor.id}`} aria-label="Ver proveedor">
                         <Eye className="h-4 w-4" />
                       </Link>
                     </Button>
 
                     <Button variant="outline" size="sm" asChild>
-                      <Link href={`/proveedores/${proveedor.id}/editar`}>
+                      <Link href={`/proveedores/${proveedor.id}/editar`} aria-label="Editar proveedor">
                         <Edit className="h-4 w-4" />
                       </Link>
                     </Button>
@@ -173,6 +173,8 @@ export function ProveedorList() {
                       <Button
                         variant="outline"
                         size="sm"
+                        title="Suspender proveedor"
+                        aria-label="Suspender proveedor"
                         onClick={() => handleSuspender(proveedor.id)}
                         disabled={processingId === proveedor.id}
                       >
@@ -182,6 +184,8 @@ export function ProveedorList() {
                       <Button
                         variant="outline"
                         size="sm"
+                        title="Activar proveedor"
+                        aria-label="Activar proveedor"
                         onClick={() => handleActivar(proveedor.id)}
                         disabled={processingId === proveedor.id}
                       >

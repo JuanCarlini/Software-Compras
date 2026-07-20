@@ -149,16 +149,17 @@ export function OrdenPagoList() {
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button variant="outline" size="sm" asChild>
-                      <Link href={`/ordenes-pago/${orden.id}`}>
+                      <Link href={`/ordenes-pago/${orden.id}`} aria-label="Ver orden de pago">
                         <Eye className="h-4 w-4" />
                       </Link>
                     </Button>
-                    
-                    {orden.estado === "borrador" && (
+
+                    {canModify && orden.estado === "borrador" && (
                       <Button
                         variant="outline"
                         size="sm"
                         title="Mandar a aprobar"
+                        aria-label="Mandar a aprobar"
                         onClick={() => handleMandarAAprobar(orden.id)}
                         disabled={processingId === orden.id}
                       >
@@ -171,6 +172,7 @@ export function OrdenPagoList() {
                         variant="outline"
                         size="sm"
                         title="Aprobar"
+                        aria-label="Aprobar orden de pago"
                         onClick={() => handleAprobar(orden.id)}
                         disabled={processingId === orden.id}
                       >
@@ -183,6 +185,7 @@ export function OrdenPagoList() {
                         variant="outline"
                         size="sm"
                         title="Registrar pago"
+                        aria-label="Registrar pago"
                         onClick={() => handlePagar(orden.id)}
                         disabled={processingId === orden.id}
                       >
@@ -195,6 +198,7 @@ export function OrdenPagoList() {
                         variant="outline"
                         size="sm"
                         title="Rechazar"
+                        aria-label="Rechazar orden de pago"
                         onClick={() => handleRechazar(orden.id)}
                         disabled={processingId === orden.id}
                       >
