@@ -179,10 +179,6 @@ export function OrdenCompraForm() {
     try {
       setIsLoading(true)
 
-      const total_neto = calcularSubtotal()
-      const total_iva = calcularImpuestos()
-      const total_con_iva = calcularTotal()
-
       // líneas para gu_lineasdeordenesdecompra (el orden_compra_id lo asigna el backend)
       const lineas = items.map((item) => {
         const totalNeto = item.subtotal
@@ -191,7 +187,6 @@ export function OrdenCompraForm() {
 
         return {
           item_id: item.item_id || null,
-          item_codigo: item.producto || null,
           // la columna descripcion es NOT NULL en la tabla, así que le mando algo sí o sí
           descripcion: item.descripcion || item.producto,
           cantidad: item.cantidad,
@@ -208,15 +203,11 @@ export function OrdenCompraForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          numero_oc: `OC-${Date.now()}`,              // la tabla tiene numero_oc
+          // numero_oc, totales y estado los pone la DB/el server (Zod descarta lo demás)
           proveedor_id: Number(formData.proveedor_id),
           proyecto_id: null,                          // no lo estás pidiendo
           fecha_oc: formData.fecha_oc,                // la tabla es DATE
           moneda: formData.moneda,                    // enum en la base
-          total_neto,
-          total_iva,
-          total_con_iva,
-          estado: "borrador",                         // default en la base
           observaciones: formData.observaciones || null,
           lineas,
         }),
@@ -230,13 +221,6 @@ export function OrdenCompraForm() {
       showSuccessToast("Orden de compra creada exitosamente")
       router.push("/ordenes-compra")
     } catch (err: any) {
-      console.group("🧩 Error completo al crear orden")
-      console.error("Objeto recibido:", err)
-      console.error("message:", err?.message)
-      console.error("details:", err?.details)
-      console.error("hint:", err?.hint)
-      console.groupEnd()
-
       const errorMessage = err?.message ?? "Error desconocido"
       setError(`Error al crear la orden de compra: ${errorMessage}`)
       showErrorToast("Error al crear la orden de compra", errorMessage)
