@@ -20,10 +20,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/views/ui/select"
-import { Loader2, Shield, User, Eye, Users, UserPlus, KeyRound, UserX, UserCheck, Plus, Trash2 } from "lucide-react"
+import { Loader2, Shield, ShieldCheck, User, Eye, Users, UserPlus, KeyRound, UserX, UserCheck, Plus, Trash2 } from "lucide-react"
 import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
 import { useAuth } from "@/shared/auth-context"
 import { isAdmin, stringToUserRole } from "@/shared/permissions"
+import { RolPermisosMatrix } from "@/views/rol-permisos-matrix"
 import { useRouter } from "next/navigation"
 
 interface UserData {
@@ -42,6 +43,7 @@ interface RolData {
   descripcion: string | null
   usuarios: number
   es_sistema: boolean
+  permisos: string[]
 }
 
 const roleLabels: Record<string, string> = {
@@ -86,7 +88,9 @@ export default function AdminUsersPage() {
   const [resetUser, setResetUser] = useState<UserData | null>(null)
   const [resetPass, setResetPass] = useState("")
   const [nuevoRolOpen, setNuevoRolOpen] = useState(false)
-  const [nuevoRol, setNuevoRol] = useState({ nombre: "", descripcion: "" })
+  const [nuevoRol, setNuevoRol] = useState<{ nombre: string; descripcion: string; permisos: string[] }>({ nombre: "", descripcion: "", permisos: [] })
+  const [editRol, setEditRol] = useState<RolData | null>(null)
+  const [editPermisos, setEditPermisos] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
 
   // Verificar permisos
@@ -222,10 +226,31 @@ export default function AdminUsersPage() {
       })
       showSuccessToast("Rol creado", nuevoRol.nombre)
       setNuevoRolOpen(false)
-      setNuevoRol({ nombre: "", descripcion: "" })
+      setNuevoRol({ nombre: "", descripcion: "", permisos: [] })
       await fetchRoles()
     } catch (error) {
       showErrorToast("Error", error instanceof Error ? error.message : "No se pudo crear el rol")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const esRolAdmin = editRol?.nombre === "admin"
+
+  const handleGuardarPermisos = async () => {
+    if (!editRol || esRolAdmin) return
+    setSaving(true)
+    try {
+      await api(`/api/admin/roles/${editRol.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ permisos: editPermisos }),
+      })
+      showSuccessToast("Permisos actualizados", editRol.nombre)
+      setEditRol(null)
+      await fetchRoles()
+    } catch (error) {
+      showErrorToast("Error", error instanceof Error ? error.message : "No se pudieron guardar los permisos")
     } finally {
       setSaving(false)
     }
@@ -400,22 +425,35 @@ export default function AdminUsersPage() {
                       </div>
                       <p className="text-sm text-muted-foreground">{rol.descripcion}</p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      title={rol.es_sistema ? "Los roles del sistema no se eliminan" : "Eliminar rol"}
-                      disabled={rol.es_sistema || rol.usuarios > 0}
-                      onClick={() => handleEliminarRol(rol)}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-600" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        title="Editar permisos"
+                        aria-label={`Editar permisos de ${rol.nombre}`}
+                        onClick={() => { setEditRol(rol); setEditPermisos(rol.permisos ?? []) }}
+                      >
+                        <ShieldCheck className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        title={rol.es_sistema ? "Los roles del sistema no se eliminan" : "Eliminar rol"}
+                        aria-label={`Eliminar rol ${rol.nombre}`}
+                        disabled={rol.es_sistema || rol.usuarios > 0}
+                        onClick={() => handleEliminarRol(rol)}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
               <p className="text-xs text-muted-foreground mt-4">
-                Los roles del sistema (admin, supervisor, usuario, readonly) están vinculados a los permisos
-                del código y no pueden renombrarse ni eliminarse. Los roles nuevos reciben permisos de
-                &quot;usuario&quot; hasta que se les asigne un mapeo propio.
+                Los roles del sistema (admin, supervisor, usuario, readonly) no pueden renombrarse ni
+                eliminarse. Los permisos de cada rol se asignan con la matriz (botón{" "}
+                <ShieldCheck className="inline h-3 w-3 align-text-bottom" />): tildá por módulo y acción
+                qué puede hacer cada rol. El rol admin tiene acceso total y no es editable.
               </p>
             </CardContent>
           </Card>
@@ -490,7 +528,7 @@ export default function AdminUsersPage() {
 
       {/* Dialog: nuevo rol */}
       <Dialog open={nuevoRolOpen} onOpenChange={setNuevoRolOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Nuevo rol</DialogTitle>
           </DialogHeader>
@@ -503,6 +541,13 @@ export default function AdminUsersPage() {
               <Label>Descripción</Label>
               <Input value={nuevoRol.descripcion} onChange={(e) => setNuevoRol({ ...nuevoRol, descripcion: e.target.value })} />
             </div>
+            <div className="space-y-2">
+              <Label>Permisos</Label>
+              <RolPermisosMatrix
+                value={nuevoRol.permisos}
+                onChange={(permisos) => setNuevoRol({ ...nuevoRol, permisos })}
+              />
+            </div>
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="outline" onClick={() => setNuevoRolOpen(false)}>Cancelar</Button>
               <Button type="submit" disabled={saving}>
@@ -511,6 +556,39 @@ export default function AdminUsersPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: editar permisos de un rol */}
+      <Dialog open={editRol !== null} onOpenChange={(open) => { if (!open) setEditRol(null) }}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Permisos de {editRol?.nombre}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {esRolAdmin && (
+              <p className="text-sm text-muted-foreground">
+                El rol <span className="font-medium text-foreground">admin</span> tiene acceso total a
+                todos los módulos y no es editable.
+              </p>
+            )}
+            <RolPermisosMatrix
+              value={editPermisos}
+              onChange={setEditPermisos}
+              readOnly={esRolAdmin}
+            />
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => setEditRol(null)}>
+                {esRolAdmin ? "Cerrar" : "Cancelar"}
+              </Button>
+              {!esRolAdmin && (
+                <Button type="button" disabled={saving} onClick={handleGuardarPermisos}>
+                  {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Guardar permisos
+                </Button>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
