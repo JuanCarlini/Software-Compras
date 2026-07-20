@@ -97,7 +97,7 @@ export function OrdenPagoList() {
     return (
       <Card>
         <CardContent className="text-center py-8">
-          <p className="text-red-600">Error: {error}</p>
+          <p className="text-destructive">Error: {error}</p>
         </CardContent>
       </Card>
     )

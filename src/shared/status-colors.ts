@@ -67,15 +67,15 @@ export function getStatusColor(estado: string | null | undefined): string {
   
   switch (category) {
     case StatusCategory.SUCCESS:
-      return "bg-green-100 text-green-800 border-green-200"
+      return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
     case StatusCategory.PENDING:
-      return "bg-yellow-100 text-yellow-800 border-yellow-200"
+      return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
     case StatusCategory.ERROR:
-      return "bg-red-100 text-red-800 border-red-200"
+      return "bg-destructive/10 text-destructive border-destructive/20"
     case StatusCategory.INFO:
-      return "bg-blue-100 text-blue-800 border-blue-200"
+      return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
     default:
-      return "bg-gray-100 text-gray-800 border-gray-200"
+      return "bg-muted text-muted-foreground border-border"
   }
 }
 
@@ -107,15 +107,15 @@ export function getStatusIconColor(estado: string | null | undefined): string {
   
   switch (category) {
     case StatusCategory.SUCCESS:
-      return "text-green-600"
+      return "text-emerald-600 dark:text-emerald-400"
     case StatusCategory.PENDING:
-      return "text-yellow-600"
+      return "text-amber-600 dark:text-amber-400"
     case StatusCategory.ERROR:
-      return "text-red-600"
+      return "text-destructive"
     case StatusCategory.INFO:
-      return "text-blue-600"
+      return "text-blue-600 dark:text-blue-400"
     default:
-      return "text-gray-600"
+      return "text-muted-foreground"
   }
 }
 

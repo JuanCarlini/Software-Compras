@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/views/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Badge } from "@/views/ui/badge"
-import { Plus, Receipt, Calendar, Building2 } from "lucide-react"
+import { Plus, Receipt, Calendar, Building2, Loader2 } from "lucide-react"
 import { showErrorToast } from "@/shared/toast-helpers"
 import { StatusBadge } from "@/shared/status-badge"
 
 export function FacturasList() {
   const [facturas, setFacturas] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -24,15 +25,35 @@ export function FacturasList() {
       if (!response.ok) throw new Error('Error al cargar facturas')
       const data = await response.json()
       setFacturas(data)
+      setError(null)
     } catch (error) {
-      showErrorToast("Error", "No se pudieron cargar las facturas")
+      const msg = error instanceof Error ? error.message : "No se pudieron cargar las facturas"
+      setError(msg)
+      showErrorToast("Error", msg)
     } finally {
       setLoading(false)
     }
   }
 
   if (loading) {
-    return <div className="text-center py-8">Cargando facturas...</div>
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Cargando facturas...</span>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="text-center py-8">
+          <p className="text-destructive">Error: {error}</p>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (

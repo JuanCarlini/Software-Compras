@@ -18,26 +18,7 @@ import { useDashboard } from "@/shared/use-dashboard"
 import { formatCurrency } from "@/shared/format-utils"
 import { formatDateShort } from "@/shared/date-utils"
 import { showSuccessToast, showInfoToast, showWarningToast, showErrorToast } from "@/shared/toast-helpers"
-
-const getEstadoBadge = (estado: string) => {
-  switch (estado.toLowerCase()) {
-    case 'pendiente':
-      return <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Pendiente</Badge>
-    case 'aprobada':
-    case 'aprobado':
-      return <Badge variant="outline" className="bg-blue-100 text-blue-800">Aprobada</Badge>
-    case 'pagada':
-    case 'pagado':
-      return <Badge variant="outline" className="bg-green-100 text-green-800">Pagada</Badge>
-    case 'rechazada':
-    case 'rechazado':
-      return <Badge variant="outline" className="bg-red-100 text-red-800">Rechazada</Badge>
-    case 'activo':
-      return <Badge variant="outline" className="bg-green-100 text-green-800">Activo</Badge>
-    default:
-      return <Badge variant="outline">{estado}</Badge>
-  }
-}
+import { StatusBadge } from "@/shared/status-badge"
 
 const getTipoIcon = (tipo: string) => {
   switch (tipo) {
@@ -85,7 +66,7 @@ export function DashboardOverview() {
     return (
       <Card>
         <CardContent className="text-center py-8">
-          <p className="text-red-600 mb-4">Error: {error}</p>
+          <p className="text-destructive mb-4">Error: {error}</p>
           <Button onClick={refreshData} variant="outline">
             <RefreshCw className="h-4 w-4 mr-2" />
             Reintentar
@@ -227,7 +208,7 @@ export function DashboardOverview() {
                       <p className="text-sm text-foreground truncate">{actividad.descripcion}</p>
                       <div className="flex items-center space-x-2 mt-1">
                         <p className="text-xs text-muted-foreground">{formatDateShort(actividad.fecha)}</p>
-                        {actividad.estado && getEstadoBadge(actividad.estado)}
+                        {actividad.estado && <StatusBadge estado={actividad.estado} />}
                       </div>
                     </div>
                   </div>
@@ -246,15 +227,15 @@ export function DashboardOverview() {
             <div className="space-y-4">
               {/* Órdenes de pago vencidas */}
               {stats.ordenesPago.vencidas > 0 && (
-                <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-destructive/10 rounded-lg">
                   <div className="flex items-center space-x-2">
-                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                    <AlertTriangle className="h-4 w-4 text-destructive" />
                     <div>
-                      <p className="text-sm font-medium text-red-800">Órdenes Vencidas</p>
-                      <p className="text-xs text-red-600">{stats.ordenesPago.vencidas} órdenes de pago vencidas</p>
+                      <p className="text-sm font-medium text-destructive">Órdenes Vencidas</p>
+                      <p className="text-xs text-destructive">{stats.ordenesPago.vencidas} órdenes de pago vencidas</p>
                     </div>
                   </div>
-                  <Badge variant="outline" className="bg-red-100 text-red-800">
+                  <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
                     Urgente
                   </Badge>
                 </div>
@@ -262,15 +243,15 @@ export function DashboardOverview() {
 
               {/* Órdenes pendientes */}
               {stats.ordenesCompra.pendientes > 0 && (
-                <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-amber-500/10 rounded-lg">
                   <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-yellow-600" />
+                    <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                     <div>
-                      <p className="text-sm font-medium text-yellow-800">Órdenes Pendientes</p>
-                      <p className="text-xs text-yellow-600">{stats.ordenesCompra.pendientes} órdenes de compra por aprobar</p>
+                      <p className="text-sm font-medium text-amber-600 dark:text-amber-400">Órdenes Pendientes</p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400">{stats.ordenesCompra.pendientes} órdenes de compra por aprobar</p>
                     </div>
                   </div>
-                  <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                  <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
                     Pendiente
                   </Badge>
                 </div>
@@ -278,11 +259,11 @@ export function DashboardOverview() {
 
               {/* Si todo está bien */}
               {stats.ordenesPago.vencidas === 0 && stats.ordenesCompra.pendientes === 0 && (
-                <div className="flex items-center space-x-2 p-3 bg-green-50 rounded-lg">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                <div className="flex items-center space-x-2 p-3 bg-emerald-500/10 rounded-lg">
+                  <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                   <div>
-                    <p className="text-sm font-medium text-green-800">Todo al día</p>
-                    <p className="text-xs text-green-600">No hay elementos que requieran atención inmediata</p>
+                    <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Todo al día</p>
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400">No hay elementos que requieran atención inmediata</p>
                   </div>
                 </div>
               )}
