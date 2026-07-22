@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ItemService } from "@/controllers"
-import { requireRole } from "@/shared/permissions-server"
-import { ROLES_ESCRITURA } from "@/shared/permissions"
+import { requirePermission } from "@/shared/permissions-server"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
 
@@ -14,7 +13,7 @@ interface Params {
 // POST /api/items/[id]/reactivate - Reactivar un item inactivo
 export async function POST(request: NextRequest, { params }: Params) {
   try {
-    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    const { error: authError } = await requirePermission("items", "crear")
     if (authError) return authError
 
     const itemId = parseId((await params).id)

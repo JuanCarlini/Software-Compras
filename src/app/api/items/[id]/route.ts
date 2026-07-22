@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ItemService } from "@/controllers"
 import { UpdateItemSchema } from "@/shared/item-validation"
-import { requireRole } from "@/shared/permissions-server"
-import { ROLES_ESCRITURA } from "@/shared/permissions"
+import { requirePermission } from "@/shared/permissions-server"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
 import { getByIdRoute } from "@/shared/crud-route"
@@ -21,7 +20,7 @@ export const GET = getByIdRoute({
 // PUT /api/items/[id] - Actualizar un item
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
-    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    const { error: authError } = await requirePermission("items", "crear")
     if (authError) return authError
 
     const itemId = parseId((await params).id)
@@ -41,7 +40,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
 // DELETE /api/items/[id] - Soft delete de un item
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    const { error: authError } = await requirePermission("items", "crear")
     if (authError) return authError
 
     const itemId = parseId((await params).id)

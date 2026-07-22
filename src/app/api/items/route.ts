@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ItemService } from "@/controllers"
 import { CreateItemSchema } from "@/shared/item-validation"
-import { requireRole } from "@/shared/permissions-server"
-import { ROLES_ESCRITURA } from "@/shared/permissions"
+import { requirePermission } from "@/shared/permissions-server"
 import { handleRouteError } from "@/shared/handle-route-error"
 import { createRoute } from "@/shared/crud-route"
 
@@ -32,7 +31,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/items - Crear nuevo item (created_by lo pone el server desde el JWT)
 export const POST = createRoute({
-  autorizar: () => requireRole(ROLES_ESCRITURA),
+  autorizar: () => requirePermission("items", "crear"),
   schema: CreateItemSchema,
   crear: (data, user) => ItemService.create(data, user.id),
   contexto: "POST /api/items",
