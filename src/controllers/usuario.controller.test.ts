@@ -68,12 +68,16 @@ describe("UsuarioService.resetPassword", () => {
 })
 
 describe("UsuarioService.updateRol", () => {
-  it("rechaza un rol fuera de la whitelist (no toca la DB)", async () => {
-    await expect(
-      UsuarioService.updateRol(1, "superuser", { id: 99 })
-    ).rejects.toMatchObject({ status: 400 })
-    expect(repo.findById).not.toHaveBeenCalled()
-    expect(repo.update).not.toHaveBeenCalled()
+  it("asigna un rol custom (no-sistema) que existe en gu_roles", async () => {
+    repo.findById.mockResolvedValue({ id: 7, email: "a@b.com", gu_roles: { nombre: "usuario" } })
+    rolRepo.findByNombre.mockResolvedValue({ id: 5 })
+    repo.update.mockResolvedValue({ id: 7 })
+
+    const res = await UsuarioService.updateRol(7, "compras", { id: 1 })
+
+    expect(rolRepo.findByNombre).toHaveBeenCalledWith("compras")
+    expect(repo.update).toHaveBeenCalledWith(7, { rol_id: 5 })
+    expect(res.rol).toBe("compras")
   })
 
   it("404 si el usuario no existe", async () => {

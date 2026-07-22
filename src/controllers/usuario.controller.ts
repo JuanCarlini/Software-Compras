@@ -83,11 +83,9 @@ export class UsuarioService {
   // (violaba SRP/DIP); acá delega a los repos. Guarda anti auto-lockout: un admin
   // no puede quitarse a sí mismo el rol admin.
   static async updateRol(id: number, nuevoRol: string, actor: { id: number }) {
-    const VALIDOS = ["admin", "supervisor", "usuario", "readonly"]
-    if (!VALIDOS.includes(nuevoRol)) {
-      throw new HttpError(400, "Rol inválido")
-    }
-
+    // No se whitelistea contra los 4 roles de sistema: cualquier rol que exista en gu_roles
+    // (incluidos los custom, p.ej. "compras") es asignable. La existencia la valida
+    // RolRepository.findByNombre abajo (404 si no existe).
     const actual = await UsuarioRepository.findById(id)
     if (!actual) {
       throw new HttpError(404, "Usuario no encontrado")

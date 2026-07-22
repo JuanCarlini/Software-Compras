@@ -180,10 +180,13 @@ export function UsuariosTab({ users, setUsers, roles, refetchUsers, refetchRoles
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="admin">Administrador</SelectItem>
-                            <SelectItem value="supervisor">Supervisor</SelectItem>
-                            <SelectItem value="usuario">Usuario</SelectItem>
-                            <SelectItem value="readonly">Solo Lectura</SelectItem>
+                            {/* Todos los roles del catálogo, no solo los de sistema: así los
+                                roles custom (p.ej. "compras") también se pueden asignar. */}
+                            {roles.map((r) => (
+                              <SelectItem key={r.id} value={r.nombre}>
+                                {roleLabels[r.nombre] || r.nombre}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         {updatingUserId === userData.id && (
