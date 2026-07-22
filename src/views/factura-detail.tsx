@@ -10,6 +10,7 @@ import { ArrowLeft, Building2, Calendar, FileCheck, Check, X } from "lucide-reac
 import { showErrorToast, showSuccessToast } from "@/shared/toast-helpers"
 import { useAuth } from "@/shared/auth-context"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
+import { StatusBadge } from "@/shared/status-badge"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -86,16 +87,6 @@ export function FacturaDetail({ params }: Props) {
     }
   }
 
-  const getEstadoBadge = (estado: string) => {
-    const variants: Record<string, { variant: any; label: string }> = {
-      borrador: { variant: "secondary", label: "Borrador" },
-      finalizado: { variant: "default", label: "Finalizado" },
-      anulado: { variant: "outline", label: "Anulado" }
-    }
-
-    const config = variants[estado] || variants.borrador
-    return <Badge variant={config.variant}>{config.label}</Badge>
-  }
 
   if (loading) return <div className="text-center py-8">Cargando...</div>
   if (!factura) return <div className="text-center py-8">Factura no encontrada</div>
@@ -135,7 +126,7 @@ export function FacturaDetail({ params }: Props) {
               <CardTitle className="text-3xl mb-2">
                 {factura.numero_factura}
               </CardTitle>
-              {getEstadoBadge(factura.estado)}
+              <StatusBadge estado={factura.estado} />
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-green-600">

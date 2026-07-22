@@ -10,6 +10,7 @@ import { ArrowLeft, FileText, Calendar, Building2, User, Check, X } from "lucide
 import { showErrorToast, showSuccessToast } from "@/shared/toast-helpers"
 import { useAuth } from "@/shared/auth-context"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
+import { StatusBadge } from "@/shared/status-badge"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -95,17 +96,6 @@ export function CertificacionDetail({ params }: Props) {
     }
   }
 
-  const getEstadoBadge = (estado: string) => {
-    const e = (estado || "").toLowerCase()
-    if (e === "aprobada" || e === "aprobado") {
-      return <Badge>Aprobado</Badge>
-    }
-    if (e === "rechazada" || e === "rechazado") {
-      return <Badge variant="destructive">Rechazado</Badge>
-    }
-    return <Badge variant="secondary">Borrador</Badge>
-  }
-
   if (loading) return <div className="text-center py-8">Cargando...</div>
   if (!cert) return <div className="text-center py-8">Certificación no encontrada</div>
 
@@ -163,7 +153,7 @@ export function CertificacionDetail({ params }: Props) {
               <CardTitle className="text-3xl mb-2">
                 {cert.numero_cert ?? `CERT-${cert.id}`}
               </CardTitle>
-              {getEstadoBadge(cert.estado)}
+              <StatusBadge estado={cert.estado} />
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-green-600">
