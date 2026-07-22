@@ -3,7 +3,7 @@ import { CajaService } from "@/controllers"
 import { CreateCajaSchema } from "@/shared/caja-validation"
 import { requireAdmin } from "@/shared/permissions-server"
 import { handleRouteError } from "@/shared/handle-route-error"
-import { AuditService } from "@/lib/audit/audit.service"
+import { createRoute } from "@/shared/crud-route"
 
 // GET /api/cajas - Cajas activas (la OP las necesita; autentica el middleware)
 export async function GET(request: NextRequest) {
@@ -20,23 +20,13 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/cajas - Crear caja (solo admin: es catálogo)
-export async function POST(request: NextRequest) {
-  try {
-    const { error: authError } = await requireAdmin()
-    if (authError) return authError
-
-    const validatedData = CreateCajaSchema.parse(await request.json())
-    const nuevaCaja = await CajaService.create(validatedData)
-
-    await AuditService.registrarDesdeRequest({
-      tabla: "gu_cajas",
-      registroId: nuevaCaja.id,
-      accion: "crear",
-      detalle: `Caja ${nuevaCaja.nombre} (${nuevaCaja.tipo}, ${nuevaCaja.moneda}) creada`,
-    })
-
-    return NextResponse.json(nuevaCaja, { status: 201 })
-  } catch (error) {
-    return handleRouteError(error, "POST /api/cajas")
-  }
-}
+export const POST = createRoute({
+  autorizar: () => requireAdmin(),
+  schema: CreateCajaSchema,
+  crear: (data) => CajaService.create(data),
+  audit: {
+    tabla: "gu_cajas",
+    detalle: (c) => `Caja ${c.nombre} (${c.tipo}, ${c.moneda}) creada`,
+  },
+  contexto: "POST /api/cajas",
+})

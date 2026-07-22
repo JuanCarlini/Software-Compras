@@ -4,29 +4,16 @@ import { UpdateOrdenCompraSchema } from "@/shared/orden-compra-validation"
 import { requirePermission } from "@/shared/permissions-server"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
+import { getByIdRoute } from "@/shared/crud-route"
 import { AuditService } from "@/lib/audit/audit.service"
 
 // GET /api/ordenes-compra/[id] - Obtener una orden específica
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { error: authError } = await requirePermission("ordenes_compra", "ver")
-    if (authError) return authError
-
-    const id = parseId((await params).id)
-
-    const orden = await OrdenCompraService.getById(id)
-    if (!orden) {
-      return NextResponse.json({ error: "Orden de compra no encontrada" }, { status: 404 })
-    }
-
-    return NextResponse.json(orden)
-  } catch (error) {
-    return handleRouteError(error, "GET /api/ordenes-compra/[id]")
-  }
-}
+export const GET = getByIdRoute({
+  autorizar: () => requirePermission("ordenes_compra", "ver"),
+  getById: (id) => OrdenCompraService.getById(id),
+  noEncontrado: "Orden de compra no encontrada",
+  contexto: "GET /api/ordenes-compra/[id]",
+})
 
 // PUT /api/ordenes-compra/[id] - Editar la cabecera (el estado va por PATCH /estado)
 export async function PUT(

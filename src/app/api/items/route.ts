@@ -3,7 +3,8 @@ import { ItemService } from "@/controllers"
 import { CreateItemSchema } from "@/shared/item-validation"
 import { requireRole } from "@/shared/permissions-server"
 import { ROLES_ESCRITURA } from "@/shared/permissions"
-import { z } from "zod"
+import { handleRouteError } from "@/shared/handle-route-error"
+import { createRoute } from "@/shared/crud-route"
 
 // GET /api/items - Obtener todos los items activos
 // Query params opcionales: ?includeInactive=true, ?categoria=string
@@ -16,52 +17,23 @@ export async function GET(request: NextRequest) {
     let items
 
     if (categoria) {
-      // Filtrar por categoría
       items = await ItemService.getByCategoria(categoria)
     } else if (includeInactive) {
-      // Incluir items inactivos
       items = await ItemService.getAllIncludingInactive()
     } else {
-      // Solo items activos (default)
       items = await ItemService.getAll()
     }
 
     return NextResponse.json(items || [])
   } catch (error) {
-    console.error("Error al obtener items:", error)
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+    return handleRouteError(error, "GET /api/items")
   }
 }
 
-// POST /api/items - Crear nuevo item
-export async function POST(request: NextRequest) {
-  try {
-    const { error: authError, user } = await requireRole(ROLES_ESCRITURA)
-    if (authError) return authError
-
-    const body = await request.json()
-
-    // Validar datos de entrada
-    const validatedData = CreateItemSchema.parse(body)
-
-    // Crear el item (created_by lo pone el server desde el JWT)
-    const nuevoItem = await ItemService.create(validatedData, user!.id)
-    
-    return NextResponse.json(nuevoItem, { status: 201 })
-  } catch (error) {
-    console.error("Error al crear item:", error)
-    
-    // Si es error de validación de Zod
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Datos inválidos", details: error.errors },
-        { status: 400 }
-      )
-    }
-    
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
-  }
-}
+// POST /api/items - Crear nuevo item (created_by lo pone el server desde el JWT)
+export const POST = createRoute({
+  autorizar: () => requireRole(ROLES_ESCRITURA),
+  schema: CreateItemSchema,
+  crear: (data, user) => ItemService.create(data, user.id),
+  contexto: "POST /api/items",
+})

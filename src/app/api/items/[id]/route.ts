@@ -5,26 +5,18 @@ import { requireRole } from "@/shared/permissions-server"
 import { ROLES_ESCRITURA } from "@/shared/permissions"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
+import { getByIdRoute } from "@/shared/crud-route"
 
 interface Params {
   params: Promise<{ id: string }>
 }
 
 // GET /api/items/[id] - Obtener un item por ID
-export async function GET(request: NextRequest, { params }: Params) {
-  try {
-    const itemId = parseId((await params).id)
-
-    const item = await ItemService.getById(itemId)
-    if (!item) {
-      return NextResponse.json({ error: "Item no encontrado" }, { status: 404 })
-    }
-
-    return NextResponse.json(item)
-  } catch (error) {
-    return handleRouteError(error, "GET /api/items/[id]")
-  }
-}
+export const GET = getByIdRoute({
+  getById: (id) => ItemService.getById(id),
+  noEncontrado: "Item no encontrado",
+  contexto: "GET /api/items/[id]",
+})
 
 // PUT /api/items/[id] - Actualizar un item
 export async function PUT(request: NextRequest, { params }: Params) {

@@ -4,6 +4,7 @@ import { UpdateCajaSchema } from "@/shared/caja-validation"
 import { requireAdmin } from "@/shared/permissions-server"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
+import { getByIdRoute } from "@/shared/crud-route"
 import { AuditService } from "@/lib/audit/audit.service"
 
 interface Params {
@@ -11,17 +12,11 @@ interface Params {
 }
 
 // GET /api/cajas/[id] — autentica el middleware
-export async function GET(request: NextRequest, { params }: Params) {
-  try {
-    const id = parseId((await params).id)
-    const caja = await CajaService.getById(id)
-    if (!caja) return NextResponse.json({ error: "Caja no encontrada" }, { status: 404 })
-
-    return NextResponse.json(caja)
-  } catch (error) {
-    return handleRouteError(error, "GET /api/cajas/[id]")
-  }
-}
+export const GET = getByIdRoute({
+  getById: (id) => CajaService.getById(id),
+  noEncontrado: "Caja no encontrada",
+  contexto: "GET /api/cajas/[id]",
+})
 
 // PUT /api/cajas/[id] - Editar caja (solo admin). Cambiar la moneda devuelve 422.
 export async function PUT(request: NextRequest, { params }: Params) {

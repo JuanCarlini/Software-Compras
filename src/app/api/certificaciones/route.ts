@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { CertificacionService } from "@/controllers/certificacion.controller"
 import { CreateCertificacionSchema } from "@/shared/certificacion-validation"
-import { AuditService } from "@/lib/audit/audit.service"
 import { requireRole } from "@/shared/permissions-server"
 import { ROLES_ESCRITURA } from "@/shared/permissions"
 import { handleRouteError } from "@/shared/handle-route-error"
+import { createRoute } from "@/shared/crud-route"
 
 // GET /api/certificaciones - Lista con el rollup de facturación (v_cert_rollup)
 export async function GET() {
@@ -18,23 +18,10 @@ export async function GET() {
 // POST /api/certificaciones - Certificar contra UNA orden de compra aprobada.
 // Las líneas solo llevan { linea_oc_id, avance_unidades }.
 // 422 si la OC no está aprobada o si el trigger del 100% rechaza el avance.
-export async function POST(request: NextRequest) {
-  try {
-    const { error: authError } = await requireRole(ROLES_ESCRITURA)
-    if (authError) return authError
-
-    const validatedData = CreateCertificacionSchema.parse(await request.json())
-    const nuevaCert = await CertificacionService.create(validatedData)
-
-    await AuditService.registrarDesdeRequest({
-      tabla: "gu_certificaciones",
-      registroId: nuevaCert.id,
-      accion: "crear",
-      detalle: `Certificación ${nuevaCert.numero_cert} creada`,
-    })
-
-    return NextResponse.json(nuevaCert, { status: 201 })
-  } catch (error) {
-    return handleRouteError(error, "POST /api/certificaciones")
-  }
-}
+export const POST = createRoute({
+  autorizar: () => requireRole(ROLES_ESCRITURA),
+  schema: CreateCertificacionSchema,
+  crear: (data) => CertificacionService.create(data),
+  audit: { tabla: "gu_certificaciones", detalle: (c) => `Certificación ${c.numero_cert} creada` },
+  contexto: "POST /api/certificaciones",
+})

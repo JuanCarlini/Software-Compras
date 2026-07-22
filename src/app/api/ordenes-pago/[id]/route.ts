@@ -4,6 +4,7 @@ import { requireRole } from "@/shared/permissions-server"
 import { ROLES_DESTRUCTIVO } from "@/shared/permissions"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
+import { getByIdRoute } from "@/shared/crud-route"
 import { AuditService } from "@/lib/audit/audit.service"
 
 interface Params {
@@ -11,20 +12,11 @@ interface Params {
 }
 
 // GET /api/ordenes-pago/[id] - Cabecera + facturas + cajas
-export async function GET(request: NextRequest, { params }: Params) {
-  try {
-    const id = parseId((await params).id)
-
-    const orden = await OrdenPagoService.getById(id)
-    if (!orden) {
-      return NextResponse.json({ error: "Orden de pago no encontrada" }, { status: 404 })
-    }
-
-    return NextResponse.json(orden)
-  } catch (error) {
-    return handleRouteError(error, "GET /api/ordenes-pago/[id]")
-  }
-}
+export const GET = getByIdRoute({
+  getById: (id) => OrdenPagoService.getById(id),
+  noEncontrado: "Orden de pago no encontrada",
+  contexto: "GET /api/ordenes-pago/[id]",
+})
 
 // DELETE /api/ordenes-pago/[id]
 export async function DELETE(request: NextRequest, { params }: Params) {

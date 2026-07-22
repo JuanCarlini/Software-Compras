@@ -5,6 +5,7 @@ import { requireRole } from "@/shared/permissions-server"
 import { ROLES_DESTRUCTIVO, ROLES_ESCRITURA } from "@/shared/permissions"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
+import { getByIdRoute } from "@/shared/crud-route"
 import { AuditService } from "@/lib/audit/audit.service"
 
 interface Params {
@@ -12,20 +13,11 @@ interface Params {
 }
 
 // GET /api/certificaciones/[id] - Cabecera + líneas derivadas + rollup de facturación
-export async function GET(request: NextRequest, { params }: Params) {
-  try {
-    const id = parseId((await params).id)
-
-    const cert = await CertificacionService.getById(id)
-    if (!cert) {
-      return NextResponse.json({ error: "Certificación no encontrada" }, { status: 404 })
-    }
-
-    return NextResponse.json(cert)
-  } catch (error) {
-    return handleRouteError(error, "GET /api/certificaciones/[id]")
-  }
-}
+export const GET = getByIdRoute({
+  getById: (id) => CertificacionService.getById(id),
+  noEncontrado: "Certificación no encontrada",
+  contexto: "GET /api/certificaciones/[id]",
+})
 
 // PUT /api/certificaciones/[id] - Editar la cabecera (el estado va por PATCH /estado)
 export async function PUT(request: NextRequest, { params }: Params) {
