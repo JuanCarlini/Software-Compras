@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { OrdenPagoService } from "@/controllers"
-import { requireRole } from "@/shared/permissions-server"
-import { ROLES_DESTRUCTIVO } from "@/shared/permissions"
+import { requirePermission } from "@/shared/permissions-server"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
 import { getByIdRoute } from "@/shared/crud-route"
@@ -13,6 +12,7 @@ interface Params {
 
 // GET /api/ordenes-pago/[id] - Cabecera + facturas + cajas
 export const GET = getByIdRoute({
+  autorizar: () => requirePermission("ordenes_pago", "ver"),
   getById: (id) => OrdenPagoService.getById(id),
   noEncontrado: "Orden de pago no encontrada",
   contexto: "GET /api/ordenes-pago/[id]",
@@ -21,7 +21,7 @@ export const GET = getByIdRoute({
 // DELETE /api/ordenes-pago/[id]
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    const { error: authError } = await requireRole(ROLES_DESTRUCTIVO)
+    const { error: authError } = await requirePermission("ordenes_pago", "borrar")
     if (authError) return authError
 
     const id = parseId((await params).id)

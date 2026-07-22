@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server"
 import { FacturaService } from "@/controllers/factura.controller"
 import { CreateFacturaSchema } from "@/shared/factura-validation"
-import { requireRole } from "@/shared/permissions-server"
-import { ROLES_ESCRITURA } from "@/shared/permissions"
+import { requirePermission } from "@/shared/permissions-server"
 import { handleRouteError } from "@/shared/handle-route-error"
 import { createRoute } from "@/shared/crud-route"
 
 // GET /api/facturas - Lista con el rollup de pago (v_factura_rollup)
 export async function GET() {
   try {
+    const { error: authError } = await requirePermission("facturas", "ver")
+    if (authError) return authError
     return NextResponse.json(await FacturaService.getAll())
   } catch (error) {
     return handleRouteError(error, "GET /api/facturas")
@@ -18,7 +19,7 @@ export async function GET() {
 // POST /api/facturas - Crear factura (líneas + imputaciones a certs aprobadas).
 // 422 si una imputación viola fn_check_imputacion (cert no aprobada o Σ > total de líneas).
 export const POST = createRoute({
-  autorizar: () => requireRole(ROLES_ESCRITURA),
+  autorizar: () => requirePermission("facturas", "crear"),
   schema: CreateFacturaSchema,
   crear: (data) => FacturaService.create(data),
   audit: {

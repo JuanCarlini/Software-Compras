@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { CertificacionService } from "@/controllers/certificacion.controller"
 import { UpdateCertificacionSchema } from "@/shared/certificacion-validation"
-import { requireRole } from "@/shared/permissions-server"
-import { ROLES_DESTRUCTIVO, ROLES_ESCRITURA } from "@/shared/permissions"
+import { requirePermission } from "@/shared/permissions-server"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
 import { getByIdRoute } from "@/shared/crud-route"
@@ -14,6 +13,7 @@ interface Params {
 
 // GET /api/certificaciones/[id] - Cabecera + líneas derivadas + rollup de facturación
 export const GET = getByIdRoute({
+  autorizar: () => requirePermission("certificaciones", "ver"),
   getById: (id) => CertificacionService.getById(id),
   noEncontrado: "Certificación no encontrada",
   contexto: "GET /api/certificaciones/[id]",
@@ -22,7 +22,7 @@ export const GET = getByIdRoute({
 // PUT /api/certificaciones/[id] - Editar la cabecera (el estado va por PATCH /estado)
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
-    const { error: authError, user } = await requireRole(ROLES_ESCRITURA)
+    const { error: authError, user } = await requirePermission("certificaciones", "crear")
     if (authError) return authError
 
     const id = parseId((await params).id)
@@ -50,7 +50,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
 // DELETE /api/certificaciones/[id]
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    const { error: authError } = await requireRole(ROLES_DESTRUCTIVO)
+    const { error: authError } = await requirePermission("certificaciones", "borrar")
     if (authError) return authError
 
     const id = parseId((await params).id)

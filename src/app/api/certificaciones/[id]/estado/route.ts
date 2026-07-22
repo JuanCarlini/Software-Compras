@@ -1,7 +1,7 @@
 import { CertificacionService } from "@/controllers/certificacion.controller"
 import { CambiarEstadoCertificacionSchema } from "@/shared/certificacion-validation"
-import { requireRole } from "@/shared/permissions-server"
-import { rolRequerido } from "@/shared/transiciones"
+import { requirePermission } from "@/shared/permissions-server"
+import { accionRequerida } from "@/shared/transiciones"
 import { estadoRoute } from "@/shared/estado-route"
 import type { AccionAuditoria } from "@/lib/audit/audit.service"
 import type { EstadoAprobacion } from "@/models"
@@ -20,7 +20,7 @@ const ACCION: Record<EstadoAprobacion, AccionAuditoria> = {
  */
 export const PATCH = estadoRoute({
   schema: CambiarEstadoCertificacionSchema,
-  autorizar: (estado: EstadoAprobacion) => requireRole(rolRequerido(estado)),
+  autorizar: (estado: EstadoAprobacion) => requirePermission("certificaciones", accionRequerida(estado)),
   cambiarEstado: (id, estado) => CertificacionService.cambiarEstado(id, estado),
   tabla: "gu_certificaciones",
   accion: (estado) => ACCION[estado],

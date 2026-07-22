@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { OrdenPagoService } from "@/controllers"
 import { AgregarCajaSchema } from "@/shared/orden-pago-validation"
-import { requireRole } from "@/shared/permissions-server"
-import { ROLES_ESCRITURA } from "@/shared/permissions"
+import { requirePermission } from "@/shared/permissions-server"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
 import { HttpError } from "@/shared/http-error"
@@ -16,7 +15,7 @@ interface Params {
 // no acá: la regla vive en el trigger.
 export async function POST(request: NextRequest, { params }: Params) {
   try {
-    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    const { error: authError } = await requirePermission("ordenes_pago", "crear")
     if (authError) return authError
 
     const opId = parseId((await params).id)
@@ -32,7 +31,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 // DELETE /api/ordenes-pago/[id]/cajas?cajaId=N
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    const { error: authError } = await requirePermission("ordenes_pago", "crear")
     if (authError) return authError
 
     const opId = parseId((await params).id)

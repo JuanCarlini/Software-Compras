@@ -1,7 +1,7 @@
 import { OrdenPagoService } from "@/controllers"
 import { CambiarEstadoOPSchema } from "@/shared/orden-pago-validation"
-import { requireRole } from "@/shared/permissions-server"
-import { rolRequerido } from "@/shared/transiciones"
+import { requirePermission } from "@/shared/permissions-server"
+import { accionRequerida } from "@/shared/transiciones"
 import { estadoRoute } from "@/shared/estado-route"
 import type { AccionAuditoria } from "@/lib/audit/audit.service"
 import type { EstadoOp } from "@/models"
@@ -25,7 +25,7 @@ const ACCION: Record<EstadoOp, AccionAuditoria> = {
  */
 export const PATCH = estadoRoute({
   schema: CambiarEstadoOPSchema,
-  autorizar: (estado: EstadoOp) => requireRole(rolRequerido(estado)),
+  autorizar: (estado: EstadoOp) => requirePermission("ordenes_pago", accionRequerida(estado)),
   cambiarEstado: (id, estado) => OrdenPagoService.cambiarEstado(id, estado),
   tabla: "gu_ordenesdepago",
   accion: (estado) => ACCION[estado],

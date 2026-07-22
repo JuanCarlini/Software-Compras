@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { FacturaService } from "@/controllers/factura.controller"
 import { ImputarSchema } from "@/shared/factura-validation"
-import { requireRole } from "@/shared/permissions-server"
-import { ROLES_ESCRITURA } from "@/shared/permissions"
+import { requirePermission } from "@/shared/permissions-server"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
 import { HttpError } from "@/shared/http-error"
@@ -15,7 +14,7 @@ interface Params {
 // Solo en borrador. 422 si la cert no está aprobada o si Σ supera el total de líneas.
 export async function POST(request: NextRequest, { params }: Params) {
   try {
-    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    const { error: authError } = await requirePermission("facturas", "crear")
     if (authError) return authError
 
     const facturaId = parseId((await params).id)
@@ -31,7 +30,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 // DELETE /api/facturas/[id]/imputaciones?certificacionId=N - Quitar una imputación (borrador)
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    const { error: authError } = await requirePermission("facturas", "crear")
     if (authError) return authError
 
     const facturaId = parseId((await params).id)
