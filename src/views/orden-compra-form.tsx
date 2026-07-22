@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
 import { Input } from "@/views/ui/input"
@@ -9,15 +12,23 @@ import { Label } from "@/views/ui/label"
 import { Textarea } from "@/views/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/views/ui/select"
 import { Alert, AlertDescription } from "@/views/ui/alert"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/views/ui/form"
 import { Loader2, Plus, Trash2, ShoppingCart } from "lucide-react"
 import { Proveedor, Item } from "@/models"
 import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
 import { formatCurrency } from "@/shared/format-utils"
 import { ItemSelector } from "@/components/items"
 
+// Migrado a RHF+Zod (2026-07-22, patrón híbrido = certificacion-form): la CABECERA
+// (proveedor, fecha, moneda, observaciones) va por react-hook-form + zodResolver con
+// <FormField>/<FormLabel> (validación de campo + a11y). Los items se agregan por un
+// mini-form de staging (nuevoItem) y viven en una lista de solo lectura → estado
+// controlado; useFieldArray no aporta acá (las filas no se editan inline). Las
+// validaciones del staging y del submit van a form root.
+
 interface ItemOrden {
   id: string
-  item_id?: number | null  // NUEVO: ID del item del catálogo
+  item_id?: number | null
   producto: string
   descripcion: string
   cantidad: number
@@ -29,49 +40,49 @@ interface ItemOrden {
 // Alícuotas de IVA vigentes en Argentina. Cada línea de OC elige la suya.
 const IVA_RATES = [0, 10.5, 21, 27] as const
 
+const ocFormSchema = z.object({
+  proveedor_id: z.string().min(1, "Seleccioná un proveedor"),
+  fecha_oc: z.string().min(1, "La fecha es requerida"),
+  moneda: z.string().min(1),
+  observaciones: z.string(),
+})
+type OcFormData = z.infer<typeof ocFormSchema>
+
 export function OrdenCompraForm() {
   const router = useRouter()
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const form = useForm<OcFormData>({
+    resolver: zodResolver(ocFormSchema),
+    defaultValues: {
+      proveedor_id: "",
+      fecha_oc: new Date().toISOString().split("T")[0],
+      moneda: "ARS",
+      observaciones: "",
+    },
+  })
+  const isLoading = form.formState.isSubmitting
 
   const [proveedores, setProveedores] = useState<Proveedor[]>([])
   const [loadingProveedores, setLoadingProveedores] = useState(true)
 
-  // datos de la cabecera de la OC (los que sí existen en la tabla)
-  const [formData, setFormData] = useState({
-    proveedor_id: "",
-    fecha_oc: new Date().toISOString().split("T")[0],
-    moneda: "ARS",
-    observaciones: "",
-  })
-
   // items solo para el front, después los convertimos al formato de la tabla de líneas
   const [items, setItems] = useState<ItemOrden[]>([])
   const [nuevoItem, setNuevoItem] = useState({
-    item_id: null as number | null,  // NUEVO: ID del item seleccionado
+    item_id: null as number | null,
     producto: "",
     descripcion: "",
     cantidad: "1",
     precio_unitario: "",
     iva_porcentaje: "21",
   })
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null)  // NUEVO: Item completo
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null)
 
   // ===== helpers de totales =====
 
-  const calcularSubtotal = () => {
-    return items.reduce((sum, item) => sum + item.subtotal, 0)
-  }
-
-  const calcularImpuestos = () => {
-    // Cada línea puede tener su propia alícuota → IVA por línea, no un 21% plano.
-    return items.reduce((sum, item) => sum + item.subtotal * (item.iva_porcentaje / 100), 0)
-  }
-
-  const calcularTotal = () => {
-    return calcularSubtotal() + calcularImpuestos()
-  }
+  const calcularSubtotal = () => items.reduce((sum, item) => sum + item.subtotal, 0)
+  // Cada línea puede tener su propia alícuota → IVA por línea, no un 21% plano.
+  const calcularImpuestos = () => items.reduce((sum, item) => sum + item.subtotal * (item.iva_porcentaje / 100), 0)
+  const calcularTotal = () => calcularSubtotal() + calcularImpuestos()
 
   // ===== cargar proveedores =====
 
@@ -84,114 +95,73 @@ export function OrdenCompraForm() {
         // en la base el estado es 'activo' / 'inactivo'
         const activos = data.filter((p) => (p.estado ?? "activo") === "activo")
         setProveedores(activos)
-      } catch (err: any) {
+      } catch (err) {
         console.error("Error al cargar proveedores:", err)
-        setError("No se pudieron cargar los proveedores")
+        form.setError("root", { message: "No se pudieron cargar los proveedores" })
       } finally {
         setLoadingProveedores(false)
       }
     }
 
     fetchProveedores()
-  }, [])
+  }, [form])
 
   // ===== handlers =====
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
-  }
-
   const handleNuevoItemChange = (field: string, value: string) => {
-    setNuevoItem((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
+    setNuevoItem((prev) => ({ ...prev, [field]: value }))
   }
 
   const agregarItem = () => {
     if (!nuevoItem.producto.trim()) {
-      setError("El nombre del producto es requerido")
-      return
+      return form.setError("root", { message: "El nombre del producto es requerido" })
     }
 
     const cantidad = parseFloat(nuevoItem.cantidad) || 0
     const precioUnitario = parseFloat(nuevoItem.precio_unitario) || 0
 
     if (cantidad <= 0) {
-      setError("La cantidad debe ser mayor a 0")
-      return
+      return form.setError("root", { message: "La cantidad debe ser mayor a 0" })
     }
-
     if (precioUnitario <= 0) {
-      setError("El precio unitario debe ser mayor a 0")
-      return
+      return form.setError("root", { message: "El precio unitario debe ser mayor a 0" })
     }
-
-    const subtotal = cantidad * precioUnitario
 
     const item: ItemOrden = {
       id: `temp-${Date.now()}`,
-      item_id: nuevoItem.item_id,  // NUEVO: Guardar el item_id
+      item_id: nuevoItem.item_id,
       producto: nuevoItem.producto,
       descripcion: nuevoItem.descripcion,
       cantidad,
       precio_unitario: precioUnitario,
       iva_porcentaje: parseFloat(nuevoItem.iva_porcentaje) || 0,
-      subtotal,
+      subtotal: cantidad * precioUnitario,
     }
 
     setItems((prev) => [...prev, item])
 
-    // Reset form (el IVA vuelve al 21% por defecto)
-    setNuevoItem({
-      item_id: null,  // NUEVO
-      producto: "",
-      descripcion: "",
-      cantidad: "1",
-      precio_unitario: "",
-      iva_porcentaje: "21",
-    })
-    setSelectedItem(null)  // NUEVO
-
-    setError(null)
+    // Reset del staging (el IVA vuelve al 21% por defecto)
+    setNuevoItem({ item_id: null, producto: "", descripcion: "", cantidad: "1", precio_unitario: "", iva_porcentaje: "21" })
+    setSelectedItem(null)
+    form.clearErrors("root")
   }
 
   const eliminarItem = (id: string) => {
     setItems((prev) => prev.filter((it) => it.id !== id))
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-
-    // validaciones básicas
-    if (!formData.proveedor_id) {
-      setError("Por favor selecciona un proveedor")
-      return
-    }
-
-    if (!formData.fecha_oc) {
-      setError("Por favor selecciona una fecha de la orden")
-      return
-    }
+  const onSubmit = async (data: OcFormData) => {
+    form.clearErrors("root")
 
     if (items.length === 0) {
-      setError("Debes agregar al menos un item")
-      return
+      return form.setError("root", { message: "Debes agregar al menos un item" })
     }
 
     try {
-      setIsLoading(true)
-
       // líneas para gu_lineasdeordenesdecompra (el orden_compra_id lo asigna el backend)
       const lineas = items.map((item) => {
         const totalNeto = item.subtotal
         const iva = item.iva_porcentaje
-        const totalConIva = totalNeto * (1 + iva / 100)
-
         return {
           item_id: item.item_id || null,
           // la columna descripcion es NOT NULL en la tabla, así que le mando algo sí o sí
@@ -200,7 +170,7 @@ export function OrdenCompraForm() {
           precio_unitario_neto: item.precio_unitario,
           iva_porcentaje: iva,
           total_neto: totalNeto,
-          total_con_iva: totalConIva,
+          total_con_iva: totalNeto * (1 + iva / 100),
           estado: "borrador",
         }
       })
@@ -211,11 +181,11 @@ export function OrdenCompraForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           // numero_oc, totales y estado los pone la DB/el server (Zod descarta lo demás)
-          proveedor_id: Number(formData.proveedor_id),
-          proyecto_id: null,                          // no lo estás pidiendo
-          fecha_oc: formData.fecha_oc,                // la tabla es DATE
-          moneda: formData.moneda,                    // enum en la base
-          observaciones: formData.observaciones || null,
+          proveedor_id: Number(data.proveedor_id),
+          proyecto_id: null,
+          fecha_oc: data.fecha_oc, // la tabla es DATE
+          moneda: data.moneda, // enum en la base
+          observaciones: data.observaciones || null,
           lineas,
         }),
       })
@@ -227,12 +197,10 @@ export function OrdenCompraForm() {
 
       showSuccessToast("Orden de compra creada exitosamente")
       router.push("/ordenes-compra")
-    } catch (err: any) {
-      const errorMessage = err?.message ?? "Error desconocido"
-      setError(`Error al crear la orden de compra: ${errorMessage}`)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Error desconocido"
+      form.setError("root", { message: `Error al crear la orden de compra: ${errorMessage}` })
       showErrorToast("Error al crear la orden de compra", errorMessage)
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -242,258 +210,273 @@ export function OrdenCompraForm() {
         <CardTitle>Nueva Orden de Compra</CardTitle>
       </CardHeader>
       <CardContent>
-        {error && (
-          <Alert className="mb-6" variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {form.formState.errors.root && (
+              <Alert variant="destructive">
+                <AlertDescription>{form.formState.errors.root.message}</AlertDescription>
+              </Alert>
+            )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Información de la OC */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2 md:col-span-2">
-              <Label>Proveedor</Label>
-              <Select
-                required
-                disabled={loadingProveedores || isLoading}
-                value={formData.proveedor_id}
-                onValueChange={(value) => handleInputChange("proveedor_id", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      loadingProveedores
-                        ? "Cargando proveedores..."
-                        : proveedores.length === 0
-                        ? "No hay proveedores disponibles"
-                        : "Selecciona un proveedor"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {proveedores.length === 0 ? (
-                    <SelectItem value="none" disabled>
-                      No hay proveedores registrados
-                    </SelectItem>
-                  ) : (
-                    proveedores.map((p) => (
-                      <SelectItem key={p.id} value={String(p.id)}>
-                        {p.nombre}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Información de la OC */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <FormField
+                control={form.control}
+                name="proveedor_id"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Proveedor *</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange} disabled={loadingProveedores || isLoading}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={
+                              loadingProveedores
+                                ? "Cargando proveedores..."
+                                : proveedores.length === 0
+                                ? "No hay proveedores disponibles"
+                                : "Selecciona un proveedor"
+                            }
+                          />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {proveedores.length === 0 ? (
+                          <SelectItem value="none" disabled>
+                            No hay proveedores registrados
+                          </SelectItem>
+                        ) : (
+                          proveedores.map((p) => (
+                            <SelectItem key={p.id} value={String(p.id)}>
+                              {p.nombre}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <div className="space-y-2">
-              <Label>Fecha de la OC</Label>
-              <Input
-                type="date"
-                value={formData.fecha_oc}
-                onChange={(e) => handleInputChange("fecha_oc", e.target.value)}
-                disabled={isLoading}
-                required
+              <FormField
+                control={form.control}
+                name="fecha_oc"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Fecha de la OC *</FormLabel>
+                    <FormControl>
+                      <Input type="date" disabled={isLoading} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <Label>Moneda</Label>
-              <Select
-                value={formData.moneda}
-                onValueChange={(value) => handleInputChange("moneda", value)}
-                disabled={isLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona moneda" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ARS">ARS</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="EUR">EUR</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="md:col-span-2 space-y-2">
-              <Label>Observaciones</Label>
-              <Textarea
-                rows={2}
-                value={formData.observaciones}
-                onChange={(e) => handleInputChange("observaciones", e.target.value)}
-                disabled={isLoading}
-                placeholder="Notas u observaciones internas..."
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <FormField
+                control={form.control}
+                name="moneda"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Moneda</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona moneda" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="ARS">ARS</SelectItem>
+                        <SelectItem value="USD">USD</SelectItem>
+                        <SelectItem value="EUR">EUR</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="observaciones"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Observaciones</FormLabel>
+                    <FormControl>
+                      <Textarea rows={2} disabled={isLoading} placeholder="Notas u observaciones internas..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-          </div>
 
-          {/* Items */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5" />
-              Items de la Orden
-            </h3>
+            {/* Items */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-medium text-foreground mb-4 flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5" />
+                Items de la Orden
+              </h3>
 
-            {/* Form para agregar item */}
-            <div className="bg-muted p-4 rounded-lg mb-4">
-              <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-                <div className="md:col-span-2 space-y-2">
-                  <Label>Producto / Servicio *</Label>
-                  <ItemSelector
-                    value={nuevoItem.item_id}
-                    onChange={(itemId, item) => {
-                      setSelectedItem(item)
-                      setNuevoItem((prev) => ({
-                        ...prev,
-                        item_id: itemId,
-                        producto: item?.nombre || "",
-                      }))
-                    }}
-                    disabled={isLoading}
-                    placeholder="Buscar o crear item..."
-                  />
-                  {selectedItem && selectedItem.descripcion && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {selectedItem.descripcion}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Cantidad *</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={nuevoItem.cantidad}
-                    onChange={(e) => handleNuevoItemChange("cantidad", e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Precio Unit. *</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={nuevoItem.precio_unitario}
-                    onChange={(e) => handleNuevoItemChange("precio_unitario", e.target.value)}
-                    disabled={isLoading}
-                    placeholder="0.00"
-                  />
-                  {/* TODO(F3): mostrar el precio del item PARA ESTE PROVEEDOR
-                      (GET /api/items/[id]/precio?proveedorId=). El item ya no tiene precio propio. */}
-                </div>
-                <div className="space-y-2">
-                  <Label>IVA *</Label>
-                  <Select
-                    value={nuevoItem.iva_porcentaje}
-                    onValueChange={(value) => handleNuevoItemChange("iva_porcentaje", value)}
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {IVA_RATES.map((rate) => (
-                        <SelectItem key={rate} value={String(rate)}>
-                          {rate}%
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-end">
-                  <Button type="button" onClick={agregarItem} disabled={isLoading} className="w-full">
-                    <Plus className="h-4 w-4 mr-1" />
-                    Agregar
-                  </Button>
-                </div>
-              </div>
-
-              <div className="mt-2 space-y-2">
-                <Label>Descripción del item (opcional)</Label>
-                <Input
-                  value={nuevoItem.descripcion}
-                  onChange={(e) => handleNuevoItemChange("descripcion", e.target.value)}
-                  disabled={isLoading}
-                  placeholder="Detalles adicionales del producto"
-                />
-              </div>
-            </div>
-
-            {/* lista de items */}
-            {items.length > 0 ? (
-              <div className="space-y-2">
-                <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-muted rounded-t font-medium text-sm">
-                  <div className="col-span-4">Producto</div>
-                  <div className="col-span-2 text-right">Cantidad</div>
-                  <div className="col-span-2 text-right">P. Unitario</div>
-                  <div className="col-span-1 text-right">IVA</div>
-                  <div className="col-span-2 text-right">Subtotal</div>
-                  <div className="col-span-1" />
-                </div>
-                {items.map((item) => (
-                  <div key={item.id} className="grid grid-cols-12 gap-2 px-4 py-3 border rounded hover:bg-accent">
-                    <div className="col-span-4">
-                      <p className="font-medium">{item.producto}</p>
-                      {item.descripcion && <p className="text-sm text-muted-foreground">{item.descripcion}</p>}
-                    </div>
-                    <div className="col-span-2 text-right">{item.cantidad}</div>
-                    <div className="col-span-2 text-right">{formatCurrency(item.precio_unitario)}</div>
-                    <div className="col-span-1 text-right">{item.iva_porcentaje}%</div>
-                    <div className="col-span-2 text-right font-medium">{formatCurrency(item.subtotal)}</div>
-                    <div className="col-span-1 flex justify-end">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => eliminarItem(item.id)}
-                        disabled={isLoading}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-600" />
-                      </Button>
-                    </div>
+              {/* Form para agregar item */}
+              <div className="bg-muted p-4 rounded-lg mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                  <div className="md:col-span-2 space-y-2">
+                    <Label>Producto / Servicio *</Label>
+                    <ItemSelector
+                      value={nuevoItem.item_id}
+                      onChange={(itemId, item) => {
+                        setSelectedItem(item)
+                        setNuevoItem((prev) => ({ ...prev, item_id: itemId, producto: item?.nombre || "" }))
+                      }}
+                      disabled={isLoading}
+                      placeholder="Buscar o crear item..."
+                    />
+                    {selectedItem && selectedItem.descripcion && (
+                      <p className="text-xs text-muted-foreground mt-1">{selectedItem.descripcion}</p>
+                    )}
                   </div>
-                ))}
+                  <div className="space-y-2">
+                    <Label htmlFor="nuevo-item-cantidad">Cantidad *</Label>
+                    <Input
+                      id="nuevo-item-cantidad"
+                      type="number"
+                      min="1"
+                      value={nuevoItem.cantidad}
+                      onChange={(e) => handleNuevoItemChange("cantidad", e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="nuevo-item-precio">Precio Unit. *</Label>
+                    <Input
+                      id="nuevo-item-precio"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={nuevoItem.precio_unitario}
+                      onChange={(e) => handleNuevoItemChange("precio_unitario", e.target.value)}
+                      disabled={isLoading}
+                      placeholder="0.00"
+                    />
+                    {/* TODO(F3): mostrar el precio del item PARA ESTE PROVEEDOR
+                        (GET /api/items/[id]/precio?proveedorId=). El item ya no tiene precio propio. */}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="nuevo-item-iva">IVA *</Label>
+                    <Select
+                      value={nuevoItem.iva_porcentaje}
+                      onValueChange={(value) => handleNuevoItemChange("iva_porcentaje", value)}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger id="nuevo-item-iva">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {IVA_RATES.map((rate) => (
+                          <SelectItem key={rate} value={String(rate)}>
+                            {rate}%
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-end">
+                    <Button type="button" onClick={agregarItem} disabled={isLoading} className="w-full">
+                      <Plus className="h-4 w-4 mr-1" />
+                      Agregar
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mt-2 space-y-2">
+                  <Label htmlFor="nuevo-item-desc">Descripción del item (opcional)</Label>
+                  <Input
+                    id="nuevo-item-desc"
+                    value={nuevoItem.descripcion}
+                    onChange={(e) => handleNuevoItemChange("descripcion", e.target.value)}
+                    disabled={isLoading}
+                    placeholder="Detalles adicionales del producto"
+                  />
+                </div>
               </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded">
-                No hay items agregados. Usa el formulario de arriba para agregarlos.
+
+              {/* lista de items */}
+              {items.length > 0 ? (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-muted rounded-t font-medium text-sm">
+                    <div className="col-span-4">Producto</div>
+                    <div className="col-span-2 text-right">Cantidad</div>
+                    <div className="col-span-2 text-right">P. Unitario</div>
+                    <div className="col-span-1 text-right">IVA</div>
+                    <div className="col-span-2 text-right">Subtotal</div>
+                    <div className="col-span-1" />
+                  </div>
+                  {items.map((item) => (
+                    <div key={item.id} className="grid grid-cols-12 gap-2 px-4 py-3 border rounded hover:bg-accent">
+                      <div className="col-span-4">
+                        <p className="font-medium">{item.producto}</p>
+                        {item.descripcion && <p className="text-sm text-muted-foreground">{item.descripcion}</p>}
+                      </div>
+                      <div className="col-span-2 text-right">{item.cantidad}</div>
+                      <div className="col-span-2 text-right">{formatCurrency(item.precio_unitario)}</div>
+                      <div className="col-span-1 text-right">{item.iva_porcentaje}%</div>
+                      <div className="col-span-2 text-right font-medium">{formatCurrency(item.subtotal)}</div>
+                      <div className="col-span-1 flex justify-end">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          aria-label={`Quitar ${item.producto}`}
+                          onClick={() => eliminarItem(item.id)}
+                          disabled={isLoading}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded">
+                  No hay items agregados. Usa el formulario de arriba para agregarlos.
+                </div>
+              )}
+            </div>
+
+            {/* Totales */}
+            {items.length > 0 && (
+              <div className="bg-muted p-4 rounded-lg">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Total Neto:</span>
+                    <span className="font-medium">{formatCurrency(calcularSubtotal())}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>IVA:</span>
+                    <span className="font-medium">{formatCurrency(calcularImpuestos())}</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t text-lg font-bold">
+                    <span>Total con IVA:</span>
+                    <span className="text-green-600">{formatCurrency(calcularTotal())}</span>
+                  </div>
+                </div>
               </div>
             )}
-          </div>
 
-          {/* Totales */}
-          {items.length > 0 && (
-            <div className="bg-muted p-4 rounded-lg">
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>Total Neto:</span>
-                  <span className="font-medium">{formatCurrency(calcularSubtotal())}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>IVA:</span>
-                  <span className="font-medium">{formatCurrency(calcularImpuestos())}</span>
-                </div>
-                <div className="flex justify-between pt-2 border-t text-lg font-bold">
-                  <span>Total con IVA:</span>
-                  <span className="text-green-600">{formatCurrency(calcularTotal())}</span>
-                </div>
-              </div>
+            {/* acciones */}
+            <div className="flex gap-4 pt-4">
+              <Button type="submit" disabled={isLoading || loadingProveedores}>
+                {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {isLoading ? "Creando..." : "Crear Orden"}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => router.push("/ordenes-compra")} disabled={isLoading}>
+                Cancelar
+              </Button>
             </div>
-          )}
-
-          {/* acciones */}
-          <div className="flex gap-4 pt-4">
-            <Button type="submit" disabled={isLoading || loadingProveedores}>
-              {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {isLoading ? "Creando..." : "Crear Orden"}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => router.push("/ordenes-compra")} disabled={isLoading}>
-              Cancelar
-            </Button>
-          </div>
-        </form>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   )
