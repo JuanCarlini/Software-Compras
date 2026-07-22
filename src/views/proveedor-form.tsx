@@ -76,7 +76,6 @@ export function ProveedorForm({ proveedor, isEditing = false }: Props) {
           throw new Error(error.error || 'Error al crear proveedor')
         }
         
-        const newProveedor = await response.json()
         showSuccessToast("Proveedor creado", "El proveedor se creó correctamente")
         router.push('/proveedores')
       }

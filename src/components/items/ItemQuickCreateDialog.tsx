@@ -40,14 +40,12 @@ interface ItemQuickCreateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onItemCreated?: (item: Item) => void
-  userId?: number | null
 }
 
 export function ItemQuickCreateDialog({
   open,
   onOpenChange,
   onItemCreated,
-  userId,
 }: ItemQuickCreateDialogProps) {
   const [isLoading, setIsLoading] = useState(false)
 

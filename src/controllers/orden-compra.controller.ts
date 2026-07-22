@@ -2,7 +2,7 @@ import type { TablesUpdate } from "@/lib/supabase/database.types"
 import { OrdenCompraRepository } from "@/repositories/orden-compra.repository"
 import { ItemPrecioRepository } from "@/repositories/item-precio.repository"
 import { HttpError } from "@/shared/http-error"
-import { totalesDeLinea, totalesDeCabecera } from "@/shared/totales"
+import { totalesDeLinea, totalesDeCabecera, IVA_DEFAULT } from "@/shared/totales"
 import { puedeTransicionar, TRANSICIONES_APROBACION } from "@/shared/transiciones"
 import {
   CreateOrdenCompraData,
@@ -114,7 +114,7 @@ export class OrdenCompraService {
       await ItemPrecioRepository.upsertPrecio(input.item_id, oc.proveedor_id, precio)
     }
 
-    const iva = input.iva_porcentaje ?? 21
+    const iva = input.iva_porcentaje ?? IVA_DEFAULT
     return {
       orden_compra_id: oc.id,
       item_id: item.id,

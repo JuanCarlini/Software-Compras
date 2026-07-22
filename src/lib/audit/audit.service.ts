@@ -26,7 +26,7 @@ export class AuditService {
    */
   static async registrar({ usuarioId, tabla, registroId, accion, detalle }: RegistrarParams): Promise<void> {
     try {
-      const supabase = await createClient()
+      const supabase = createClient()
       await supabase.from('gu_auditoria').insert({
         tabla_origen: tabla,
         registro_id: registroId,

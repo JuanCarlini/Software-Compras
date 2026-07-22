@@ -5,6 +5,9 @@
 // ponytail: number/float, no decimal.js. Con 2 decimales y montos de obra alcanza; si algún
 // día hay que cerrar contra contabilidad al centavo, pasar a bigint de centavos.
 
+// IVA por defecto (Argentina, alícuota general 21%). Se usa cuando una línea no trae iva_porcentaje.
+export const IVA_DEFAULT = 21
+
 const r2 = (n: number) => Math.round(n * 100) / 100
 
 export function totalesDeLinea(cantidad: number, precioUnitario: number, ivaPorcentaje: number) {

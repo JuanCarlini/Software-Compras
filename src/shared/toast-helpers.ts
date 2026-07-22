@@ -47,25 +47,6 @@ export const toastMessages = {
     error: "Error al procesar el proveedor"
   },
   
-  // Reportes
-  reporte: {
-    created: "Reporte generado exitosamente",
-    regenerated: "Reporte regenerado",
-    deleted: "Reporte eliminado",
-    downloaded: "Reporte descargado",
-    error: "Error al procesar el reporte"
-  },
-  
-  // Configuración
-  configuracion: {
-    updated: "Configuración actualizada exitosamente",
-    exported: "Configuración exportada",
-    imported: "Configuración importada exitosamente",
-    reset: "Configuración restablecida",
-    logoUploaded: "Logo actualizado exitosamente",
-    error: "Error al actualizar la configuración"
-  },
-  
   // General
   general: {
     loading: "Procesando...",

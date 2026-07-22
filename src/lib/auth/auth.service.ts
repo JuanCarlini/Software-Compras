@@ -44,7 +44,7 @@ export class AuthService {
    */
   static async login(email: string, password: string): Promise<{ user: AuthUser; token: string } | null> {
     try {
-      const supabase = await createClient()
+      const supabase = createClient()
 
       // Buscar usuario por email con su rol
       const { data: usuario, error } = await supabase
@@ -126,7 +126,7 @@ export class AuthService {
    */
   static async getUserById(userId: number): Promise<AuthUser | null> {
     try {
-      const supabase = await createClient()
+      const supabase = createClient()
 
       const { data: usuario, error } = await supabase
         .from('gu_usuario')
@@ -167,7 +167,7 @@ export class AuthService {
    */
   static async changePassword(userId: number, oldPassword: string, newPassword: string): Promise<boolean> {
     try {
-      const supabase = await createClient()
+      const supabase = createClient()
 
       // Obtener usuario actual
       const { data: usuario, error } = await supabase

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import { ProveedorDetails } from "@/views/proveedor-details"
 import { Card, CardContent } from "@/views/ui/card"
 import { Loader2 } from "lucide-react"
@@ -9,7 +9,6 @@ import { Proveedor } from "@/models"
 
 export default function ProveedorDetailsPage() {
   const params = useParams()
-  const router = useRouter()
   const [proveedor, setProveedor] = useState<Proveedor | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

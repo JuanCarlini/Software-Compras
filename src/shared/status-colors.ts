@@ -12,7 +12,7 @@ import {
 /**
  * Categorías de estado según semáforo
  */
-export enum StatusCategory {
+enum StatusCategory {
   SUCCESS = "success",    // Verde - Aprobado/Completado
   PENDING = "pending",    // Amarillo - Pendiente/En proceso
   ERROR = "error",        // Rojo - Rechazado/Error/Anulado
@@ -25,33 +25,26 @@ export enum StatusCategory {
 const statusMap: Record<string, StatusCategory> = {
   // Estados aprobados/exitosos - VERDE
   "aprobado": StatusCategory.SUCCESS,
-  "completado": StatusCategory.SUCCESS,
   "activo": StatusCategory.SUCCESS,
   "pagado": StatusCategory.SUCCESS,
   "finalizado": StatusCategory.SUCCESS,
-  
+
   // Estados pendientes/en proceso - AMARILLO
   "borrador": StatusCategory.PENDING,
   "pendiente": StatusCategory.PENDING,
   "en_aprobacion": StatusCategory.PENDING,
-  "en_ejecucion": StatusCategory.PENDING,
-  "generando": StatusCategory.PENDING,
-  
+
   // Estados rechazados/error - ROJO
   "rechazado": StatusCategory.ERROR,
   "anulado": StatusCategory.ERROR,
   "error": StatusCategory.ERROR,
   "inactivo": StatusCategory.ERROR,
-  "cancelado": StatusCategory.ERROR,
-  
-  // Estados informativos - AZUL
-  "planificado": StatusCategory.INFO,
 }
 
 /**
  * Obtiene la categoría de un estado
  */
-export function getStatusCategory(estado: string | null | undefined): StatusCategory {
+function getStatusCategory(estado: string | null | undefined): StatusCategory {
   if (!estado) return StatusCategory.INFO
   const estadoLower = estado.toLowerCase()
   return statusMap[estadoLower] || StatusCategory.INFO
@@ -60,7 +53,7 @@ export function getStatusCategory(estado: string | null | undefined): StatusCate
 /**
  * Obtiene las clases de Tailwind para el color de fondo y texto del badge
  */
-export function getStatusColor(estado: string | null | undefined): string {
+function getStatusColor(estado: string | null | undefined): string {
   const category = getStatusCategory(estado)
   
   switch (category) {
@@ -80,7 +73,7 @@ export function getStatusColor(estado: string | null | undefined): string {
 /**
  * Obtiene el icono correspondiente según la categoría de estado
  */
-export function getStatusIcon(estado: string | null | undefined) {
+function getStatusIcon(estado: string | null | undefined) {
   const category = getStatusCategory(estado)
   
   switch (category) {
@@ -100,7 +93,7 @@ export function getStatusIcon(estado: string | null | undefined) {
 /**
  * Obtiene las clases de color para el icono
  */
-export function getStatusIconColor(estado: string | null | undefined): string {
+function getStatusIconColor(estado: string | null | undefined): string {
   const category = getStatusCategory(estado)
   
   switch (category) {

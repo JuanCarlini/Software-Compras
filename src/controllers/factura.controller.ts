@@ -1,6 +1,6 @@
 import { FacturaRepository } from "@/repositories/factura.repository"
 import { HttpError } from "@/shared/http-error"
-import { totalesDeLinea, totalesDeCabecera } from "@/shared/totales"
+import { totalesDeLinea, totalesDeCabecera, IVA_DEFAULT } from "@/shared/totales"
 import { puedeTransicionar, TRANSICIONES_FACTURA } from "@/shared/transiciones"
 import type { CreateFacturaData, CreateFacturaLinea, CreateImputacion, EstadoFactura } from "@/models"
 
@@ -97,7 +97,7 @@ export class FacturaService {
 
   // Los totales de la línea los calcula la app (la columna de precio es `precio_unitario`).
   private static armarLinea(facturaId: number, l: CreateFacturaLinea): CreateFacturaLinea & { factura_id: number } {
-    const iva = l.iva_porcentaje ?? 21
+    const iva = l.iva_porcentaje ?? IVA_DEFAULT
     const { total_neto, total_con_iva } = totalesDeLinea(l.cantidad ?? 0, l.precio_unitario ?? 0, iva)
     return {
       factura_id: facturaId,

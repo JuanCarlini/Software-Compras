@@ -8,7 +8,6 @@ import { ItemCombobox } from "./ItemCombobox"
 interface ItemSelectorProps {
   value?: number | null
   onChange: (itemId: number | null, item: Item | null) => void
-  userId?: number | null
   disabled?: boolean
   placeholder?: string
 }
@@ -23,13 +22,11 @@ interface ItemSelectorProps {
  * <ItemSelector
  *   value={selectedItemId}
  *   onChange={(itemId, item) => setSelectedItemId(itemId)}
- *   userId={currentUserId}
  * />
  */
 export function ItemSelector({
   value,
   onChange,
-  userId,
   disabled = false,
   placeholder = "Seleccionar item...",
 }: ItemSelectorProps) {
@@ -58,7 +55,6 @@ export function ItemSelector({
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onItemCreated={handleItemCreated}
-        userId={userId}
       />
     </>
   )
