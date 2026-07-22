@@ -8,6 +8,7 @@ import { Button } from "@/views/ui/button"
 import { Badge } from "@/views/ui/badge"
 import { ArrowLeft, Building2, Calendar, FileCheck, Check, X } from "lucide-react"
 import { showErrorToast, showSuccessToast } from "@/shared/toast-helpers"
+import { formatCurrency } from "@/shared/format-utils"
 import { useAuth } from "@/shared/auth-context"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 import { StatusBadge } from "@/shared/status-badge"
@@ -22,6 +23,37 @@ import {
   AlertDialogTitle,
 } from "@/views/ui/alert-dialog"
 
+// View-model de GET /api/facturas/[id] (cabecera + joins de proveedor + imputaciones +
+// líneas). Numéricos como string desde Postgres → Number() en el render.
+type Num = number | string | null
+interface FacturaImputacionDetalle {
+  certificacion_id: number
+  monto_asignado: Num
+  gu_certificaciones: { numero_cert: string | null; total_con_iva: Num } | null
+}
+interface FacturaLineaDetalle {
+  id: number | null
+  descripcion: string | null
+  cantidad: Num
+  precio_unitario: Num
+  total_con_iva: Num
+  iva_porcentaje: Num
+}
+interface FacturaDetalle {
+  numero_factura: string | null
+  estado: string
+  total_neto: Num
+  total_iva: Num
+  total_con_iva: Num
+  proveedor_nombre: string | null
+  proveedor_cuit: string | null
+  proveedor_email: string | null
+  proveedor_direccion: string | null
+  fecha_emision: string | null
+  imputaciones: FacturaImputacionDetalle[] | null
+  lineas: FacturaLineaDetalle[] | null
+}
+
 interface Props {
   params: Promise<{ id: string }>
 }
@@ -29,7 +61,7 @@ interface Props {
 export function FacturaDetail({ params }: Props) {
   const { id } = use(params)
   const { user } = useAuth()
-  const [factura, setFactura] = useState<any>(null)
+  const [factura, setFactura] = useState<FacturaDetalle | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [showApproveDialog, setShowApproveDialog] = useState(false)
@@ -130,10 +162,7 @@ export function FacturaDetail({ params }: Props) {
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-green-600">
-                $
-                {Number(factura.total_con_iva ?? 0).toLocaleString("es-AR", {
-                  minimumFractionDigits: 2,
-                })}
+                {formatCurrency(Number(factura.total_con_iva ?? 0))}
               </div>
               <div className="text-sm text-muted-foreground">Total con IVA</div>
             </div>
@@ -183,25 +212,19 @@ export function FacturaDetail({ params }: Props) {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal (Neto)</span>
                 <span className="font-semibold">
-                  ${Number(factura.total_neto ?? 0).toLocaleString("es-AR", {
-                    minimumFractionDigits: 2,
-                  })}
+                  {formatCurrency(Number(factura.total_neto ?? 0))}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">IVA</span>
                 <span className="font-semibold">
-                  ${Number(factura.total_iva ?? 0).toLocaleString("es-AR", {
-                    minimumFractionDigits: 2,
-                  })}
+                  {formatCurrency(Number(factura.total_iva ?? 0))}
                 </span>
               </div>
               <div className="flex justify-between text-lg font-bold border-t pt-2">
                 <span>Total con IVA</span>
                 <span className="text-green-600">
-                  ${Number(factura.total_con_iva ?? 0).toLocaleString("es-AR", {
-                    minimumFractionDigits: 2,
-                  })}
+                  {formatCurrency(Number(factura.total_con_iva ?? 0))}
                 </span>
               </div>
             </div>
@@ -219,7 +242,7 @@ export function FacturaDetail({ params }: Props) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {factura.imputaciones.map((imp: any) => (
+              {factura.imputaciones.map((imp) => (
                 <div
                   key={imp.certificacion_id}
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent cursor-pointer"
@@ -228,15 +251,13 @@ export function FacturaDetail({ params }: Props) {
                   <div>
                     <div className="font-semibold">{imp.gu_certificaciones?.numero_cert}</div>
                     <div className="text-sm text-muted-foreground">
-                      Certificado: ${Number(imp.gu_certificaciones?.total_con_iva ?? 0).toLocaleString("es-AR", { minimumFractionDigits: 2 })}
+                      Certificado: {formatCurrency(Number(imp.gu_certificaciones?.total_con_iva ?? 0))}
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-xs text-muted-foreground">Imputado</div>
                     <div className="text-sm font-medium mt-1">
-                      ${Number(imp.monto_asignado ?? 0).toLocaleString("es-AR", {
-                        minimumFractionDigits: 2,
-                      })}
+                      {formatCurrency(Number(imp.monto_asignado ?? 0))}
                     </div>
                   </div>
                 </div>
@@ -255,7 +276,7 @@ export function FacturaDetail({ params }: Props) {
             <p className="text-muted-foreground">No hay líneas registradas</p>
           ) : (
             <div className="space-y-4">
-              {factura.lineas.map((linea: any, index: number) => (
+              {factura.lineas.map((linea, index) => (
                 <div key={linea.id ?? index} className="border rounded-lg p-4 bg-muted">
                   <div className="grid grid-cols-5 gap-4">
                     <div className="col-span-2">
@@ -269,17 +290,13 @@ export function FacturaDetail({ params }: Props) {
                     <div>
                       <div className="text-sm text-muted-foreground">Precio Unitario</div>
                       <div className="font-medium">
-                        ${Number(linea.precio_unitario ?? 0).toLocaleString("es-AR", {
-                          minimumFractionDigits: 2,
-                        })}
+                        {formatCurrency(Number(linea.precio_unitario ?? 0))}
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-sm text-muted-foreground">Total</div>
                       <div className="font-bold text-green-600">
-                        ${Number(linea.total_con_iva ?? 0).toLocaleString("es-AR", {
-                          minimumFractionDigits: 2,
-                        })}
+                        {formatCurrency(Number(linea.total_con_iva ?? 0))}
                       </div>
                       <div className="text-xs text-muted-foreground">IVA: {linea.iva_porcentaje}%</div>
                     </div>

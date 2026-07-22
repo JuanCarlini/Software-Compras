@@ -24,12 +24,41 @@ import {
 
 // La OP paga N facturas y reparte el total en N cajas de la misma moneda (modelo CCIP).
 // Flujo: borrador -> en_aprobacion (aplica fn_op_gate: Σcajas=Σfacturas=total) -> aprobado -> pagado.
+
+// View-model de GET /api/ordenes-pago/[id] (cabecera + líneas de factura + cajas). Los montos
+// se pasan directo a formatCurrency (number).
+interface OpFacturaDetalle {
+  id: number
+  factura_id: number
+  monto: number
+  gu_facturas: { numero_factura: string | null; moneda: string | null } | null
+}
+interface OpCajaDetalle {
+  id: number
+  caja_id: number
+  monto: number
+  gu_cajas: { nombre: string | null; tipo: string | null; moneda: string | null } | null
+}
+interface OrdenPagoDetalle {
+  numero_op: string | null
+  estado: string
+  total_a_pagar: number
+  moneda: string
+  proveedor_nombre: string | null
+  proveedor_id: number
+  proveedor_cuit: string | null
+  fecha_op: string | null
+  observaciones: string | null
+  facturas: OpFacturaDetalle[] | null
+  cajas: OpCajaDetalle[] | null
+}
+
 export function OrdenPagoDetails() {
   const params = useParams()
   const router = useRouter()
   const id = params.id as string
   const { user } = useAuth()
-  const [orden, setOrden] = useState<any>(null)
+  const [orden, setOrden] = useState<OrdenPagoDetalle | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [processing, setProcessing] = useState(false)
@@ -109,8 +138,8 @@ export function OrdenPagoDetails() {
   }
 
   const moneda = orden.moneda
-  const facturas: any[] = orden.facturas ?? []
-  const cajas: any[] = orden.cajas ?? []
+  const facturas = orden.facturas ?? []
+  const cajas = orden.cajas ?? []
 
   return (
     <div className="space-y-6">

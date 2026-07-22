@@ -8,14 +8,38 @@ import { formatCurrency } from "@/shared/format-utils"
 import { formatDateShort } from "@/shared/date-utils"
 import { StatusBadge } from "@/shared/status-badge"
 
+// View-models de esta vista (cabecera de OC + líneas + proveedor). Numéricos como string
+// desde Postgres → Number() en el render.
+type Num = number | string | null
+interface OcLineaDetalle {
+  id: number
+  descripcion: string | null
+  item_codigo: string | null
+  cantidad: Num
+  precio_unitario_neto: Num
+  total_neto: Num
+}
+interface OrdenCompraDetalle {
+  id: number
+  numero_oc: string | null
+  estado: string
+  fecha_oc: string | null
+  proveedor_id: number | null
+  moneda: string | null
+  observaciones: string | null
+  total_neto: Num
+  total_iva: Num
+  total_con_iva: Num
+}
+
 interface Props {
   ordenId: string
 }
 
 export function OrdenCompraDetails({ ordenId }: Props) {
-  const [orden, setOrden] = useState<any>(null)
-  const [lineas, setLineas] = useState<any[]>([])
-  const [proveedor, setProveedor] = useState<any>(null)
+  const [orden, setOrden] = useState<OrdenCompraDetalle | null>(null)
+  const [lineas, setLineas] = useState<OcLineaDetalle[]>([])
+  const [proveedor, setProveedor] = useState<{ nombre: string | null } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 

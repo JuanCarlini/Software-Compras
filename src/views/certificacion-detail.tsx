@@ -8,6 +8,7 @@ import { Button } from "@/views/ui/button"
 import { Badge } from "@/views/ui/badge"
 import { ArrowLeft, FileText, Calendar, Building2, User, Check, X } from "lucide-react"
 import { showErrorToast, showSuccessToast } from "@/shared/toast-helpers"
+import { formatCurrency } from "@/shared/format-utils"
 import { useAuth } from "@/shared/auth-context"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 import { StatusBadge } from "@/shared/status-badge"
@@ -22,6 +23,38 @@ import {
   AlertDialogTitle,
 } from "@/views/ui/alert-dialog"
 
+// View-model que devuelve GET /api/certificaciones/[id] (cabecera + joins derivados +
+// líneas). Los numéricos llegan como string desde Postgres (supabase-js) → se coercionan
+// con Number() en el render; el tipo captura los nombres de campo (la seguridad que importa).
+type Num = number | string | null
+interface CertLineaDetalle {
+  id: number
+  numero_lce: string | null
+  linea_oc_id: number | null
+  avance_unidades: Num
+  avance_monto: Num
+  iva_porcentaje: Num
+  gu_lineasdeordenesdecompra: {
+    descripcion: string | null
+    numero_loc: string | null
+    precio_unitario_neto: Num
+  } | null
+}
+interface CertDetalle {
+  id: number
+  numero_cert: string | null
+  estado: string
+  total_neto: Num
+  total_con_iva: Num
+  fecha_cert: string | null
+  observaciones: string | null
+  numero_oc: string | null
+  proveedor_nombre: string | null
+  proveedor_cuit: string | null
+  estado_facturacion: string | null
+  lineas: CertLineaDetalle[] | null
+}
+
 interface Props {
   params: Promise<{ id: string }>
 }
@@ -29,7 +62,7 @@ interface Props {
 export function CertificacionDetail({ params }: Props) {
   const { id } = use(params)
   const { user } = useAuth()
-  const [cert, setCert] = useState<any>(null)
+  const [cert, setCert] = useState<CertDetalle | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [showApproveDialog, setShowApproveDialog] = useState(false)
@@ -157,10 +190,7 @@ export function CertificacionDetail({ params }: Props) {
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-green-600">
-                $
-                {Number(cert.total_con_iva ?? 0).toLocaleString("es-AR", {
-                  minimumFractionDigits: 2,
-                })}
+                {formatCurrency(Number(cert.total_con_iva ?? 0))}
               </div>
               <div className="text-sm text-muted-foreground">Total con IVA</div>
             </div>
@@ -230,7 +260,7 @@ export function CertificacionDetail({ params }: Props) {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {cert.lineas?.map((linea: any) => {
+            {cert.lineas?.map((linea) => {
               // Modelo CCIP: la LCE deriva del avance por unidades; el precio/desc vienen
               // de la línea de OC. avance_monto es NETO → total con IVA = neto * (1 + iva%).
               const ocLinea = linea.gu_lineasdeordenesdecompra
@@ -253,7 +283,7 @@ export function CertificacionDetail({ params }: Props) {
                     </div>
                     <div className="col-span-2 text-right">
                       <div className="text-sm text-muted-foreground">Precio Unit.</div>
-                      <div>${Number(ocLinea?.precio_unitario_neto ?? 0).toFixed(2)}</div>
+                      <div>{formatCurrency(Number(ocLinea?.precio_unitario_neto ?? 0))}</div>
                     </div>
                     <div className="col-span-1 text-right">
                       <div className="text-sm text-muted-foreground">IVA</div>
@@ -261,7 +291,7 @@ export function CertificacionDetail({ params }: Props) {
                     </div>
                     <div className="col-span-2 text-right">
                       <div className="text-sm text-muted-foreground">Total</div>
-                      <div className="font-semibold">${totalConIva.toFixed(2)}</div>
+                      <div className="font-semibold">{formatCurrency(totalConIva)}</div>
                     </div>
                   </div>
                 </div>
@@ -274,13 +304,13 @@ export function CertificacionDetail({ params }: Props) {
               <div className="text-right">
                 <div className="text-sm text-muted-foreground">Total Neto</div>
                 <div className="text-xl font-bold">
-                  ${Number(cert.total_neto ?? 0).toFixed(2)}
+                  {formatCurrency(Number(cert.total_neto ?? 0))}
                 </div>
               </div>
               <div className="text-right">
                 <div className="text-sm text-muted-foreground">Total con IVA</div>
                 <div className="text-2xl font-bold text-green-600">
-                  ${Number(cert.total_con_iva ?? 0).toFixed(2)}
+                  {formatCurrency(Number(cert.total_con_iva ?? 0))}
                 </div>
               </div>
             </div>
