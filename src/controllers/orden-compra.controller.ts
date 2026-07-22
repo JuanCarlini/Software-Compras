@@ -55,8 +55,9 @@ export class OrdenCompraService {
 
     if (lineas && lineas.length > 0) {
       try {
-        const armadas = []
-        for (const l of lineas) armadas.push(await OrdenCompraService.armarLinea(oc, l))
+        // Concurrente (I/O-bound): cada armarLinea hace su lookup de item + precio; en serie
+        // eran ~2N round-trips secuenciales (N = líneas). Promise.all preserva el orden.
+        const armadas = await Promise.all(lineas.map((l) => OrdenCompraService.armarLinea(oc, l)))
         await OrdenCompraRepository.insertLineas(armadas)
         await OrdenCompraService.recalcularCabecera(oc.id)
       } catch (e) {
