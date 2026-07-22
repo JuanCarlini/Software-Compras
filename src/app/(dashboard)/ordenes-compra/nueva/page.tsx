@@ -2,8 +2,10 @@ import { OrdenCompraForm } from "@/views/orden-compra-form"
 import { Button } from "@/views/ui/button"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { requirePagePermission } from "@/shared/permissions-server"
 
-export default function NuevaOrdenCompraPage() {
+export default async function NuevaOrdenCompraPage() {
+  await requirePagePermission("ordenes_compra", "crear", "/ordenes-compra")
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-4">

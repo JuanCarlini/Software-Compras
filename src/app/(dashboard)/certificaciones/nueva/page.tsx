@@ -1,8 +1,8 @@
-"use client"
-
 import { CertificacionForm } from "@/views/certificacion-form"
+import { requirePagePermission } from "@/shared/permissions-server"
 
-export default function NuevaCertificacionPage() {
+export default async function NuevaCertificacionPage() {
+  await requirePagePermission("certificaciones", "crear", "/certificaciones")
   return (
     <div className="space-y-6">
       <div>

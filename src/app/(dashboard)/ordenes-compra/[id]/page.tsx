@@ -2,12 +2,14 @@ import { OrdenCompraDetails } from "@/views/orden-compra-details"
 import { Button } from "@/views/ui/button"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { requirePagePermission } from "@/shared/permissions-server"
 
 interface Props {
   params: Promise<{ id: string }>
 }
 
 export default async function OrdenCompraDetailPage({ params }: Props) {
+  await requirePagePermission("ordenes_compra", "ver")
   const { id } = await params
   
   return (

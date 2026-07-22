@@ -1,7 +1,9 @@
 import { CertificacionesList } from "@/views/certificaciones-list"
 import { CrearButton } from "@/views/crear-button"
+import { requirePagePermission } from "@/shared/permissions-server"
 
-export default function CertificacionesPage() {
+export default async function CertificacionesPage() {
+  await requirePagePermission("certificaciones", "ver")
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

@@ -1,8 +1,8 @@
-"use client"
-
 import { FacturaForm } from "@/views/factura-form"
+import { requirePagePermission } from "@/shared/permissions-server"
 
-export default function NuevaFacturaPage() {
+export default async function NuevaFacturaPage() {
+  await requirePagePermission("facturas", "crear", "/facturas")
   return (
     <div className="space-y-6">
       <div>

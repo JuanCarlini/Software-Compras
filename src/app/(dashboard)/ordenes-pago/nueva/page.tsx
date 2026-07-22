@@ -2,8 +2,10 @@ import { OrdenPagoForm } from "@/views/orden-pago-form"
 import { Button } from "@/views/ui/button"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { requirePagePermission } from "@/shared/permissions-server"
 
-export default function NuevaOrdenPagoPage() {
+export default async function NuevaOrdenPagoPage() {
+  await requirePagePermission("ordenes_pago", "crear", "/ordenes-pago")
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-4">

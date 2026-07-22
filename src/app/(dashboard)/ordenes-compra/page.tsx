@@ -1,7 +1,9 @@
 import { OrdenCompraList } from "@/views/orden-compra-list"
 import { CrearButton } from "@/views/crear-button"
+import { requirePagePermission } from "@/shared/permissions-server"
 
-export default function OrdenesCompraPage() {
+export default async function OrdenesCompraPage() {
+  await requirePagePermission("ordenes_compra", "ver")
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

@@ -1,6 +1,8 @@
 import { ProveedorForm } from "@/views/proveedor-form"
+import { requirePagePermission } from "@/shared/permissions-server"
 
-export default function NuevoProveedorPage() {
+export default async function NuevoProveedorPage() {
+  await requirePagePermission("proveedores", "crear", "/proveedores")
   return (
     <div className="space-y-6">
       <div>

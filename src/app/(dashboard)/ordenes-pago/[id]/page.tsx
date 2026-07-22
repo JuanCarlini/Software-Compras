@@ -1,9 +1,7 @@
 import { OrdenPagoDetails } from "@/views/orden-pago-details"
+import { requirePagePermission } from "@/shared/permissions-server"
 
-interface Props {
-  params: Promise<{ id: string }>
-}
-
-export default function OrdenPagoDetailPage({ params }: Props) {
+export default async function OrdenPagoDetailPage() {
+  await requirePagePermission("ordenes_pago", "ver")
   return <OrdenPagoDetails />
 }

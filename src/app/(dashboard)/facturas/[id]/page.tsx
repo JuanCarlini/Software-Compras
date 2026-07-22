@@ -1,7 +1,7 @@
-"use client"
-
 import { FacturaDetail } from "@/views/factura-detail"
+import { requirePagePermission } from "@/shared/permissions-server"
 
-export default function FacturaDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function FacturaDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  await requirePagePermission("facturas", "ver")
   return <FacturaDetail params={params} />
 }

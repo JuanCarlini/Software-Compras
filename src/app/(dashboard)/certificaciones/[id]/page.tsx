@@ -1,7 +1,7 @@
-"use client"
-
 import { CertificacionDetail } from "@/views/certificacion-detail"
+import { requirePagePermission } from "@/shared/permissions-server"
 
-export default function CertificacionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CertificacionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  await requirePagePermission("certificaciones", "ver")
   return <CertificacionDetail params={params} />
 }

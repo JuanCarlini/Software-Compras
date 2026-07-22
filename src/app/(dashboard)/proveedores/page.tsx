@@ -1,9 +1,9 @@
-import { Button } from "@/views/ui/button"
-import { Plus } from "lucide-react"
-import Link from "next/link"
 import { ProveedorList } from "@/views/proveedor-list"
+import { CrearButton } from "@/views/crear-button"
+import { requirePagePermission } from "@/shared/permissions-server"
 
-export default function ProveedoresPage() {
+export default async function ProveedoresPage() {
+  await requirePagePermission("proveedores", "ver")
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -11,12 +11,7 @@ export default function ProveedoresPage() {
           <h1 className="text-3xl font-bold text-foreground">Proveedores</h1>
           <p className="text-muted-foreground">Gestiona los proveedores de tu empresa</p>
         </div>
-        <Button asChild>
-          <Link href="/proveedores/nuevo">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Proveedor
-          </Link>
-        </Button>
+        <CrearButton modulo="proveedores" href="/proveedores/nuevo" label="Nuevo Proveedor" />
       </div>
       
       <ProveedorList />
