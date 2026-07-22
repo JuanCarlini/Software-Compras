@@ -6,7 +6,8 @@ import { Button } from "@/views/ui/button"
 import { Badge } from "@/views/ui/badge"
 import { SearchBar } from "@/views/ui/search-bar"
 import { SearchStats } from "@/views/ui/search-stats"
-import { Eye, Loader2 } from "lucide-react"
+import { Eye } from "lucide-react"
+import { ListShell } from "@/views/list-shell"
 import Link from "next/link"
 import { searchWithScore } from "@/shared/search-utils"
 import { formatCurrency } from "@/shared/format-utils"
@@ -46,28 +47,8 @@ export function CertificacionesList() {
     { numero_cert: 3, numero_oc: 2, proveedor_nombre: 2, estado: 2 }
   )
 
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <span className="ml-2">Cargando certificaciones...</span>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardContent className="text-center py-8">
-          <p className="text-destructive">Error: {error}</p>
-        </CardContent>
-      </Card>
-    )
-  }
-
   return (
+    <ListShell loading={loading} error={error} loadingText="Cargando certificaciones...">
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -148,5 +129,6 @@ export function CertificacionesList() {
         </div>
       </CardContent>
     </Card>
+    </ListShell>
   )
 }

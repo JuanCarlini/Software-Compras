@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
 import { SearchBar } from "@/views/ui/search-bar"
 import { Eye, CheckCircle, XCircle, Loader2 } from "lucide-react"
+import { ListShell } from "@/views/list-shell"
 import Link from "next/link"
 import { useOrders } from "@/shared/use-orders"
 import { formatCurrency } from "@/shared/format-utils"
@@ -54,28 +55,8 @@ export function OrdenCompraList() {
     }
   }
 
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <span className="ml-2">Cargando órdenes...</span>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardContent className="text-center py-8">
-          <p className="text-destructive">Error: {error}</p>
-        </CardContent>
-      </Card>
-    )
-  }
-
   return (
+    <ListShell loading={loading} error={error} loadingText="Cargando órdenes...">
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -197,5 +178,6 @@ export function OrdenCompraList() {
         </div>
       </CardContent>
     </Card>
+    </ListShell>
   )
 }

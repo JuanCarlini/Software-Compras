@@ -3,7 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
 import { SearchBar } from "@/views/ui/search-bar"
-import { Eye, Edit, CheckCircle, XCircle, Loader2, Building2, Mail, Phone, MapPin } from "lucide-react"
+import { Eye, Edit, CheckCircle, XCircle, Building2, Mail, Phone, MapPin } from "lucide-react"
+import { ListShell } from "@/views/list-shell"
 import Link from "next/link"
 import { useState } from "react"
 import { useProveedores } from "@/shared/use-proveedores"
@@ -60,28 +61,8 @@ export function ProveedorList() {
     }
   }
 
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <span className="ml-2">Cargando proveedores...</span>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardContent className="text-center py-8">
-          <p className="text-destructive">Error: {error}</p>
-        </CardContent>
-      </Card>
-    )
-  }
-
   return (
+    <ListShell loading={loading} error={error} loadingText="Cargando proveedores...">
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -208,5 +189,6 @@ export function ProveedorList() {
         </div>
       </CardContent>
     </Card>
+    </ListShell>
   )
 }
