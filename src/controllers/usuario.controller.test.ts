@@ -1,14 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import bcrypt from "bcryptjs"
 import { UsuarioRepository } from "@/repositories/usuario.repository"
+import { RolRepository } from "@/repositories/rol.repository"
 import { UsuarioService } from "./usuario.controller"
 
 vi.mock("@/repositories/usuario.repository", () => ({
   UsuarioRepository: {
     findByEmail: vi.fn(),
+    findById: vi.fn(),
     insert: vi.fn(),
     update: vi.fn(),
     updatePassword: vi.fn(),
+  },
+}))
+vi.mock("@/repositories/rol.repository", () => ({
+  RolRepository: {
+    findByNombre: vi.fn(),
   },
 }))
 // bcrypt mockeado: determinístico y rápido (no queremos hashear de verdad en el test).
@@ -17,6 +24,7 @@ vi.mock("bcryptjs", () => ({
 }))
 
 const repo = vi.mocked(UsuarioRepository)
+const rolRepo = vi.mocked(RolRepository)
 const bcryptMock = vi.mocked(bcrypt)
 
 beforeEach(() => vi.clearAllMocks())
@@ -56,5 +64,52 @@ describe("UsuarioService.resetPassword", () => {
     expect(bcryptMock.hash).toHaveBeenCalledWith("nueva", 10)
     expect(repo.updatePassword).toHaveBeenCalledWith(5, "hash(nueva)")
     expect(ok).toBe(true)
+  })
+})
+
+describe("UsuarioService.updateRol", () => {
+  it("rechaza un rol fuera de la whitelist (no toca la DB)", async () => {
+    await expect(
+      UsuarioService.updateRol(1, "superuser", { id: 99 })
+    ).rejects.toMatchObject({ status: 400 })
+    expect(repo.findById).not.toHaveBeenCalled()
+    expect(repo.update).not.toHaveBeenCalled()
+  })
+
+  it("404 si el usuario no existe", async () => {
+    repo.findById.mockResolvedValue(null)
+    await expect(
+      UsuarioService.updateRol(1, "supervisor", { id: 99 })
+    ).rejects.toMatchObject({ status: 404 })
+    expect(repo.update).not.toHaveBeenCalled()
+  })
+
+  it("impide que un admin se quite a sí mismo el rol admin (anti auto-lockout)", async () => {
+    repo.findById.mockResolvedValue({ id: 7, email: "a@b.com", gu_roles: { nombre: "admin" } })
+    await expect(
+      UsuarioService.updateRol(7, "usuario", { id: 7 })
+    ).rejects.toMatchObject({ status: 400 })
+    expect(repo.update).not.toHaveBeenCalled()
+  })
+
+  it("404 si el rol destino no existe en gu_roles", async () => {
+    repo.findById.mockResolvedValue({ id: 7, email: "a@b.com", gu_roles: { nombre: "usuario" } })
+    rolRepo.findByNombre.mockResolvedValue(null)
+    await expect(
+      UsuarioService.updateRol(7, "supervisor", { id: 1 })
+    ).rejects.toMatchObject({ status: 404 })
+    expect(repo.update).not.toHaveBeenCalled()
+  })
+
+  it("cambia el rol: resuelve el rol_id y actualiza el usuario", async () => {
+    repo.findById.mockResolvedValue({ id: 7, email: "a@b.com", gu_roles: { nombre: "usuario" } })
+    rolRepo.findByNombre.mockResolvedValue({ id: 3 })
+    repo.update.mockResolvedValue({ id: 7 })
+
+    const res = await UsuarioService.updateRol(7, "supervisor", { id: 1 })
+
+    expect(rolRepo.findByNombre).toHaveBeenCalledWith("supervisor")
+    expect(repo.update).toHaveBeenCalledWith(7, { rol_id: 3 })
+    expect(res).toEqual({ id: 7, email: "a@b.com", rol: "supervisor" })
   })
 })

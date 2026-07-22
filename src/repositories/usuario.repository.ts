@@ -15,6 +15,13 @@ export class UsuarioRepository {
     return (data as { id: number } | null) ?? null
   }
 
+  // Proyección sin hash + nombre del rol (para la guarda anti auto-lockout del cambio de rol).
+  static async findById(id: number): Promise<any | null> {
+    const supabase = createClient()
+    const { data } = await supabase.from(TABLE).select(SELECT_SIN_HASH).eq("id", id).maybeSingle()
+    return data ?? null
+  }
+
   static async insert(usuario: TablesInsert<"gu_usuario">): Promise<any> {
     const supabase = createClient()
     const { data, error } = await supabase.from(TABLE).insert(usuario).select(SELECT_SIN_HASH).single()

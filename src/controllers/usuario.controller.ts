@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs"
 import { UsuarioRepository } from "@/repositories/usuario.repository"
+import { RolRepository } from "@/repositories/rol.repository"
 import { HttpError } from "@/shared/http-error"
 
 export interface CreateUsuarioData {
@@ -39,6 +40,34 @@ export class UsuarioService {
   static async update(id: number, data: UpdateUsuarioData) {
     // cast al borde de persistencia (el repo trabaja con columnas sueltas, sin tipar)
     return UsuarioRepository.update(id, { ...data } as Record<string, unknown>)
+  }
+
+  // Cambio de rol por admin. Antes esta lógica vivía en la ruta con .from() crudo
+  // (violaba SRP/DIP); acá delega a los repos. Guarda anti auto-lockout: un admin
+  // no puede quitarse a sí mismo el rol admin.
+  static async updateRol(id: number, nuevoRol: string, actor: { id: number }) {
+    const VALIDOS = ["admin", "supervisor", "usuario", "readonly"]
+    if (!VALIDOS.includes(nuevoRol)) {
+      throw new HttpError(400, "Rol inválido")
+    }
+
+    const actual = await UsuarioRepository.findById(id)
+    if (!actual) {
+      throw new HttpError(404, "Usuario no encontrado")
+    }
+
+    const rolActual = (actual.gu_roles as { nombre?: string } | null)?.nombre?.toLowerCase()
+    if (actual.id === actor.id && rolActual === "admin" && nuevoRol !== "admin") {
+      throw new HttpError(400, "No puedes quitarte a ti mismo el rol de administrador")
+    }
+
+    const rolNuevo = await RolRepository.findByNombre(nuevoRol)
+    if (!rolNuevo) {
+      throw new HttpError(404, "Rol no encontrado")
+    }
+
+    await UsuarioRepository.update(id, { rol_id: rolNuevo.id })
+    return { id: actual.id, email: actual.email, rol: nuevoRol }
   }
 
   // Reset administrativo: pisa la clave sin pedir la anterior (distinto de changePassword)
