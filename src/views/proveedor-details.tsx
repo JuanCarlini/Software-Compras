@@ -108,7 +108,7 @@ export function ProveedorDetails({ proveedor, onActivar, onSuspender }: Props) {
                   disabled={isProcessing}
                 >
                   <XCircle className="h-4 w-4 mr-2 text-red-600" />
-                  Suspender
+                  Desactivar
                 </Button>
               ) : (
                 <Button

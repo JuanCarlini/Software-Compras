@@ -29,7 +29,7 @@ interface FilaAuditoria {
 interface UsuarioOpc { id: number; nombre: string }
 
 const TABLAS = ["sesion", "gu_ordenesdecompra", "gu_certificaciones", "gu_facturas", "gu_ordenesdepago", "gu_proveedores"]
-const ACCIONES = ["login", "logout", "crear", "actualizar", "eliminar", "aprobar", "rechazar", "anular", "activar", "suspender"]
+const ACCIONES = ["login", "logout", "crear", "actualizar", "eliminar", "aprobar", "rechazar", "anular", "activar", "desactivar"]
 const TODOS = "__todos__"
 
 // Diferencia campo a campo entre datos anteriores y nuevos (control de cambios)

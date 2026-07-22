@@ -162,8 +162,8 @@ export function ProveedorList() {
                       <Button
                         variant="outline"
                         size="sm"
-                        title="Suspender proveedor"
-                        aria-label="Suspender proveedor"
+                        title="Desactivar proveedor"
+                        aria-label="Desactivar proveedor"
                         onClick={() => handleSuspender(proveedor.id)}
                         disabled={processingId === proveedor.id}
                       >

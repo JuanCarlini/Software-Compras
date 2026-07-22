@@ -23,7 +23,7 @@ export type AccionAuditoria =
   | 'login' | 'logout'
   | 'crear' | 'actualizar' | 'eliminar'
   | 'aprobar' | 'rechazar' | 'anular'
-  | 'activar' | 'suspender' | 'resetear'
+  | 'activar' | 'desactivar' | 'resetear'
 
 interface RegistrarParams {
   usuarioId: number

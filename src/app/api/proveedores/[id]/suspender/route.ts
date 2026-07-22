@@ -21,13 +21,13 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const userRole = stringToUserRole(user!.rol)
     if (!canModificarProveedor(userRole)) {
       return NextResponse.json(
-        { error: "No tienes permisos para suspender proveedores" },
+        { error: "No tienes permisos para desactivar proveedores" },
         { status: 403 }
       )
     }
 
     const id = parseId((await params).id)
-    // La DB solo tiene activo/inactivo: "suspender" se materializa como inactivo
+    // "Desactivar" un proveedor lo pone en inactivo (el enum solo tiene activo/inactivo).
     const proveedor = await ProveedorService.update(id, { estado: EstadoProveedor.INACTIVO })
 
     if (!proveedor) {
@@ -41,8 +41,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       usuarioId: user!.id,
       tabla: "gu_proveedores",
       registroId: id,
-      accion: "suspender",
-      detalle: `Proveedor ${proveedor.nombre ?? id} suspendido (inactivo)`,
+      accion: "desactivar",
+      detalle: `Proveedor ${proveedor.nombre ?? id} desactivado (inactivo)`,
     })
 
     return NextResponse.json(proveedor)
