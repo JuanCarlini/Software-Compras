@@ -10,9 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Input } from "@/views/ui/input"
 import { Label } from "@/views/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/views/ui/select"
-import { Alert, AlertDescription } from "@/views/ui/alert"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/views/ui/form"
-import { Loader2, Plus, Trash2, AlertCircle } from "lucide-react"
+import { FormRootError } from "@/views/form-root-error"
+import { Loader2, Plus, Trash2 } from "lucide-react"
 import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
 import { formatCurrency } from "@/shared/format-utils"
 
@@ -166,12 +166,7 @@ export function FacturaForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {form.formState.errors.root && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{form.formState.errors.root.message}</AlertDescription>
-          </Alert>
-        )}
+        <FormRootError />
 
         <Card>
           <CardHeader>
