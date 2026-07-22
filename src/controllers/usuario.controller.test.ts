@@ -113,3 +113,50 @@ describe("UsuarioService.updateRol", () => {
     expect(res).toEqual({ id: 7, email: "a@b.com", rol: "supervisor" })
   })
 })
+
+describe("UsuarioService.update (anti auto-lockout)", () => {
+  it("impide que un admin se desactive a sí mismo", async () => {
+    await expect(
+      UsuarioService.update(7, { estado: "inactivo" }, { id: 7 })
+    ).rejects.toMatchObject({ status: 400 })
+    expect(repo.update).not.toHaveBeenCalled()
+  })
+
+  it("impide que un admin se quite el rol admin a sí mismo (rol_id != 1)", async () => {
+    await expect(
+      UsuarioService.update(7, { rol_id: 2 }, { id: 7 })
+    ).rejects.toMatchObject({ status: 400 })
+    expect(repo.update).not.toHaveBeenCalled()
+  })
+
+  it("permite editarse a sí mismo si mantiene el rol admin (rol_id = 1)", async () => {
+    repo.update.mockResolvedValue({ id: 7 })
+    await UsuarioService.update(7, { rol_id: 1, nombre: "Yo" }, { id: 7 })
+    expect(repo.update).toHaveBeenCalled()
+  })
+
+  it("permite a un admin desactivar a OTRO usuario", async () => {
+    repo.update.mockResolvedValue({ id: 9 })
+    await UsuarioService.update(9, { estado: "inactivo" }, { id: 7 })
+    expect(repo.update).toHaveBeenCalledWith(9, expect.objectContaining({ estado: "inactivo" }))
+  })
+
+  it("sin actor no aplica la guarda (compatibilidad)", async () => {
+    repo.update.mockResolvedValue({ id: 7 })
+    await UsuarioService.update(7, { estado: "inactivo" })
+    expect(repo.update).toHaveBeenCalled()
+  })
+})
+
+describe("UsuarioService.baja (anti auto-baja)", () => {
+  it("impide que un admin se dé de baja a sí mismo", async () => {
+    await expect(UsuarioService.baja(7, { id: 7 })).rejects.toMatchObject({ status: 400 })
+    expect(repo.update).not.toHaveBeenCalled()
+  })
+
+  it("da de baja a otro usuario (estado inactivo)", async () => {
+    repo.update.mockResolvedValue({ id: 9 })
+    await UsuarioService.baja(9, { id: 7 })
+    expect(repo.update).toHaveBeenCalledWith(9, { estado: "inactivo" })
+  })
+})

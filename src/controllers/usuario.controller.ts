@@ -17,6 +17,9 @@ export interface UpdateUsuarioData {
   estado?: "activo" | "inactivo"
 }
 
+// En la DB: 1=admin (seed CCIP). El anti auto-lockout se apoya en este id.
+const ROL_ADMIN_ID = 1
+
 // Gestión de usuarios por administrador (T02/T04). El I/O vive en UsuarioRepository (A1);
 // acá quedan las reglas: unicidad de email, hasheo de clave y la "baja" lógica
 // (estado = inactivo; el login filtra por estado activo).
@@ -53,9 +56,27 @@ export class UsuarioService {
     })
   }
 
-  static async update(id: number, data: UpdateUsuarioData) {
+  // `actor` es el usuario que ejecuta la acción (el admin logueado). Guarda anti auto-lockout:
+  // un admin no puede desactivarse ni quitarse el rol admin a sí mismo. Antes vivía inline en
+  // la ruta (no testeable); ahora es regla de negocio del service.
+  static async update(id: number, data: UpdateUsuarioData, actor?: { id: number }) {
+    if (
+      actor &&
+      actor.id === id &&
+      (data.estado === "inactivo" || (data.rol_id !== undefined && data.rol_id !== ROL_ADMIN_ID))
+    ) {
+      throw new HttpError(400, "No podés desactivarte ni quitarte el rol de administrador a vos mismo")
+    }
     // cast al borde de persistencia (el repo trabaja con columnas sueltas, sin tipar)
     return UsuarioRepository.update(id, { ...data } as Record<string, unknown>)
+  }
+
+  // Baja lógica (estado = inactivo; el login la excluye). Un admin no puede darse de baja a sí mismo.
+  static async baja(id: number, actor: { id: number }) {
+    if (actor.id === id) {
+      throw new HttpError(400, "No podés darte de baja a vos mismo")
+    }
+    return UsuarioRepository.update(id, { estado: "inactivo" })
   }
 
   // Cambio de rol por admin. Antes esta lógica vivía en la ruta con .from() crudo
