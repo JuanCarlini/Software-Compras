@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ProveedorService } from "@/controllers"
-import { requireRole } from "@/shared/permissions-server"
-import { ROLES_ESCRITURA, ROLES_DESTRUCTIVO } from "@/shared/permissions"
+import { requirePermission } from "@/shared/permissions-server"
 import { UpdateProveedorSchema } from "@/shared/proveedor-validation"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
@@ -14,6 +13,7 @@ interface Params {
 }
 
 export const GET = getByIdRoute({
+  autorizar: () => requirePermission("proveedores", "ver"),
   getById: (id) => ProveedorService.getById(id),
   noEncontrado: "Proveedor no encontrado",
   contexto: "GET /api/proveedores/[id]",
@@ -21,7 +21,7 @@ export const GET = getByIdRoute({
 
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
-    const { error: authError } = await requireRole(ROLES_ESCRITURA)
+    const { error: authError } = await requirePermission("proveedores", "crear")
     if (authError) return authError
 
     const id = parseId((await params).id)
@@ -41,7 +41,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    const { error: authError } = await requireRole(ROLES_DESTRUCTIVO)
+    const { error: authError } = await requirePermission("proveedores", "crear")
     if (authError) return authError
 
     const id = parseId((await params).id)

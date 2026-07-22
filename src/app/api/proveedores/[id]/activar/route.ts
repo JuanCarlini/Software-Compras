@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ProveedorService } from "@/controllers"
-import { requireAuth } from "@/shared/permissions-server"
-import { canModificarProveedor, stringToUserRole } from "@/shared/permissions"
+import { requirePermission } from "@/shared/permissions-server"
 import { EstadoProveedor } from "@/models"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
@@ -13,18 +12,8 @@ interface Params {
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
-    // Verificar autenticación
-    const { error: authError, user } = await requireAuth()
+    const { error: authError, user } = await requirePermission("proveedores", "crear")
     if (authError) return authError
-
-    // Verificar permisos para modificar proveedores
-    const userRole = stringToUserRole(user!.rol)
-    if (!canModificarProveedor(userRole)) {
-      return NextResponse.json(
-        { error: "No tienes permisos para activar proveedores" },
-        { status: 403 }
-      )
-    }
 
     const id = parseId((await params).id)
     const proveedor = await ProveedorService.update(id, { estado: EstadoProveedor.ACTIVO })
