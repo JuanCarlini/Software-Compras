@@ -1,5 +1,19 @@
 import { createClient } from '@/lib/supabase/service'
 import { getCurrentUser } from '@/lib/auth/auth.cookies'
+import { HttpError } from '@/shared/http-error'
+
+// Valores del enum audit_accion (columna gu_audit_log.accion). La bitácora
+// (gu_auditoria.accion) es texto libre y acepta cualquier filtro.
+const ACCIONES_CAMBIO = ['crear', 'actualizar', 'eliminar'] as const
+
+export interface ConsultaAuditoria {
+  fuente: 'bitacora' | 'cambios'
+  usuarioId?: string | null
+  tabla?: string | null
+  accion?: string | null
+  desde?: string | null // YYYY-MM-DD
+  hasta?: string | null // YYYY-MM-DD
+}
 
 // Bitácora de operaciones con usuario (T06). Se escribe SERVER-SIDE, donde el JWT
 // identifica al usuario, a gu_auditoria. Complementa el control de cambios que los
@@ -47,5 +61,75 @@ export class AuditService {
     const user = await getCurrentUser()
     if (!user) return
     await AuditService.registrar({ usuarioId: user.id, ...params })
+  }
+
+  /**
+   * Consulta de auditoría (pantalla /admin/auditoria). Dos fuentes:
+   * - 'bitacora' (gu_auditoria): operaciones con usuario.
+   * - 'cambios' (gu_audit_log): historial de valores anteriores/nuevos.
+   * Es la única lectura de auditoría; antes vivía como .from() crudo en la ruta.
+   */
+  static async consultar(f: ConsultaAuditoria) {
+    const supabase = createClient()
+
+    if (f.fuente === 'cambios') {
+      // El filtro se compara contra un enum de Postgres: un valor fuera del enum
+      // reventaba la query. Antes un 400 que un 500 silencioso.
+      if (f.accion && !(ACCIONES_CAMBIO as readonly string[]).includes(f.accion)) {
+        throw new HttpError(
+          400,
+          `Acción inválida para el control de cambios. Válidas: ${ACCIONES_CAMBIO.join(', ')}`
+        )
+      }
+
+      let q = supabase
+        .from('gu_audit_log')
+        .select('id, tabla_afectada, registro_id, usuario_id, accion, datos_anteriores, datos_nuevos, created_at, gu_usuario(nombre, email)')
+        .order('created_at', { ascending: false })
+        .limit(500)
+
+      if (f.usuarioId) q = q.eq('usuario_id', Number(f.usuarioId))
+      if (f.tabla) q = q.eq('tabla_afectada', f.tabla)
+      if (f.accion) q = q.eq('accion', f.accion as (typeof ACCIONES_CAMBIO)[number])
+      if (f.desde) q = q.gte('created_at', `${f.desde}T00:00:00`)
+      if (f.hasta) q = q.lte('created_at', `${f.hasta}T23:59:59`)
+
+      const { data, error } = await q
+      if (error) throw error
+      return (data || []).map((r: any) => ({
+        id: r.id,
+        tabla: r.tabla_afectada,
+        registro_id: r.registro_id,
+        usuario: r.gu_usuario?.nombre ?? (r.usuario_id ? `#${r.usuario_id}` : 'sistema/directo'),
+        accion: r.accion,
+        datos_anteriores: r.datos_anteriores,
+        datos_nuevos: r.datos_nuevos,
+        fecha: r.created_at,
+      }))
+    }
+
+    let q = supabase
+      .from('gu_auditoria')
+      .select('id, tabla_origen, registro_id, usuario_id, accion, motivo_cambio, fecha_cambio, gu_usuario(nombre, email)')
+      .order('fecha_cambio', { ascending: false })
+      .limit(500)
+
+    if (f.usuarioId) q = q.eq('usuario_id', Number(f.usuarioId))
+    if (f.tabla) q = q.eq('tabla_origen', f.tabla)
+    if (f.accion) q = q.eq('accion', f.accion)
+    if (f.desde) q = q.gte('fecha_cambio', `${f.desde}T00:00:00`)
+    if (f.hasta) q = q.lte('fecha_cambio', `${f.hasta}T23:59:59`)
+
+    const { data, error } = await q
+    if (error) throw error
+    return (data || []).map((r: any) => ({
+      id: r.id,
+      tabla: r.tabla_origen,
+      registro_id: r.registro_id,
+      usuario: r.gu_usuario?.nombre ?? `#${r.usuario_id}`,
+      accion: r.accion,
+      detalle: r.motivo_cambio,
+      fecha: r.fecha_cambio,
+    }))
   }
 }

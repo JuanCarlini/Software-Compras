@@ -21,6 +21,22 @@ export interface UpdateUsuarioData {
 // acá quedan las reglas: unicidad de email, hasheo de clave y la "baja" lógica
 // (estado = inactivo; el login filtra por estado activo).
 export class UsuarioService {
+  // Listado para la administración de usuarios: mapea la fila + join de rol al shape de la UI.
+  static async getAll() {
+    const rows = await UsuarioRepository.findAllConRoles()
+    return rows.map((u) => ({
+      id: u.id,
+      email: u.email,
+      nombre: u.nombre || "",
+      apellido: "", // no existe en gu_usuario; la UI lo espera
+      rol: (u.gu_roles as { nombre?: string } | null)?.nombre?.toLowerCase() || "usuario",
+      rol_id: u.rol_id,
+      estado: u.estado ?? "activo",
+      created_at: u.created_at,
+      last_sign_in_at: null, // no se registra en gu_usuario
+    }))
+  }
+
   static async create(data: CreateUsuarioData) {
     if (await UsuarioRepository.findByEmail(data.email)) {
       throw new HttpError(409, "El email ya está registrado")

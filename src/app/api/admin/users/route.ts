@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAuth, requireAdmin } from "@/shared/permissions-server"
 import { isAdmin } from "@/shared/permissions"
 import { UserRole } from "@/models"
-import { createClient } from "@/lib/supabase/service"
 import { UsuarioService } from "@/controllers/usuario.controller"
 import { AuditService } from "@/lib/audit/audit.service"
 import { handleRouteError } from "@/shared/handle-route-error"
@@ -19,53 +18,14 @@ export async function GET(request: NextRequest) {
 
     // Verificar que sea admin
     if (!isAdmin(user!.rol as UserRole)) {
-      console.error("Usuario no es admin:", user!.rol)
       return NextResponse.json(
         { error: "No tienes permisos para acceder a esta sección" },
         { status: 403 }
       )
     }
 
-    // Obtener todos los usuarios de gu_usuario con sus roles
-    const supabase = await createClient()
-    const { data: guUsers, error } = await supabase
-      .from('gu_usuario')
-      .select(`
-        id,
-        email,
-        nombre,
-        rol_id,
-        estado,
-        created_at,
-        gu_roles (
-          id,
-          nombre
-        )
-      `)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error("Error al listar usuarios desde Supabase:", error)
-      return NextResponse.json(
-        { error: `Error al obtener usuarios: ${error.message}` },
-        { status: 500 }
-      )
-    }
-
-    // Mapear usuarios a formato simple con rol desde gu_roles
-    const mappedUsers = (guUsers || []).map(u => ({
-      id: u.id,
-      email: u.email,
-      nombre: u.nombre || '',
-      apellido: '', // Campo apellido no existe en gu_usuario
-      rol: (u.gu_roles as any)?.nombre?.toLowerCase() || 'usuario',
-      rol_id: u.rol_id,
-      estado: (u as any).estado ?? 'activo',
-      created_at: u.created_at,
-      last_sign_in_at: null, // No tenemos esta info en gu_usuario
-    }))
-
-    return NextResponse.json(mappedUsers)
+    const users = await UsuarioService.getAll()
+    return NextResponse.json(users)
   } catch (error) {
     return handleRouteError(error, "GET /api/admin/users")
   }

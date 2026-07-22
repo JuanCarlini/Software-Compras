@@ -22,6 +22,17 @@ export class UsuarioRepository {
     return data ?? null
   }
 
+  // Listado con el rol (id + nombre) para la pantalla de administración de usuarios.
+  static async findAllConRoles(): Promise<any[]> {
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from(TABLE)
+      .select("id, email, nombre, rol_id, estado, created_at, gu_roles(id, nombre)")
+      .order("created_at", { ascending: false })
+    if (error) throw error
+    return data || []
+  }
+
   static async insert(usuario: TablesInsert<"gu_usuario">): Promise<any> {
     const supabase = createClient()
     const { data, error } = await supabase.from(TABLE).insert(usuario).select(SELECT_SIN_HASH).single()
