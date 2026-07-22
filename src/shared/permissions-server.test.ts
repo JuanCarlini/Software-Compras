@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { getCurrentUser } from "@/lib/auth/auth.cookies"
 import { RolRepository } from "@/repositories/rol.repository"
 import { ROLES_ESCRITURA } from "@/shared/permissions"
-import { requireAuth, requireAdmin, requireRole, requirePermission } from "./permissions-server"
+import { requireAuth, requireAdmin, requireRole, requirePermission, requirePagePermission } from "./permissions-server"
+import { redirect } from "next/navigation"
 
 // Enforcement RBAC (S1): la barrera de autorización de toda ruta mutante. Antes sin un
 // solo test. Se mockea la frontera (cookie + repo de permisos) y se ejerce la decisión real.
@@ -10,9 +11,12 @@ vi.mock("@/lib/auth/auth.cookies", () => ({ getCurrentUser: vi.fn() }))
 vi.mock("@/repositories/rol.repository", () => ({
   RolRepository: { findPermisosByNombre: vi.fn() },
 }))
+// redirect() corta el flujo (como en runtime, donde tira NEXT_REDIRECT).
+vi.mock("next/navigation", () => ({ redirect: vi.fn(() => { throw new Error("REDIRECT") }) }))
 
 const getUser = vi.mocked(getCurrentUser)
 const rolRepo = vi.mocked(RolRepository)
+const redirectMock = vi.mocked(redirect)
 
 // getCurrentUser devuelve el usuario "crudo"; getAuthenticatedUser lee rol_nombre.
 const comoRol = (rol_nombre: string, id = 1) =>
@@ -97,5 +101,45 @@ describe("requirePermission", () => {
     comoRol("usuario")
     rolRepo.findPermisosByNombre.mockResolvedValue(["ordenes_compra:crear"])
     expect((await requirePermission("ordenes_compra", "crear")).error).toBeNull()
+  })
+})
+
+describe("requirePagePermission (guarda de página)", () => {
+  it("redirige a /login sin usuario", async () => {
+    getUser.mockResolvedValue(null as any)
+    await expect(requirePagePermission("certificaciones", "ver")).rejects.toThrow()
+    expect(redirectMock).toHaveBeenCalledWith("/login")
+  })
+
+  it("redirige al fallback si el rol no tiene el permiso", async () => {
+    comoRol("usuario")
+    rolRepo.findPermisosByNombre.mockResolvedValue([])
+    await expect(
+      requirePagePermission("certificaciones", "crear", "/certificaciones")
+    ).rejects.toThrow()
+    expect(redirectMock).toHaveBeenCalledWith("/certificaciones")
+  })
+
+  it("redirige al default /dashboard si no se pasa fallback", async () => {
+    comoRol("readonly")
+    rolRepo.findPermisosByNombre.mockResolvedValue([])
+    await expect(requirePagePermission("facturas", "crear")).rejects.toThrow()
+    expect(redirectMock).toHaveBeenCalledWith("/dashboard")
+  })
+
+  it("devuelve el usuario si tiene el permiso (y NO redirige)", async () => {
+    comoRol("usuario")
+    rolRepo.findPermisosByNombre.mockResolvedValue(["certificaciones:crear"])
+    const { user } = await requirePagePermission("certificaciones", "crear")
+    expect(user.rol).toBe("usuario")
+    expect(redirectMock).not.toHaveBeenCalled()
+  })
+
+  it("admin pasa siempre (short-circuit), sin importar la matriz", async () => {
+    comoRol("admin")
+    rolRepo.findPermisosByNombre.mockResolvedValue([])
+    const { user } = await requirePagePermission("facturas", "aprobar")
+    expect(user.rol).toBe("admin")
+    expect(redirectMock).not.toHaveBeenCalled()
   })
 })

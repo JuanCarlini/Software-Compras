@@ -1,5 +1,6 @@
 import { UserRole } from "@/models"
 import { NextResponse } from "next/server"
+import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth/auth.cookies"
 import { isAdmin, stringToUserRole, tienePermiso } from "@/shared/permissions"
 import { RolRepository } from "@/repositories/rol.repository"
@@ -115,4 +116,18 @@ export async function requirePermission(modulo: string, accion: string) {
   }
 
   return { error: null, user }
+}
+
+/**
+ * Guarda de PÁGINA (Server Components). Equivalente de requirePermission para páginas:
+ * si no hay usuario redirige a /login; si el rol no tiene `modulo:accion`, redirige al
+ * fallback (default /dashboard). Permisos frescos por request (sin staleness). La fuente
+ * de verdad de la autorización sigue siendo la API — esto bloquea el acceso por URL directa.
+ */
+export async function requirePagePermission(modulo: string, accion: string, fallbackUrl = "/dashboard") {
+  const user = await getAuthenticatedUser()
+  if (!user) redirect("/login")
+  const permisos = await RolRepository.findPermisosByNombre(user.rol)
+  if (!tienePermiso(user.rol, permisos, modulo, accion)) redirect(fallbackUrl)
+  return { user }
 }
