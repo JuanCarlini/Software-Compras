@@ -93,7 +93,8 @@ export function CertificacionForm() {
     }
     fetch(`/api/certificaciones/lineas-oc-disponibles?ordenCompraId=${ordenCompraId}`)
       .then((r) => (r.ok ? r.json() : []))
-      .then(setLineasOC)
+      // No mostrar líneas ya 100% certificadas (sin avance disponible).
+      .then((data: LineaOCDisponible[]) => setLineasOC(data.filter((l) => l.cantidad_disponible > 0)))
       .catch(() => setLineasOC([]))
     setAvances({})
   }, [ordenCompraId])
