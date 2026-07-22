@@ -19,52 +19,29 @@ import { useAuth } from "@/shared/auth-context"
 import { isAdmin, stringToUserRole } from "@/shared/permissions"
 import { Button } from "@/views/ui/button"
 
+// `modulo` = clave de la matriz; si está, el item solo se muestra con permiso `ver`.
+// Dashboard y Reportes no son módulos de matriz → siempre visibles.
 const menuItems = [
-  {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: Home,
-  },
-  {
-    title: "Órdenes de Compra",
-    url: "/ordenes-compra",
-    icon: ShoppingCart,
-  },
-  {
-    title: "Certificaciones",
-    url: "/certificaciones",
-    icon: FileCheck,
-  },
-  {
-    title: "Facturas",
-    url: "/facturas",
-    icon: Receipt,
-  },
-  {
-    title: "Órdenes de Pago",
-    url: "/ordenes-pago",
-    icon: CreditCard,
-  },
-  {
-    title: "Proveedores",
-    url: "/proveedores",
-    icon: Building2,
-  },
-  {
-    title: "Reportes",
-    url: "/reportes",
-    icon: BarChart3,
-  },
+  { title: "Dashboard", url: "/dashboard", icon: Home },
+  { title: "Órdenes de Compra", url: "/ordenes-compra", icon: ShoppingCart, modulo: "ordenes_compra" },
+  { title: "Certificaciones", url: "/certificaciones", icon: FileCheck, modulo: "certificaciones" },
+  { title: "Facturas", url: "/facturas", icon: Receipt, modulo: "facturas" },
+  { title: "Órdenes de Pago", url: "/ordenes-pago", icon: CreditCard, modulo: "ordenes_pago" },
+  { title: "Proveedores", url: "/proveedores", icon: Building2, modulo: "proveedores" },
+  { title: "Reportes", url: "/reportes", icon: BarChart3 },
 ]
 
 export function AppSidebar() {
   const pathname = usePathname()
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, puede } = useAuth()
 
   // Verificar si el usuario es admin
   const userRole = user ? stringToUserRole(user.rol) : null
   const userIsAdmin = userRole ? isAdmin(userRole) : false
+
+  // Solo los módulos que el rol puede ver (Dashboard/Reportes no llevan módulo → siempre).
+  const visibles = menuItems.filter((item) => !item.modulo || puede(item.modulo, "ver"))
 
   const handleLogout = async () => {
     try {
@@ -95,7 +72,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
+              {visibles.map((item) => {
                 const isActive = pathname === item.url
                 return (
                   <SidebarMenuItem key={item.title}>
