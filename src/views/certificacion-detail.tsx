@@ -10,7 +10,6 @@ import { ArrowLeft, FileText, Calendar, Building2, User, Check, X } from "lucide
 import { showErrorToast, showSuccessToast } from "@/shared/toast-helpers"
 import { formatCurrency } from "@/shared/format-utils"
 import { useAuth } from "@/shared/auth-context"
-import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 import { StatusBadge } from "@/shared/status-badge"
 import {
   AlertDialog,
@@ -61,17 +60,13 @@ interface Props {
 
 export function CertificacionDetail({ params }: Props) {
   const { id } = use(params)
-  const { user } = useAuth()
+  const { puede } = useAuth()
   const [cert, setCert] = useState<CertDetalle | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [showApproveDialog, setShowApproveDialog] = useState(false)
   const [showRejectDialog, setShowRejectDialog] = useState(false)
   const router = useRouter()
-
-  // Verificar permisos
-  const userRole = user ? stringToUserRole(user.rol) : null
-  const canModify = userRole ? canAnularDocumento(userRole) : false
 
   const fetchCertificacion = useCallback(async () => {
     try {
@@ -148,14 +143,14 @@ export function CertificacionDetail({ params }: Props) {
         </Button>
 
         <div className="flex gap-2">
-          {puedeMandarAAprobar && (
+          {puedeMandarAAprobar && puede("certificaciones", "crear") && (
             <Button onClick={() => cambiarEstado("en_aprobacion")} disabled={updating}>
               <Check className="h-4 w-4 mr-2" />
               Mandar a aprobar
             </Button>
           )}
 
-          {canModify && puedeAprobar && (
+          {puede("certificaciones", "aprobar") && puedeAprobar && (
             <Button
               onClick={() => setShowApproveDialog(true)}
               disabled={updating}
@@ -166,7 +161,7 @@ export function CertificacionDetail({ params }: Props) {
             </Button>
           )}
 
-          {canModify && puedeRechazar && (
+          {puede("certificaciones", "aprobar") && puedeRechazar && (
             <Button
               onClick={() => setShowRejectDialog(true)}
               disabled={updating}

@@ -1,0 +1,23 @@
+"use client"
+
+import { Button } from "@/views/ui/button"
+import { Plus } from "lucide-react"
+import Link from "next/link"
+import { useAuth } from "@/shared/auth-context"
+
+// Botón "Nueva X" que solo aparece si el rol tiene el permiso `modulo:crear`. El backend
+// igual gatea el POST (requirePermission) — esto es la contraparte de UI para no mostrar
+// una acción que daría 403.
+export function CrearButton({ modulo, href, label }: { modulo: string; href: string; label: string }) {
+  const { puede } = useAuth()
+  if (!puede(modulo, "crear")) return null
+
+  return (
+    <Button asChild>
+      <Link href={href}>
+        <Plus className="h-4 w-4 mr-2" />
+        {label}
+      </Link>
+    </Button>
+  )
+}

@@ -1,7 +1,5 @@
 import { OrdenPagoList } from "@/views/orden-pago-list"
-import { Button } from "@/views/ui/button"
-import { Plus } from "lucide-react"
-import Link from "next/link"
+import { CrearButton } from "@/views/crear-button"
 
 export default function OrdenesPagoPage() {
   return (
@@ -11,12 +9,7 @@ export default function OrdenesPagoPage() {
           <h1 className="text-3xl font-bold text-foreground">Órdenes de Pago</h1>
           <p className="text-muted-foreground">Gestiona las órdenes de pago a proveedores</p>
         </div>
-        <Button asChild>
-          <Link href="/ordenes-pago/nueva">
-            <Plus className="h-4 w-4 mr-2" />
-            Nueva Orden de Pago
-          </Link>
-        </Button>
+        <CrearButton modulo="ordenes_pago" href="/ordenes-pago/nueva" label="Nueva Orden de Pago" />
       </div>
       <OrdenPagoList />
     </div>

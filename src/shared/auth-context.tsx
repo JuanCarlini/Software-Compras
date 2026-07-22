@@ -2,11 +2,16 @@
 
 import { createContext, useContext, useEffect, useState } from "react"
 import { AuthUser } from "@/models"
+import { tienePermiso } from "@/shared/permissions"
 
 interface AuthContextType {
   user: AuthUser | null
   loading: boolean
   refreshUser: () => Promise<void>
+  // ¿El usuario actual tiene el permiso `modulo:accion`? (admin siempre; el resto por su
+  // matriz). Mismo criterio que requirePermission en el server — la fuente de verdad sigue
+  // siendo el backend; esto es solo para ocultar botones que igual darían 403.
+  puede: (modulo: string, accion: string) => boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -37,8 +42,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshUser()
   }, [])
 
+  const puede = (modulo: string, accion: string) =>
+    user ? tienePermiso(user.rol, user.permisos ?? [], modulo, accion) : false
+
   return (
-    <AuthContext.Provider value={{ user, loading, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, refreshUser, puede }}>
       {children}
     </AuthContext.Provider>
   )

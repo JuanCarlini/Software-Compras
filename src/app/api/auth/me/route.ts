@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getCurrentUser } from '@/lib/auth/auth.cookies'
+import { RolRepository } from '@/repositories/rol.repository'
 
 export async function GET() {
   try {
@@ -12,14 +13,13 @@ export async function GET() {
       )
     }
 
+    const rol = user.rol_nombre?.toLowerCase() || 'usuario'
+    // Permisos del rol para que el cliente gatee botones (mismo criterio que requirePermission).
+    const permisos = await RolRepository.findPermisosByNombre(rol)
+
     // Mapear el usuario al formato esperado por el frontend (models/user.model.ts AuthUser)
     return NextResponse.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        nombre: user.nombre,
-        rol: user.rol_nombre?.toLowerCase() || 'usuario'
-      }
+      user: { id: user.id, email: user.email, nombre: user.nombre, rol, permisos }
     })
     
   } catch (error) {

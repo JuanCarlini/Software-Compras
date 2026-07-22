@@ -8,7 +8,6 @@ import { formatDateShort } from "@/shared/date-utils"
 import { formatCurrency } from "@/shared/format-utils"
 import { StatusBadge } from "@/shared/status-badge"
 import { useAuth } from "@/shared/auth-context"
-import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 import { showErrorToast } from "@/shared/toast-helpers"
 import {
   Loader2,
@@ -57,15 +56,11 @@ export function OrdenPagoDetails() {
   const params = useParams()
   const router = useRouter()
   const id = params.id as string
-  const { user } = useAuth()
+  const { puede } = useAuth()
   const [orden, setOrden] = useState<OrdenPagoDetalle | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [processing, setProcessing] = useState(false)
-
-  // Verificar permisos
-  const userRole = user ? stringToUserRole(user.rol) : null
-  const canModify = userRole ? canAnularDocumento(userRole) : false
 
   const fetchOrden = useCallback(async () => {
     try {
@@ -150,15 +145,14 @@ export function OrdenPagoDetails() {
           Volver
         </Button>
 
-        {canModify && (
-          <div className="flex gap-2">
-            {orden.estado === "borrador" && (
+        <div className="flex gap-2">
+            {orden.estado === "borrador" && puede("ordenes_pago", "crear") && (
               <Button onClick={() => cambiarEstado("en_aprobacion")} disabled={processing}>
                 {processing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}
                 Mandar a aprobar
               </Button>
             )}
-            {orden.estado === "en_aprobacion" && (
+            {orden.estado === "en_aprobacion" && puede("ordenes_pago", "aprobar") && (
               <>
                 <Button
                   onClick={() => cambiarEstado("aprobado")}
@@ -174,7 +168,7 @@ export function OrdenPagoDetails() {
                 </Button>
               </>
             )}
-            {orden.estado === "aprobado" && (
+            {orden.estado === "aprobado" && puede("ordenes_pago", "aprobar") && (
               <Button
                 onClick={() => cambiarEstado("pagado")}
                 disabled={processing}
@@ -185,7 +179,6 @@ export function OrdenPagoDetails() {
               </Button>
             )}
           </div>
-        )}
       </div>
 
       {/* Cabecera */}

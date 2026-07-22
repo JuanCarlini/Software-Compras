@@ -14,4 +14,7 @@ export interface AuthUser {
   email: string
   nombre: string
   rol: UserRole
+  // Permisos `modulo:accion` del rol (para gatear botones en el cliente). admin = [] (pasa
+  // por short-circuit en tienePermiso). Los custom traen su matriz.
+  permisos: string[]
 }

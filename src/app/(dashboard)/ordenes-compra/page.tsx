@@ -1,7 +1,5 @@
 import { OrdenCompraList } from "@/views/orden-compra-list"
-import { Button } from "@/views/ui/button"
-import { Plus } from "lucide-react"
-import Link from "next/link"
+import { CrearButton } from "@/views/crear-button"
 
 export default function OrdenesCompraPage() {
   return (
@@ -11,12 +9,7 @@ export default function OrdenesCompraPage() {
           <h1 className="text-3xl font-bold text-foreground">Órdenes de Compra</h1>
           <p className="text-muted-foreground">Gestiona las órdenes de compra</p>
         </div>
-        <Button asChild>
-          <Link href="/ordenes-compra/nueva">
-            <Plus className="h-4 w-4 mr-2" />
-            Nueva Orden
-          </Link>
-        </Button>
+        <CrearButton modulo="ordenes_compra" href="/ordenes-compra/nueva" label="Nueva Orden" />
       </div>
       <OrdenCompraList />
     </div>

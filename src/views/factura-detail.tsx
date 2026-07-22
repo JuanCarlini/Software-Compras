@@ -10,7 +10,6 @@ import { ArrowLeft, Building2, Calendar, FileCheck, Check, X } from "lucide-reac
 import { showErrorToast, showSuccessToast } from "@/shared/toast-helpers"
 import { formatCurrency } from "@/shared/format-utils"
 import { useAuth } from "@/shared/auth-context"
-import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 import { StatusBadge } from "@/shared/status-badge"
 import {
   AlertDialog,
@@ -60,17 +59,13 @@ interface Props {
 
 export function FacturaDetail({ params }: Props) {
   const { id } = use(params)
-  const { user } = useAuth()
+  const { puede } = useAuth()
   const [factura, setFactura] = useState<FacturaDetalle | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [showApproveDialog, setShowApproveDialog] = useState(false)
   const [showRejectDialog, setShowRejectDialog] = useState(false)
   const router = useRouter()
-
-  // Verificar permisos
-  const userRole = user ? stringToUserRole(user.rol) : null
-  const canModify = userRole ? canAnularDocumento(userRole) : false
 
   const fetchFactura = useCallback(async () => {
     try {
@@ -133,15 +128,17 @@ export function FacturaDetail({ params }: Props) {
 
         {factura.estado === "borrador" && (
           <div className="flex gap-2">
-            <Button
-              onClick={() => setShowApproveDialog(true)}
-              disabled={updating}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <Check className="h-4 w-4 mr-2" />
-              Finalizar
-            </Button>
-            {canModify && (
+            {puede("facturas", "crear") && (
+              <Button
+                onClick={() => setShowApproveDialog(true)}
+                disabled={updating}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Check className="h-4 w-4 mr-2" />
+                Finalizar
+              </Button>
+            )}
+            {puede("facturas", "aprobar") && (
               <Button onClick={() => setShowRejectDialog(true)} disabled={updating} variant="destructive">
                 <X className="h-4 w-4 mr-2" />
                 Anular
