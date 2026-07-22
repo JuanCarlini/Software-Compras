@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/shared/permissions-server"
-import { isAdmin, stringToUserRole } from "@/shared/permissions"
+import { requireAdmin } from "@/shared/permissions-server"
 import { parseId } from "@/shared/parse-id"
 import { handleRouteError } from "@/shared/handle-route-error"
 import { UsuarioService } from "@/controllers/usuario.controller"
@@ -14,15 +13,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { error: authError, user } = await requireAuth()
+    const { error: authError, user } = await requireAdmin()
     if (authError) return authError
-
-    if (!isAdmin(stringToUserRole(user!.rol))) {
-      return NextResponse.json(
-        { error: "No tienes permisos para realizar esta acción" },
-        { status: 403 }
-      )
-    }
 
     const id = parseId((await params).id)
     const { rol } = await request.json()
