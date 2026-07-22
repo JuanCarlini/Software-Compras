@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/service"
-import type { TablesUpdate } from "@/lib/supabase/database.types"
+import type { Tables, TablesUpdate } from "@/lib/supabase/database.types"
 
 const TABLE = "gu_roles"
 
@@ -58,14 +58,14 @@ export class RolRepository {
     return count ?? 0
   }
 
-  static async insert(rol: { nombre: string; descripcion: string | null; permisos?: string[] }): Promise<any> {
+  static async insert(rol: { nombre: string; descripcion: string | null; permisos?: string[] }): Promise<Tables<"gu_roles">> {
     const supabase = createClient()
     const { data, error } = await supabase.from(TABLE).insert(rol).select().single()
     if (error) throw error
     return data
   }
 
-  static async update(id: number, payload: TablesUpdate<"gu_roles">): Promise<any> {
+  static async update(id: number, payload: TablesUpdate<"gu_roles">): Promise<Tables<"gu_roles">> {
     const supabase = createClient()
     const { data, error } = await supabase.from(TABLE).update(payload).eq("id", id).select().single()
     if (error) throw error

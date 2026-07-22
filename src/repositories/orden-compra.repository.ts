@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/service"
-import type { TablesUpdate } from "@/lib/supabase/database.types"
+import type { TablesInsert, TablesUpdate } from "@/lib/supabase/database.types"
 import type { EstadoAprobacion, LocRollup, OcRollup } from "@/models"
 import {
   OrdenCompra,
@@ -29,7 +29,7 @@ export class OrdenCompraRepository {
     return data as OrdenCompra
   }
 
-  static async insert(oc: any): Promise<OrdenCompra> {
+  static async insert(oc: TablesInsert<"gu_ordenesdecompra">): Promise<OrdenCompra> {
     const supabase = createClient()
     const { data, error } = await supabase.from(TABLE).insert(oc).select().single()
     if (error) throw error
@@ -37,7 +37,7 @@ export class OrdenCompraRepository {
   }
 
   // Inserta líneas sin devolverlas (usado por create; error se propaga para compensar).
-  static async insertLineas(lineas: any[]): Promise<void> {
+  static async insertLineas(lineas: TablesInsert<"gu_lineasdeordenesdecompra">[]): Promise<void> {
     if (!lineas || lineas.length === 0) return
     const supabase = createClient()
     const { error } = await supabase.from(TABLE_LINEAS).insert(lineas)

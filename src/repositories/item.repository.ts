@@ -88,6 +88,6 @@ export const ItemRepository = {
       .not("categoria", "is", null)
 
     if (error) return []
-    return (data || []).map((row: any) => row.categoria)
+    return (data || []).map((row: { categoria: string | null }) => row.categoria)
   },
 }

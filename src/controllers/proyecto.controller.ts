@@ -1,4 +1,5 @@
 import { ProyectoRepository } from "@/repositories/proyecto.repository"
+import type { TablesInsert, TablesUpdate } from "@/lib/supabase/database.types"
 
 // CRUD de proyectos. Sin reglas de negocio propias hoy: delega el I/O al repo (A1).
 // La capa existe como costura donde irían futuras reglas y para mantener la
@@ -12,11 +13,11 @@ export class ProyectoService {
     return ProyectoRepository.findById(id)
   }
 
-  static create(proyecto: any) {
+  static create(proyecto: TablesInsert<"gu_proyectos">) {
     return ProyectoRepository.insert(proyecto)
   }
 
-  static update(id: number, proyecto: any) {
+  static update(id: number, proyecto: TablesUpdate<"gu_proyectos">) {
     return ProyectoRepository.update(id, proyecto)
   }
 
