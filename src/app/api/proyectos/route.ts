@@ -1,34 +1,25 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { ProyectoService } from "@/controllers/proyecto.controller"
+import { CreateProyectoSchema } from "@/shared/proyecto-validation"
 import { requireRole } from "@/shared/permissions-server"
 import { ROLES_ESCRITURA } from "@/shared/permissions"
+import { handleRouteError } from "@/shared/handle-route-error"
+import { createRoute } from "@/shared/crud-route"
 
 export async function GET() {
   try {
     const proyectos = await ProyectoService.getAll()
     return NextResponse.json(proyectos)
   } catch (error) {
-    console.error("Error fetching proyectos:", error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "GET /api/proyectos")
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const { error: authError } = await requireRole(ROLES_ESCRITURA)
-    if (authError) return authError
-
-    const data = await request.json()
-    const newProyecto = await ProyectoService.create(data)
-    return NextResponse.json(newProyecto, { status: 201 })
-  } catch (error) {
-    console.error("Error creating proyecto:", error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
-  }
-}
+// POST /api/proyectos - Crear proyecto. Zod whitelistea el body (S4); el estado lo
+// pone la DB, no el cliente (S2). Antes este POST tomaba el body crudo (mass-assignment).
+export const POST = createRoute({
+  autorizar: () => requireRole(ROLES_ESCRITURA),
+  schema: CreateProyectoSchema,
+  crear: (data) => ProyectoService.create(data),
+  contexto: "POST /api/proyectos",
+})
