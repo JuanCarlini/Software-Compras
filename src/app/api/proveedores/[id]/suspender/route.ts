@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { ProveedorService } from "@/controllers"
 import { requireAuth } from "@/shared/permissions-server"
 import { canModificarProveedor, stringToUserRole } from "@/shared/permissions"
-import { UserRole, EstadoProveedor } from "@/models"
+import { EstadoProveedor } from "@/models"
+import { parseId } from "@/shared/parse-id"
+import { handleRouteError } from "@/shared/handle-route-error"
 import { AuditService } from "@/lib/audit/audit.service"
 
 interface Params {
@@ -24,9 +26,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       )
     }
 
-    const { id } = await params
+    const id = parseId((await params).id)
     // La DB solo tiene activo/inactivo: "suspender" se materializa como inactivo
-    const proveedor = await ProveedorService.update(Number(id), { estado: EstadoProveedor.INACTIVO })
+    const proveedor = await ProveedorService.update(id, { estado: EstadoProveedor.INACTIVO })
 
     if (!proveedor) {
       return NextResponse.json(
@@ -38,16 +40,13 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     await AuditService.registrar({
       usuarioId: user!.id,
       tabla: "gu_proveedores",
-      registroId: Number(id),
+      registroId: id,
       accion: "suspender",
       detalle: `Proveedor ${proveedor.nombre ?? id} suspendido (inactivo)`,
     })
 
     return NextResponse.json(proveedor)
   } catch (error) {
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "PATCH /api/proveedores/[id]/suspender")
   }
 }

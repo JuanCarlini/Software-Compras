@@ -16,6 +16,3 @@ export const UpdateCajaSchema = z.object({
   entidad: z.string().max(200).nullish(),
   moneda: z.enum(MONEDAS).optional(), // se acepta para poder rechazarlo con un mensaje claro
 })
-
-export type CreateCajaFormData = z.infer<typeof CreateCajaSchema>
-export type UpdateCajaFormData = z.infer<typeof UpdateCajaSchema>

@@ -2,14 +2,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Badge } from "@/views/ui/badge"
-import { Button } from "@/views/ui/button"
-import { 
-  BarChart3, 
-  FileText, 
-  TrendingUp, 
-  Clock, 
+import {
+  BarChart3,
+  TrendingUp,
   CheckCircle,
-  AlertCircle,
   Loader2,
   DollarSign,
   Users,

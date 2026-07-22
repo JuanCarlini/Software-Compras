@@ -15,9 +15,4 @@ export const UpdateItemSchema = CreateItemSchema.partial().extend({
   is_active: z.boolean().optional()
 })
 
-export const ItemSearchSchema = z.object({
-  query: z.string().min(1, "Query de búsqueda requerido")
-})
-
 export type CreateItemFormData = z.infer<typeof CreateItemSchema>
-export type UpdateItemFormData = z.infer<typeof UpdateItemSchema>

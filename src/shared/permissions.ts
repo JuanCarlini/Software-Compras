@@ -34,20 +34,6 @@ export function isAdmin(userRole: UserRole): boolean {
 }
 
 /**
- * Verifica si un usuario tiene permisos de supervisor o superior
- */
-export function isSupervisorOrAbove(userRole: UserRole): boolean {
-  return userRole === UserRole.ADMIN || userRole === UserRole.SUPERVISOR
-}
-
-/**
- * Verifica si un usuario puede aprobar documentos
- */
-export function canAprobarDocumento(userRole: UserRole): boolean {
-  return userRole === UserRole.ADMIN || userRole === UserRole.SUPERVISOR
-}
-
-/**
  * Convierte string de rol a UserRole enum
  */
 export function stringToUserRole(rol: string): UserRole {

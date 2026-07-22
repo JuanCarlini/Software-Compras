@@ -5,7 +5,6 @@ type T = Database["public"]["Tables"]
 // El item es agnóstico al proveedor: el precio vive en gu_item_proveedor_precio (N:M).
 // Por eso se fue `precio_sugerido`. `codigo` es UNIQUE y requerido.
 export type Item = T["gu_items"]["Row"]
-export type ItemProveedorPrecio = T["gu_item_proveedor_precio"]["Row"]
 
 export type CreateItemDTO = Omit<
   T["gu_items"]["Insert"],

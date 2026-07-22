@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/service"
 import type { TablesInsert, TablesUpdate } from "@/lib/supabase/database.types"
-import type { Factura, FacturaImputacion, FacturaRollup, EstadoFactura } from "@/models"
+import type { Factura, FacturaRollup, EstadoFactura } from "@/models"
 
 const TABLE = "gu_facturas"
 const TABLE_LINEAS = "gu_lineasdefactura"

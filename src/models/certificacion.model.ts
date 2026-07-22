@@ -3,13 +3,6 @@ import type { Database } from "@/lib/supabase/database.types"
 type T = Database["public"]["Tables"]
 
 export type Certificacion = T["gu_certificaciones"]["Row"]
-export type CertificacionLinea = T["gu_lineasdecertificacion"]["Row"]
-
-// La CE cuelga de UNA OC y hereda su proveedor. numero_cert (CE-N.s) lo genera la DB.
-export type CreateCertificacionData = Omit<
-  T["gu_certificaciones"]["Insert"],
-  "id" | "numero_cert" | "estado" | "proveedor_id" | "created_at" | "updated_at"
->
 
 // El ÚNICO input de una línea de certificación es avance_unidades: avance_monto,
 // avance_porcentaje, iva_porcentaje y numero_lce los deriva el trigger fn_lce_derive.

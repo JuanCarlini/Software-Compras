@@ -3,6 +3,7 @@ import { AuthService } from '@/lib/auth/auth.service'
 import { setAuthCookie } from '@/lib/auth/auth.cookies'
 import { AuditService } from '@/lib/audit/audit.service'
 import { estaBloqueado, registrarFallo, limpiarIntentos } from '@/lib/auth/rate-limit'
+import { handleRouteError } from '@/shared/handle-route-error'
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,10 +72,6 @@ export async function POST(request: NextRequest) {
     })
     
   } catch (error) {
-    console.error('Error en login:', error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "POST /api/auth/login")
   }
 }

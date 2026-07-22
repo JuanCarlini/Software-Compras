@@ -23,6 +23,7 @@ interface OrdenCompraAprobada {
   id: number
   numero_oc: string
   estado: string
+  estado_certificacion: "sin" | "parcial" | "total"
   moneda: string
   total_con_iva: number
 }
@@ -52,11 +53,14 @@ export function CertificacionForm() {
   const [fechaDevengado, setFechaDevengado] = useState(new Date().toISOString().slice(0, 10))
   const [observaciones, setObservaciones] = useState("")
 
-  // Solo se puede certificar contra una OC aprobada (fn_cert_oc_aprobada lo garantiza).
+  // Solo se puede certificar contra una OC aprobada (fn_cert_oc_aprobada lo garantiza) y que
+  // NO esté 100% certificada: estado_certificacion "total" significa que ya no queda avance.
   useEffect(() => {
     fetch("/api/ordenes-compra")
       .then((r) => (r.ok ? r.json() : []))
-      .then((data: OrdenCompraAprobada[]) => setOrdenes(data.filter((o) => o.estado === "aprobado")))
+      .then((data: OrdenCompraAprobada[]) =>
+        setOrdenes(data.filter((o) => o.estado === "aprobado" && o.estado_certificacion !== "total"))
+      )
       .catch(() => setOrdenes([]))
   }, [])
 
@@ -160,7 +164,7 @@ export function CertificacionForm() {
             </Select>
             {ordenes.length === 0 && (
               <p className="text-xs text-muted-foreground">
-                No hay órdenes de compra aprobadas. Aprobá una antes de certificar.
+                No hay órdenes de compra aprobadas con avance pendiente de certificar.
               </p>
             )}
           </div>

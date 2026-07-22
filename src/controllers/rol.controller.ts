@@ -1,5 +1,6 @@
 import { RolRepository } from "@/repositories/rol.repository"
 import { esPermisoValido } from "@/shared/permissions-catalog"
+import { HttpError } from "@/shared/http-error"
 
 // Los 4 roles del sistema están protegidos contra rename/delete. Sus permisos se siembran
 // replicando la autorización histórica; un rol nuevo arranca con los permisos que le asigne
@@ -9,7 +10,7 @@ const ROLES_SISTEMA = ["admin", "usuario", "supervisor", "readonly"]
 // Cada clave de permisos[] debe existir en el catálogo — nunca confiar en el body.
 function validarPermisos(permisos: string[]) {
   const invalida = permisos.find((p) => !esPermisoValido(p))
-  if (invalida) throw new Error(`Permiso inválido: ${invalida}`)
+  if (invalida) throw new HttpError(400, `Permiso inválido: ${invalida}`)
 }
 
 // Reglas de negocio de roles. El I/O vive en RolRepository (A1).
@@ -35,7 +36,7 @@ export class RolService {
     const nombre = data.nombre.trim().toLowerCase()
 
     if (await RolRepository.findByNombre(nombre)) {
-      throw new Error(`Ya existe un rol llamado "${nombre}"`)
+      throw new HttpError(409, `Ya existe un rol llamado "${nombre}"`)
     }
     if (data.permisos) validarPermisos(data.permisos)
 
@@ -44,11 +45,11 @@ export class RolService {
 
   static async update(id: number, data: { nombre?: string; descripcion?: string; permisos?: string[] }) {
     const rol = await RolRepository.findById(id)
-    if (!rol) throw new Error("Rol no encontrado")
+    if (!rol) throw new HttpError(404, "Rol no encontrado")
 
     // los roles del sistema no se renombran (el código depende del nombre)
     if (data.nombre && ROLES_SISTEMA.includes(rol.nombre) && data.nombre.trim().toLowerCase() !== rol.nombre) {
-      throw new Error(`"${rol.nombre}" es un rol del sistema y no puede renombrarse`)
+      throw new HttpError(409, `"${rol.nombre}" es un rol del sistema y no puede renombrarse`)
     }
 
     const payload: Record<string, unknown> = {}
@@ -66,15 +67,15 @@ export class RolService {
 
   static async delete(id: number) {
     const rol = await RolRepository.findById(id)
-    if (!rol) throw new Error("Rol no encontrado")
+    if (!rol) throw new HttpError(404, "Rol no encontrado")
 
     if (ROLES_SISTEMA.includes(rol.nombre)) {
-      throw new Error(`"${rol.nombre}" es un rol del sistema y no puede eliminarse`)
+      throw new HttpError(409, `"${rol.nombre}" es un rol del sistema y no puede eliminarse`)
     }
 
     const count = await RolRepository.countUsuariosByRol(id)
     if (count > 0) {
-      throw new Error(`El rol tiene ${count} usuario(s) asignado(s); reasignalos antes de eliminarlo`)
+      throw new HttpError(409, `El rol tiene ${count} usuario(s) asignado(s); reasignalos antes de eliminarlo`)
     }
 
     await RolRepository.delete(id)

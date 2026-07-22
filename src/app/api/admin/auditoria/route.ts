@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/shared/permissions-server"
 import { isAdmin, stringToUserRole } from "@/shared/permissions"
 import { createClient } from "@/lib/supabase/service"
+import { handleRouteError } from "@/shared/handle-route-error"
 
 // Valores del enum audit_accion (columna gu_audit_log.accion). La bitácora
 // (gu_auditoria.accion) es texto libre y acepta cualquier filtro.
@@ -98,10 +99,6 @@ export async function GET(request: NextRequest) {
       }))
     )
   } catch (error) {
-    console.error("Error en GET /api/admin/auditoria:", error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "GET /api/admin/auditoria")
   }
 }

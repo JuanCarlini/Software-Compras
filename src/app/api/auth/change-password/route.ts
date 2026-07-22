@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/shared/permissions-server"
 import { AuthService } from "@/lib/auth/auth.service"
 import { AuditService } from "@/lib/audit/audit.service"
+import { handleRouteError } from "@/shared/handle-route-error"
 
 // POST /api/auth/change-password - El usuario autenticado cambia su propia clave
 // (distinto del reset administrativo: acá se exige la clave actual)
@@ -44,7 +45,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: "Contraseña actualizada" })
   } catch (error) {
-    console.error("Error en change-password:", error)
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+    return handleRouteError(error, "POST /api/auth/change-password")
   }
 }

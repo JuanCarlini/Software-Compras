@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs"
 import { UsuarioRepository } from "@/repositories/usuario.repository"
+import { HttpError } from "@/shared/http-error"
 
 export interface CreateUsuarioData {
   nombre: string
@@ -21,7 +22,7 @@ export interface UpdateUsuarioData {
 export class UsuarioService {
   static async create(data: CreateUsuarioData) {
     if (await UsuarioRepository.findByEmail(data.email)) {
-      throw new Error("El email ya está registrado")
+      throw new HttpError(409, "El email ya está registrado")
     }
 
     const password_hash = await bcrypt.hash(data.password, 10)

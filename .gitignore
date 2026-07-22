@@ -31,3 +31,12 @@ next-env.d.ts
 
 # claude code (config local de permisos)
 .claude/settings.local.json
+
+# skills instaladas localmente por el CLI `skills` (viven global en ~/.claude/skills)
+.claude/skills/
+.agents/
+skills-lock.json
+
+# graphify (salida generada + backup)
+graphify-out/
+CLAUDE.graphify.bak.md

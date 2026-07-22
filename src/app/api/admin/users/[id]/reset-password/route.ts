@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAdmin } from "@/shared/permissions-server"
 import { UsuarioService } from "@/controllers/usuario.controller"
 import { AuditService } from "@/lib/audit/audit.service"
+import { parseId } from "@/shared/parse-id"
+import { handleRouteError } from "@/shared/handle-route-error"
 
 interface Params {
   params: Promise<{ id: string }>
@@ -15,8 +17,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     const { error: authError, user } = await requireAdmin()
     if (authError) return authError
 
-    const { id } = await params
-    const userId = Number(id)
+    const userId = parseId((await params).id)
     const { password } = await request.json()
 
     if (!password || String(password).length < 6) {
@@ -38,7 +39,6 @@ export async function POST(request: NextRequest, { params }: Params) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error en POST reset-password:", error)
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+    return handleRouteError(error, "POST /api/admin/users/[id]/reset-password")
   }
 }

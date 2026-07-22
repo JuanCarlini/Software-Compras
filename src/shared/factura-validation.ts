@@ -33,5 +33,3 @@ export const CambiarEstadoFacturaSchema = z.object({ estado: z.enum(ESTADOS_FACT
 export const ImputarSchema = z.object({
   imputaciones: z.array(CreateImputacionSchema).min(1, "Indicá al menos una imputación"),
 })
-
-export type CreateFacturaFormData = z.infer<typeof CreateFacturaSchema>

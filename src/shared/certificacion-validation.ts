@@ -25,5 +25,3 @@ export const UpdateCertificacionSchema = z.object({
 })
 
 export const CambiarEstadoCertificacionSchema = z.object({ estado: z.enum(ESTADOS_APROBACION) })
-
-export type CreateCertificacionFormData = z.infer<typeof CreateCertificacionSchema>

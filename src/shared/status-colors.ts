@@ -1,12 +1,10 @@
 // Sistema unificado de semaforización para estados
 // Todos los estados de la aplicación usan este sistema de colores
 
-import { 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  AlertCircle, 
-  Loader2,
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
   FileText,
   Activity
 } from "lucide-react"

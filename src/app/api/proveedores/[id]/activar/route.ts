@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { ProveedorService } from "@/controllers"
 import { requireAuth } from "@/shared/permissions-server"
 import { canModificarProveedor, stringToUserRole } from "@/shared/permissions"
-import { UserRole, EstadoProveedor } from "@/models"
+import { EstadoProveedor } from "@/models"
+import { parseId } from "@/shared/parse-id"
+import { handleRouteError } from "@/shared/handle-route-error"
 import { AuditService } from "@/lib/audit/audit.service"
 
 interface Params {
@@ -24,8 +26,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       )
     }
 
-    const { id } = await params
-    const proveedor = await ProveedorService.update(Number(id), { estado: EstadoProveedor.ACTIVO })
+    const id = parseId((await params).id)
+    const proveedor = await ProveedorService.update(id, { estado: EstadoProveedor.ACTIVO })
 
     if (!proveedor) {
       return NextResponse.json(
@@ -37,16 +39,13 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     await AuditService.registrar({
       usuarioId: user!.id,
       tabla: "gu_proveedores",
-      registroId: Number(id),
+      registroId: id,
       accion: "activar",
       detalle: `Proveedor ${proveedor.nombre ?? id} activado`,
     })
 
     return NextResponse.json(proveedor)
   } catch (error) {
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "PATCH /api/proveedores/[id]/activar")
   }
 }

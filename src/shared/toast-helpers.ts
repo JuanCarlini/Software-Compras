@@ -14,20 +14,6 @@ export const showErrorToast = (message: string, description?: string) => {
   })
 }
 
-export const showWarningToast = (message: string, description?: string) => {
-  toast.warning(message, {
-    description,
-    duration: 4500,
-  })
-}
-
-export const showInfoToast = (message: string, description?: string) => {
-  toast.info(message, {
-    description,
-    duration: 3500,
-  })
-}
-
 // Toast messages específicos para acciones comunes
 export const toastMessages = {
   // Órdenes de Compra

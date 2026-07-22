@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAdmin } from "@/shared/permissions-server"
 import { RolService } from "@/controllers/rol.controller"
 import { AuditService } from "@/lib/audit/audit.service"
+import { parseId } from "@/shared/parse-id"
+import { handleRouteError } from "@/shared/handle-route-error"
 
 interface Params {
   params: Promise<{ id: string }>
@@ -13,10 +15,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
     const { error: authError, user } = await requireAdmin()
     if (authError) return authError
 
-    const { id } = await params
+    const id = parseId((await params).id)
     const body = await request.json()
 
-    const actualizado = await RolService.update(Number(id), {
+    const actualizado = await RolService.update(id, {
       nombre: body.nombre,
       descripcion: body.descripcion,
       permisos: body.permisos,
@@ -25,16 +27,14 @@ export async function PUT(request: NextRequest, { params }: Params) {
     await AuditService.registrar({
       usuarioId: user!.id,
       tabla: "gu_roles",
-      registroId: Number(id),
+      registroId: id,
       accion: "actualizar",
       detalle: `Rol #${id} actualizado`,
     })
 
     return NextResponse.json(actualizado)
-  } catch (error: any) {
-    const message = error?.message || "Error interno del servidor"
-    const esNegocio = message.includes("sistema") || message.includes("no encontrado") || message.includes("inválido")
-    return NextResponse.json({ error: message }, { status: esNegocio ? 400 : 500 })
+  } catch (error) {
+    return handleRouteError(error, "PUT /api/admin/roles/[id]")
   }
 }
 
@@ -44,21 +44,19 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     const { error: authError, user } = await requireAdmin()
     if (authError) return authError
 
-    const { id } = await params
-    await RolService.delete(Number(id))
+    const id = parseId((await params).id)
+    await RolService.delete(id)
 
     await AuditService.registrar({
       usuarioId: user!.id,
       tabla: "gu_roles",
-      registroId: Number(id),
+      registroId: id,
       accion: "eliminar",
       detalle: `Rol #${id} eliminado`,
     })
 
     return NextResponse.json({ success: true })
-  } catch (error: any) {
-    const message = error?.message || "Error interno del servidor"
-    const esNegocio = message.includes("sistema") || message.includes("usuario") || message.includes("no encontrado")
-    return NextResponse.json({ error: message }, { status: esNegocio ? 400 : 500 })
+  } catch (error) {
+    return handleRouteError(error, "DELETE /api/admin/roles/[id]")
   }
 }

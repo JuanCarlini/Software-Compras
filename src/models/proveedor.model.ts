@@ -8,7 +8,3 @@ export enum EstadoProveedor {
 }
 
 export type Proveedor = Database["public"]["Tables"]["gu_proveedores"]["Row"]
-export type CreateProveedorData = Omit<
-  Database["public"]["Tables"]["gu_proveedores"]["Insert"],
-  "id" | "estado" | "created_at"
->

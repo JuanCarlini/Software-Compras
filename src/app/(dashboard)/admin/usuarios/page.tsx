@@ -22,6 +22,7 @@ import {
 } from "@/views/ui/select"
 import { Loader2, Shield, ShieldCheck, User, Eye, Users, UserPlus, KeyRound, UserX, UserCheck, Plus, Trash2 } from "lucide-react"
 import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
+import { api } from "@/shared/api-client"
 import { useAuth } from "@/shared/auth-context"
 import { isAdmin, stringToUserRole } from "@/shared/permissions"
 import { RolPermisosMatrix } from "@/views/rol-permisos-matrix"
@@ -65,13 +66,6 @@ const roleColors: Record<string, string> = {
   supervisor: "text-blue-600",
   usuario: "text-green-600",
   readonly: "text-muted-foreground",
-}
-
-async function api(path: string, init?: RequestInit) {
-  const res = await fetch(path, init)
-  const body = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(body.error || `Error ${res.status}`)
-  return body
 }
 
 export default function AdminUsersPage() {

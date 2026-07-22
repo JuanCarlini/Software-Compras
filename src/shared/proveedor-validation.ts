@@ -15,10 +15,3 @@ export const CreateProveedorSchema = z.object({
 export const UpdateProveedorSchema = CreateProveedorSchema.partial().extend({
   estado: z.nativeEnum(EstadoProveedor).optional()
 })
-
-export const ProveedorParamsSchema = z.object({
-  id: z.string().min(1, "ID requerido")
-})
-
-export type CreateProveedorFormData = z.infer<typeof CreateProveedorSchema>
-export type UpdateProveedorFormData = z.infer<typeof UpdateProveedorSchema>

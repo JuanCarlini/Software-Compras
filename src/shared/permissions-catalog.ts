@@ -23,8 +23,6 @@ export const PERMISOS_CATALOGO = {
   items: { label: "Ítems", acciones: ["ver", "crear"] },
 } as const satisfies Record<string, { label: string; acciones: Accion[] }>
 
-export type Modulo = keyof typeof PERMISOS_CATALOGO
-
 // Las 20 claves `modulo:accion` válidas, en Set para chequeo O(1).
 export const PERMISOS_VALIDOS: Set<string> = new Set(
   Object.entries(PERMISOS_CATALOGO).flatMap(([modulo, def]) =>

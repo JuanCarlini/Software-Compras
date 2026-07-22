@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/shared/permissions-server"
 import { isAdmin, stringToUserRole } from "@/shared/permissions"
 import { createClient } from "@/lib/supabase/service"
+import { parseId } from "@/shared/parse-id"
+import { handleRouteError } from "@/shared/handle-route-error"
 
 // PATCH /api/admin/users/[id]/role - Actualizar rol de un usuario (solo admin)
 export async function PATCH(
@@ -21,8 +23,7 @@ export async function PATCH(
       )
     }
 
-    const { id: idParam } = await params
-    const id = Number(idParam)
+    const id = parseId((await params).id)
     const { rol } = await request.json()
 
     // Validar que el rol sea válido
@@ -109,10 +110,6 @@ export async function PATCH(
       }
     })
   } catch (error) {
-    console.error("Error en PATCH /api/admin/users/[id]/role:", error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "PATCH /api/admin/users/[id]/role")
   }
 }

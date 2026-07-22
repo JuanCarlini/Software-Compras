@@ -31,6 +31,3 @@ export const UpdateOrdenCompraSchema = CreateOrdenCompraSchema.omit({ lineas: tr
 
 // Body de la transición de estado.
 export const CambiarEstadoOCSchema = z.object({ estado: z.enum(ESTADOS_APROBACION) })
-
-export type CreateOrdenCompraFormData = z.infer<typeof CreateOrdenCompraSchema>
-export type UpdateOrdenCompraFormData = z.infer<typeof UpdateOrdenCompraSchema>

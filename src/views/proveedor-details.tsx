@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Button } from "@/views/ui/button"
-import { Separator } from "@/views/ui/separator"
 import {
   Building2,
   Mail,

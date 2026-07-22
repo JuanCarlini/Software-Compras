@@ -1,13 +1,13 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { ItemService } from "@/controllers"
+import { handleRouteError } from "@/shared/handle-route-error"
 
 // GET /api/items/categorias - Obtener todas las categorías únicas
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const categorias = await ItemService.getCategorias()
     return NextResponse.json(categorias || [])
   } catch (error) {
-    console.error("Error al obtener categorías:", error)
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+    return handleRouteError(error, "GET /api/items/categorias")
   }
 }

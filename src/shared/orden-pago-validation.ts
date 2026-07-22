@@ -22,5 +22,3 @@ export const AgregarCajaSchema = z.object({
 })
 
 export const CambiarEstadoOPSchema = z.object({ estado: z.enum(ESTADOS_OP) })
-
-export type CreateOrdenPagoFormData = z.infer<typeof CreateOrdenPagoSchema>

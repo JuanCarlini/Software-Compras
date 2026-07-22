@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ItemService } from "@/controllers"
+import { handleRouteError } from "@/shared/handle-route-error"
 
 // GET /api/items/search?query=texto - Buscar items por nombre o descripción
 export async function GET(request: NextRequest) {
@@ -18,10 +19,6 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(items || [])
   } catch (error) {
-    console.error("Error al buscar items:", error)
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    )
+    return handleRouteError(error, "GET /api/items/search")
   }
 }

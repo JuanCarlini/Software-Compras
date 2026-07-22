@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAdmin } from "@/shared/permissions-server"
 import { UsuarioService } from "@/controllers/usuario.controller"
 import { AuditService } from "@/lib/audit/audit.service"
+import { parseId } from "@/shared/parse-id"
+import { handleRouteError } from "@/shared/handle-route-error"
 
 interface Params {
   params: Promise<{ id: string }>
@@ -13,8 +15,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     const { error: authError, user } = await requireAdmin()
     if (authError) return authError
 
-    const { id } = await params
-    const userId = Number(id)
+    const userId = parseId((await params).id)
     const body = await request.json()
 
     // Evitar auto-lockout: un admin no puede desactivarse ni quitarse el rol a sí mismo
@@ -43,8 +44,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
     return NextResponse.json(actualizado)
   } catch (error) {
-    console.error("Error en PUT /api/admin/users/[id]:", error)
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+    return handleRouteError(error, "PUT /api/admin/users/[id]")
   }
 }
 
@@ -54,8 +54,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     const { error: authError, user } = await requireAdmin()
     if (authError) return authError
 
-    const { id } = await params
-    const userId = Number(id)
+    const userId = parseId((await params).id)
 
     if (user!.id === userId) {
       return NextResponse.json(
@@ -76,7 +75,6 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Error en DELETE /api/admin/users/[id]:", error)
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+    return handleRouteError(error, "DELETE /api/admin/users/[id]")
   }
 }

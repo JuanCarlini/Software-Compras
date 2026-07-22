@@ -3,19 +3,10 @@
 import { useState, useEffect } from "react"
 import { OrdenPago } from "@/models"
 import { showSuccessToast, showErrorToast, toastMessages } from "./toast-helpers"
+import { api } from "./api-client"
 
 // Fila de OP enriquecida con el join de proveedor que hace OrdenPagoService.getAll
 export type OrdenPagoRow = OrdenPago & { proveedor_nombre?: string }
-
-// Acceso a datos SIEMPRE vía API routes (el browser no habla con Supabase — RLS niega anon)
-async function api(path: string, init?: RequestInit) {
-  const res = await fetch(path, init)
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    throw new Error(body.error || `Error ${res.status}`)
-  }
-  return res.json()
-}
 
 // Transición de estado: ruta propia (PATCH /estado), gateada por rol y por fn_op_gate.
 function patchEstado(id: string | number, estado: string) {

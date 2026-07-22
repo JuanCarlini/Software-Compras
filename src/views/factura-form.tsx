@@ -6,7 +6,6 @@ import { Button } from "@/views/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
 import { Input } from "@/views/ui/input"
 import { Label } from "@/views/ui/label"
-import { Textarea } from "@/views/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/views/ui/select"
 import { Alert, AlertDescription } from "@/views/ui/alert"
 import { Loader2, Plus, Trash2, AlertCircle } from "lucide-react"
@@ -23,6 +22,7 @@ interface CertAprobada {
   id: number
   numero_cert: string
   total_con_iva: number
+  saldo_facturable: number
 }
 interface LineaFactura {
   descripcion: string
@@ -56,15 +56,28 @@ export function FacturaForm() {
       .catch(() => setProveedores([]))
   }, [])
 
+  // Certificaciones imputables: del proveedor, aprobadas y con SALDO facturable > 0
+  // (total_con_iva − monto_facturado). Las ya facturadas al 100% no se ofrecen.
   useEffect(() => {
     if (!proveedorId) {
       setCertificaciones([])
       setImputaciones({})
       return
     }
-    fetch(`/api/facturas/certificaciones-aprobadas?proveedorId=${proveedorId}`)
+    fetch(`/api/certificaciones`)
       .then((r) => (r.ok ? r.json() : []))
-      .then(setCertificaciones)
+      .then((todas: any[]) => {
+        const disponibles = (todas || [])
+          .filter((c) => c.estado === "aprobado" && String(c.proveedor_id) === proveedorId)
+          .map((c) => ({
+            id: c.id,
+            numero_cert: c.numero_cert,
+            total_con_iva: Number(c.total_con_iva ?? 0),
+            saldo_facturable: Number(c.total_con_iva ?? 0) - Number(c.monto_facturado ?? 0),
+          }))
+          .filter((c) => c.saldo_facturable > 0.01)
+        setCertificaciones(disponibles)
+      })
       .catch(() => setCertificaciones([]))
     setImputaciones({})
   }, [proveedorId])
@@ -90,6 +103,15 @@ export function FacturaForm() {
     if (totalImputado > totalLineas + 0.01) {
       return setError(
         `Lo imputado (${formatCurrency(totalImputado)}) supera el total de líneas (${formatCurrency(totalLineas)})`
+      )
+    }
+    // No se puede imputar a una certificación más que su saldo facturable.
+    const certExcedida = certificaciones.find(
+      (c) => Number(imputaciones[c.id] ?? 0) > c.saldo_facturable + 0.01
+    )
+    if (certExcedida) {
+      return setError(
+        `No podés imputar más que el saldo facturable de ${certExcedida.numero_cert} (${formatCurrency(certExcedida.saldo_facturable)})`
       )
     }
 
@@ -238,26 +260,37 @@ export function FacturaForm() {
             <p className="text-xs text-muted-foreground">
               La suma imputada no puede superar el total de las líneas. Dejá en 0 lo que no imputes.
             </p>
-            {certificaciones.map((cert) => (
-              <div key={cert.id} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end border-b pb-2">
-                <div className="md:col-span-2">
-                  <p className="font-mono text-sm">{cert.numero_cert}</p>
-                  <p className="text-xs text-muted-foreground">Certificado: {formatCurrency(cert.total_con_iva)}</p>
+            {certificaciones.map((cert) => {
+              const monto = Number(imputaciones[cert.id] ?? 0)
+              const excede = monto > cert.saldo_facturable + 0.01
+              return (
+                <div key={cert.id} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end border-b pb-2">
+                  <div className="md:col-span-2">
+                    <p className="font-mono text-sm">{cert.numero_cert}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Certificado: {formatCurrency(cert.total_con_iva)} · Saldo a facturar:{" "}
+                      <strong>{formatCurrency(cert.saldo_facturable)}</strong>
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Monto a imputar</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max={cert.saldo_facturable}
+                      step="0.01"
+                      value={imputaciones[cert.id] ?? ""}
+                      onChange={(e) => setImputaciones((prev) => ({ ...prev, [cert.id]: e.target.value }))}
+                      disabled={loading}
+                      placeholder="0"
+                    />
+                    {excede && (
+                      <p className="text-xs text-red-600">Máximo {formatCurrency(cert.saldo_facturable)}</p>
+                    )}
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <Label>Monto a imputar</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={imputaciones[cert.id] ?? ""}
-                    onChange={(e) => setImputaciones((prev) => ({ ...prev, [cert.id]: e.target.value }))}
-                    disabled={loading}
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-            ))}
+              )
+            })}
             <div className="flex justify-end text-sm">
               <span className={totalImputado > totalLineas + 0.01 ? "text-red-600" : ""}>
                 Total imputado: <strong>{formatCurrency(totalImputado)}</strong>
