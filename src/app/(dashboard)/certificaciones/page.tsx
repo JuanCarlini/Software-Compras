@@ -1,6 +1,6 @@
 import { CertificacionesList } from "@/views/certificaciones-list"
 import { CrearButton } from "@/components/crear-button"
-import { requirePagePermission } from "@/shared/permissions-server"
+import { requirePagePermission } from "@/lib/auth/permissions-server"
 
 export default async function CertificacionesPage() {
   await requirePagePermission("certificaciones", "ver")

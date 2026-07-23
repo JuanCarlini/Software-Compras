@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/shared/permissions-server"
+import { requireAuth } from "@/lib/auth/permissions-server"
 import { AuthService } from "@/lib/auth/auth.service"
 import { AuditService } from "@/lib/audit/audit.service"
-import { handleRouteError } from "@/shared/handle-route-error"
+import { handleRouteError } from "@/lib/route/handle-route-error"
 
 // POST /api/auth/change-password - El usuario autenticado cambia su propia clave
 // (distinto del reset administrativo: acá se exige la clave actual)

@@ -1,7 +1,7 @@
 import type { TablesUpdate } from "@/lib/supabase/database.types"
 import { OrdenCompraRepository } from "@/repositories/orden-compra.repository"
 import { ItemPrecioRepository } from "@/repositories/item-precio.repository"
-import { HttpError } from "@/shared/http-error"
+import { HttpError } from "@/lib/route/http-error"
 import { totalesDeLinea, totalesDeCabecera, IVA_DEFAULT } from "@/shared/totales"
 import { puedeTransicionar, TRANSICIONES_APROBACION } from "@/shared/transiciones"
 import {

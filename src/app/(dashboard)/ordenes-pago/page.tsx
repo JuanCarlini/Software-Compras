@@ -1,6 +1,6 @@
 import { OrdenPagoList } from "@/views/orden-pago-list"
 import { CrearButton } from "@/components/crear-button"
-import { requirePagePermission } from "@/shared/permissions-server"
+import { requirePagePermission } from "@/lib/auth/permissions-server"
 
 export default async function OrdenesPagoPage() {
   await requirePagePermission("ordenes_pago", "ver")

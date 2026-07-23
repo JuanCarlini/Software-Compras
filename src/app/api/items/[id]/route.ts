@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ItemService } from "@/controllers"
 import { UpdateItemSchema } from "@/shared/item-validation"
-import { requirePermission } from "@/shared/permissions-server"
-import { parseId } from "@/shared/parse-id"
-import { handleRouteError } from "@/shared/handle-route-error"
-import { getByIdRoute } from "@/shared/crud-route"
+import { requirePermission } from "@/lib/auth/permissions-server"
+import { parseId } from "@/lib/route/parse-id"
+import { handleRouteError } from "@/lib/route/handle-route-error"
+import { getByIdRoute } from "@/lib/route/crud-route"
 
 interface Params {
   params: Promise<{ id: string }>

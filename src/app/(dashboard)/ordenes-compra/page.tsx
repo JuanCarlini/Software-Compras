@@ -1,6 +1,6 @@
 import { OrdenCompraList } from "@/views/orden-compra-list"
 import { CrearButton } from "@/components/crear-button"
-import { requirePagePermission } from "@/shared/permissions-server"
+import { requirePagePermission } from "@/lib/auth/permissions-server"
 
 export default async function OrdenesCompraPage() {
   await requirePagePermission("ordenes_compra", "ver")

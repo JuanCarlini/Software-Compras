@@ -1,5 +1,5 @@
 import { CajaRepository } from "@/repositories/caja.repository"
-import { HttpError } from "@/shared/http-error"
+import { HttpError } from "@/lib/route/http-error"
 import type { Caja, CreateCajaData, UpdateCajaData } from "@/models"
 
 // Reglas de negocio de cajas (fondos/medios de pago). El I/O vive en CajaRepository (A1).

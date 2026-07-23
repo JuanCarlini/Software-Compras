@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { OrdenPagoService } from "@/controllers"
 import { AgregarFacturaSchema } from "@/shared/orden-pago-validation"
-import { requirePermission } from "@/shared/permissions-server"
-import { parseId } from "@/shared/parse-id"
-import { handleRouteError } from "@/shared/handle-route-error"
-import { HttpError } from "@/shared/http-error"
+import { requirePermission } from "@/lib/auth/permissions-server"
+import { parseId } from "@/lib/route/parse-id"
+import { handleRouteError } from "@/lib/route/handle-route-error"
+import { HttpError } from "@/lib/route/http-error"
 
 interface Params {
   params: Promise<{ id: string }>

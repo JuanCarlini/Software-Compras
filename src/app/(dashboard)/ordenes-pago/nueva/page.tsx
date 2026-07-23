@@ -2,7 +2,7 @@ import { OrdenPagoForm } from "@/views/orden-pago-form"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { requirePagePermission } from "@/shared/permissions-server"
+import { requirePagePermission } from "@/lib/auth/permissions-server"
 
 export default async function NuevaOrdenPagoPage() {
   await requirePagePermission("ordenes_pago", "crear", "/ordenes-pago")

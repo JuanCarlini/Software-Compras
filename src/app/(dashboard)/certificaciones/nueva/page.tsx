@@ -1,5 +1,5 @@
 import { CertificacionForm } from "@/views/certificacion-form"
-import { requirePagePermission } from "@/shared/permissions-server"
+import { requirePagePermission } from "@/lib/auth/permissions-server"
 
 export default async function NuevaCertificacionPage() {
   await requirePagePermission("certificaciones", "crear", "/certificaciones")

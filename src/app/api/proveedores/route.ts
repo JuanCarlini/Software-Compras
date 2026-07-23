@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import { ProveedorService } from "@/controllers"
-import { requirePermission } from "@/shared/permissions-server"
+import { requirePermission } from "@/lib/auth/permissions-server"
 import { CreateProveedorSchema } from "@/shared/proveedor-validation"
-import { handleRouteError } from "@/shared/handle-route-error"
-import { createRoute } from "@/shared/crud-route"
+import { handleRouteError } from "@/lib/route/handle-route-error"
+import { createRoute } from "@/lib/route/crud-route"
 
 export async function GET() {
   try {

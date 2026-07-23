@@ -1,5 +1,5 @@
 import { FacturaRepository } from "@/repositories/factura.repository"
-import { HttpError } from "@/shared/http-error"
+import { HttpError } from "@/lib/route/http-error"
 import { totalesDeLinea, totalesDeCabecera, IVA_DEFAULT } from "@/shared/totales"
 import { puedeTransicionar, TRANSICIONES_FACTURA } from "@/shared/transiciones"
 import type { CreateFacturaData, CreateFacturaLinea, CreateImputacion, EstadoFactura } from "@/models"

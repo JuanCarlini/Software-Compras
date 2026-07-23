@@ -2,7 +2,7 @@ import { OrdenCompraDetails } from "@/views/orden-compra-details"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { requirePagePermission } from "@/shared/permissions-server"
+import { requirePagePermission } from "@/lib/auth/permissions-server"
 
 interface Props {
   params: Promise<{ id: string }>

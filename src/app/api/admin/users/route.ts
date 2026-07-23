@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth, requireAdmin } from "@/shared/permissions-server"
+import { requireAuth, requireAdmin } from "@/lib/auth/permissions-server"
 import { isAdmin } from "@/shared/permissions"
 import { UserRole } from "@/models"
 import { UsuarioService } from "@/controllers/usuario.controller"
 import { AuditService } from "@/lib/audit/audit.service"
-import { handleRouteError } from "@/shared/handle-route-error"
+import { handleRouteError } from "@/lib/route/handle-route-error"
 
 // GET /api/admin/users - Listar todos los usuarios (solo admin)
 export async function GET(request: NextRequest) {

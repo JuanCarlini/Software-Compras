@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { CajaService } from "@/controllers"
 import { CreateCajaSchema } from "@/shared/caja-validation"
-import { requireAdmin } from "@/shared/permissions-server"
-import { handleRouteError } from "@/shared/handle-route-error"
-import { createRoute } from "@/shared/crud-route"
+import { requireAdmin } from "@/lib/auth/permissions-server"
+import { handleRouteError } from "@/lib/route/handle-route-error"
+import { createRoute } from "@/lib/route/crud-route"
 
 // GET /api/cajas - Cajas activas (la OP las necesita; autentica el middleware)
 export async function GET(request: NextRequest) {

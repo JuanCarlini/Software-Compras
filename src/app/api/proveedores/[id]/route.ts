@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ProveedorService } from "@/controllers"
-import { requirePermission } from "@/shared/permissions-server"
+import { requirePermission } from "@/lib/auth/permissions-server"
 import { UpdateProveedorSchema } from "@/shared/proveedor-validation"
-import { parseId } from "@/shared/parse-id"
-import { handleRouteError } from "@/shared/handle-route-error"
-import { getByIdRoute } from "@/shared/crud-route"
+import { parseId } from "@/lib/route/parse-id"
+import { handleRouteError } from "@/lib/route/handle-route-error"
+import { getByIdRoute } from "@/lib/route/crud-route"
 
 interface Params {
   params: Promise<{

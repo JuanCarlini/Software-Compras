@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import { FacturaService } from "@/controllers/factura.controller"
 import { CreateFacturaSchema } from "@/shared/factura-validation"
-import { requirePermission } from "@/shared/permissions-server"
-import { handleRouteError } from "@/shared/handle-route-error"
-import { createRoute } from "@/shared/crud-route"
+import { requirePermission } from "@/lib/auth/permissions-server"
+import { handleRouteError } from "@/lib/route/handle-route-error"
+import { createRoute } from "@/lib/route/crud-route"
 
 // GET /api/facturas - Lista con el rollup de pago (v_factura_rollup)
 export async function GET() {

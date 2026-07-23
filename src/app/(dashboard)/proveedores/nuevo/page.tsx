@@ -1,5 +1,5 @@
 import { ProveedorForm } from "@/views/proveedor-form"
-import { requirePagePermission } from "@/shared/permissions-server"
+import { requirePagePermission } from "@/lib/auth/permissions-server"
 
 export default async function NuevoProveedorPage() {
   await requirePagePermission("proveedores", "crear", "/proveedores")

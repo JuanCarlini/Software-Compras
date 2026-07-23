@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ItemPrecioRepository } from "@/repositories/item-precio.repository"
-import { parseId } from "@/shared/parse-id"
-import { handleRouteError } from "@/shared/handle-route-error"
-import { HttpError } from "@/shared/http-error"
+import { parseId } from "@/lib/route/parse-id"
+import { handleRouteError } from "@/lib/route/handle-route-error"
+import { HttpError } from "@/lib/route/http-error"
 
 // GET /api/items/[id]/precio?proveedorId=N — precio de este item PARA ese proveedor.
 // 404 si el par no tiene precio cargado todavía: la UI pide entonces uno y la primera

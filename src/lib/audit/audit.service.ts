@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/service'
 import { getCurrentUser } from '@/lib/auth/auth.cookies'
-import { HttpError } from '@/shared/http-error'
+import { HttpError } from '@/lib/route/http-error'
 
 // Valores del enum audit_accion (columna gu_audit_log.accion). La bitácora
 // (gu_auditoria.accion) es texto libre y acepta cualquier filtro.

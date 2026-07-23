@@ -1,5 +1,5 @@
 import { OrdenPagoRepository } from "@/repositories/orden-pago.repository"
-import { HttpError } from "@/shared/http-error"
+import { HttpError } from "@/lib/route/http-error"
 import { puedeTransicionar, TRANSICIONES_OP } from "@/shared/transiciones"
 import type {
   CreateOrdenPagoData,

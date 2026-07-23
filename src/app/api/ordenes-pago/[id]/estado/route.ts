@@ -1,8 +1,8 @@
 import { OrdenPagoService } from "@/controllers"
 import { CambiarEstadoOPSchema } from "@/shared/orden-pago-validation"
-import { requirePermission } from "@/shared/permissions-server"
+import { requirePermission } from "@/lib/auth/permissions-server"
 import { accionRequerida } from "@/shared/transiciones"
-import { estadoRoute } from "@/shared/estado-route"
+import { estadoRoute } from "@/lib/route/estado-route"
 import type { AccionAuditoria } from "@/lib/audit/audit.service"
 import type { EstadoOp } from "@/models"
 

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAdmin } from "@/shared/permissions-server"
+import { requireAdmin } from "@/lib/auth/permissions-server"
 import { RolService } from "@/controllers/rol.controller"
 import { AuditService } from "@/lib/audit/audit.service"
-import { handleRouteError } from "@/shared/handle-route-error"
+import { handleRouteError } from "@/lib/route/handle-route-error"
 
 // GET /api/admin/roles - Catálogo de roles con cantidad de usuarios (solo admin)
 export async function GET() {

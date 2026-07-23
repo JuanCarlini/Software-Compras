@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ItemService } from "@/controllers"
 import { CreateItemSchema } from "@/shared/item-validation"
-import { requirePermission } from "@/shared/permissions-server"
-import { handleRouteError } from "@/shared/handle-route-error"
-import { createRoute } from "@/shared/crud-route"
+import { requirePermission } from "@/lib/auth/permissions-server"
+import { handleRouteError } from "@/lib/route/handle-route-error"
+import { createRoute } from "@/lib/route/crud-route"
 
 // GET /api/items - Obtener todos los items activos
 // Query params opcionales: ?includeInactive=true, ?categoria=string

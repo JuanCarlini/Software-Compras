@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server"
 import { ProyectoService } from "@/controllers/proyecto.controller"
 import { CreateProyectoSchema } from "@/shared/proyecto-validation"
-import { requireRole } from "@/shared/permissions-server"
+import { requireRole } from "@/lib/auth/permissions-server"
 import { ROLES_ESCRITURA } from "@/shared/permissions"
-import { handleRouteError } from "@/shared/handle-route-error"
-import { createRoute } from "@/shared/crud-route"
+import { handleRouteError } from "@/lib/route/handle-route-error"
+import { createRoute } from "@/lib/route/crud-route"
 
 export async function GET() {
   try {

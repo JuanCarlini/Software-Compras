@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { FacturaService } from "@/controllers/factura.controller"
-import { requirePermission } from "@/shared/permissions-server"
-import { parseId } from "@/shared/parse-id"
-import { handleRouteError } from "@/shared/handle-route-error"
-import { getByIdRoute } from "@/shared/crud-route"
+import { requirePermission } from "@/lib/auth/permissions-server"
+import { parseId } from "@/lib/route/parse-id"
+import { handleRouteError } from "@/lib/route/handle-route-error"
+import { getByIdRoute } from "@/lib/route/crud-route"
 import { AuditService } from "@/lib/audit/audit.service"
 
 interface Params {

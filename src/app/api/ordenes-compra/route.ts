@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import { OrdenCompraService } from "@/controllers"
 import { CreateOrdenCompraSchema } from "@/shared/orden-compra-validation"
-import { requirePermission } from "@/shared/permissions-server"
-import { handleRouteError } from "@/shared/handle-route-error"
-import { createRoute } from "@/shared/crud-route"
+import { requirePermission } from "@/lib/auth/permissions-server"
+import { handleRouteError } from "@/lib/route/handle-route-error"
+import { createRoute } from "@/lib/route/crud-route"
 
 // GET /api/ordenes-compra - Lista con el rollup de certificación (leído de v_oc_rollup).
 // Gateado por permiso: 'ordenes_compra:ver' (los 4 roles del sistema lo tienen por el seed).

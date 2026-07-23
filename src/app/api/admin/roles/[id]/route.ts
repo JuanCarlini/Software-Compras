@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAdmin } from "@/shared/permissions-server"
+import { requireAdmin } from "@/lib/auth/permissions-server"
 import { RolService } from "@/controllers/rol.controller"
 import { AuditService } from "@/lib/audit/audit.service"
-import { parseId } from "@/shared/parse-id"
-import { handleRouteError } from "@/shared/handle-route-error"
+import { parseId } from "@/lib/route/parse-id"
+import { handleRouteError } from "@/lib/route/handle-route-error"
 
 interface Params {
   params: Promise<{ id: string }>

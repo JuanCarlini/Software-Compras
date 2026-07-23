@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ItemService } from "@/controllers"
-import { handleRouteError } from "@/shared/handle-route-error"
+import { handleRouteError } from "@/lib/route/handle-route-error"
 
 // GET /api/items/search?query=texto - Buscar items por nombre o descripción
 export async function GET(request: NextRequest) {

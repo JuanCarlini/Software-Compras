@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { FacturaService } from "@/controllers/factura.controller"
-import { requirePermission } from "@/shared/permissions-server"
-import { parseId } from "@/shared/parse-id"
-import { handleRouteError } from "@/shared/handle-route-error"
-import { HttpError } from "@/shared/http-error"
+import { requirePermission } from "@/lib/auth/permissions-server"
+import { parseId } from "@/lib/route/parse-id"
+import { handleRouteError } from "@/lib/route/handle-route-error"
+import { HttpError } from "@/lib/route/http-error"
 
 // GET /api/facturas/certificaciones-aprobadas?proveedorId=N
 // Certificaciones aprobadas del proveedor, para elegir a cuáles imputar la factura.

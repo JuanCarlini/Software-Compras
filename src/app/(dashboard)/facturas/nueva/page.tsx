@@ -1,5 +1,5 @@
 import { FacturaForm } from "@/views/factura-form"
-import { requirePagePermission } from "@/shared/permissions-server"
+import { requirePagePermission } from "@/lib/auth/permissions-server"
 
 export default async function NuevaFacturaPage() {
   await requirePagePermission("facturas", "crear", "/facturas")

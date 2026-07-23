@@ -3,7 +3,7 @@ import { AuthService } from '@/lib/auth/auth.service'
 import { setAuthCookie } from '@/lib/auth/auth.cookies'
 import { AuditService } from '@/lib/audit/audit.service'
 import { estaBloqueado, registrarFallo, limpiarIntentos } from '@/lib/auth/rate-limit'
-import { handleRouteError } from '@/shared/handle-route-error'
+import { handleRouteError } from '@/lib/route/handle-route-error'
 
 export async function POST(request: NextRequest) {
   try {

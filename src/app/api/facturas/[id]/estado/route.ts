@@ -1,8 +1,8 @@
 import { FacturaService } from "@/controllers/factura.controller"
 import { CambiarEstadoFacturaSchema } from "@/shared/factura-validation"
-import { requirePermission } from "@/shared/permissions-server"
+import { requirePermission } from "@/lib/auth/permissions-server"
 import { accionRequerida } from "@/shared/transiciones"
-import { estadoRoute } from "@/shared/estado-route"
+import { estadoRoute } from "@/lib/route/estado-route"
 import type { AccionAuditoria } from "@/lib/audit/audit.service"
 import type { EstadoFactura } from "@/models"
 

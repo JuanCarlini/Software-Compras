@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs"
 import { UsuarioRepository } from "@/repositories/usuario.repository"
 import { RolRepository } from "@/repositories/rol.repository"
-import { HttpError } from "@/shared/http-error"
+import { HttpError } from "@/lib/route/http-error"
 
 export interface CreateUsuarioData {
   nombre: string

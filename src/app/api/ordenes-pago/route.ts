@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import { OrdenPagoService } from "@/controllers"
 import { CreateOrdenPagoSchema } from "@/shared/orden-pago-validation"
-import { requirePermission } from "@/shared/permissions-server"
-import { handleRouteError } from "@/shared/handle-route-error"
-import { createRoute } from "@/shared/crud-route"
+import { requirePermission } from "@/lib/auth/permissions-server"
+import { handleRouteError } from "@/lib/route/handle-route-error"
+import { createRoute } from "@/lib/route/crud-route"
 
 // GET /api/ordenes-pago - Lista (con el nombre del proveedor aplanado)
 export async function GET() {

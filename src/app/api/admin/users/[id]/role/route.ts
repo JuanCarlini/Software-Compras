@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAdmin } from "@/shared/permissions-server"
-import { parseId } from "@/shared/parse-id"
-import { handleRouteError } from "@/shared/handle-route-error"
+import { requireAdmin } from "@/lib/auth/permissions-server"
+import { parseId } from "@/lib/route/parse-id"
+import { handleRouteError } from "@/lib/route/handle-route-error"
 import { UsuarioService } from "@/controllers/usuario.controller"
 import { AuditService } from "@/lib/audit/audit.service"
 

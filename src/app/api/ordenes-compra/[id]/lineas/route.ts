@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { OrdenCompraService } from "@/controllers"
 import { CreateOrdenCompraLineaSchema } from "@/shared/orden-compra-validation"
-import { requirePermission } from "@/shared/permissions-server"
-import { parseId } from "@/shared/parse-id"
-import { handleRouteError } from "@/shared/handle-route-error"
+import { requirePermission } from "@/lib/auth/permissions-server"
+import { parseId } from "@/lib/route/parse-id"
+import { handleRouteError } from "@/lib/route/handle-route-error"
 
 interface Params {
   params: Promise<{ id: string }>

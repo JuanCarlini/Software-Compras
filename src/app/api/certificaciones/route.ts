@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import { CertificacionService } from "@/controllers/certificacion.controller"
 import { CreateCertificacionSchema } from "@/shared/certificacion-validation"
-import { requirePermission } from "@/shared/permissions-server"
-import { handleRouteError } from "@/shared/handle-route-error"
-import { createRoute } from "@/shared/crud-route"
+import { requirePermission } from "@/lib/auth/permissions-server"
+import { handleRouteError } from "@/lib/route/handle-route-error"
+import { createRoute } from "@/lib/route/crud-route"
 
 // GET /api/certificaciones - Lista con el rollup de facturación (v_cert_rollup)
 export async function GET() {

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/shared/permissions-server"
+import { requireAuth } from "@/lib/auth/permissions-server"
 import { isAdmin, stringToUserRole } from "@/shared/permissions"
 import { AuditService } from "@/lib/audit/audit.service"
-import { handleRouteError } from "@/shared/handle-route-error"
+import { handleRouteError } from "@/lib/route/handle-route-error"
 
 // GET /api/admin/auditoria — consulta de auditoría (solo admin), con búsqueda combinada.
 // ?fuente=bitacora (gu_auditoria, operaciones con usuario) | cambios (gu_audit_log, historial de valores)
