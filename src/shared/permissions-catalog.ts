@@ -13,7 +13,7 @@ export const ACCION_LABEL: Record<Accion, string> = {
 }
 
 // Módulo → etiqueta + acciones válidas. Los 4 módulos de workflow tienen las 4 acciones;
-// proveedores e items solo ver/crear (no tienen aprobación ni borrado en el circuito). = 20 pares.
+// proveedores, items y proyectos solo ver/crear (no tienen aprobación ni borrado). = 22 pares.
 export const PERMISOS_CATALOGO = {
   ordenes_compra: { label: "Órdenes de compra", acciones: ["ver", "crear", "aprobar", "borrar"] },
   certificaciones: { label: "Certificaciones", acciones: ["ver", "crear", "aprobar", "borrar"] },
@@ -21,9 +21,10 @@ export const PERMISOS_CATALOGO = {
   ordenes_pago: { label: "Órdenes de pago", acciones: ["ver", "crear", "aprobar", "borrar"] },
   proveedores: { label: "Proveedores", acciones: ["ver", "crear"] },
   items: { label: "Ítems", acciones: ["ver", "crear"] },
+  proyectos: { label: "Proyectos", acciones: ["ver", "crear"] },
 } as const satisfies Record<string, { label: string; acciones: Accion[] }>
 
-// Las 20 claves `modulo:accion` válidas, en Set para chequeo O(1).
+// Las 22 claves `modulo:accion` válidas, en Set para chequeo O(1).
 export const PERMISOS_VALIDOS: Set<string> = new Set(
   Object.entries(PERMISOS_CATALOGO).flatMap(([modulo, def]) =>
     def.acciones.map((accion) => `${modulo}:${accion}`)

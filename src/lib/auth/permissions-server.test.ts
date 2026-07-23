@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { getCurrentUser } from "@/lib/auth/auth.cookies"
 import { RolRepository } from "@/repositories/rol.repository"
 import { ROLES_ESCRITURA } from "@/shared/permissions"
-import { requireAuth, requireAdmin, requireRole, requirePermission, requirePagePermission } from "./permissions-server"
+import { requireAuth, requireAdmin, requireRole, requirePermission, requirePagePermission, requirePageAdmin } from "./permissions-server"
 import { redirect } from "next/navigation"
 
 // Enforcement RBAC (S1): la barrera de autorización de toda ruta mutante. Antes sin un
@@ -141,5 +141,41 @@ describe("requirePagePermission (guarda de página)", () => {
     const { user } = await requirePagePermission("facturas", "aprobar")
     expect(user.rol).toBe("admin")
     expect(redirectMock).not.toHaveBeenCalled()
+  })
+})
+
+// Guarda de PÁGINA por rol admin: el equivalente de requireAdmin (API) para Server
+// Components. Antes /admin/* solo tenía un guard en useEffect (client), que esconde la UI
+// después de hidratar pero no bloquea el acceso por URL directa.
+describe("requirePageAdmin", () => {
+  it("redirige a /login si no hay usuario", async () => {
+    getUser.mockResolvedValue(null as any)
+    await expect(requirePageAdmin()).rejects.toThrow()
+    expect(redirectMock).toHaveBeenCalledWith("/login")
+  })
+
+  it("redirige al fallback si el rol no es admin", async () => {
+    comoRol("supervisor")
+    await expect(requirePageAdmin("/dashboard")).rejects.toThrow()
+    expect(redirectMock).toHaveBeenCalledWith("/dashboard")
+  })
+
+  it("readonly tampoco entra", async () => {
+    comoRol("readonly")
+    await expect(requirePageAdmin()).rejects.toThrow()
+    expect(redirectMock).toHaveBeenCalledWith("/dashboard")
+  })
+
+  it("devuelve el usuario si es admin (y NO redirige)", async () => {
+    comoRol("admin")
+    const { user } = await requirePageAdmin()
+    expect(user.rol).toBe("admin")
+    expect(redirectMock).not.toHaveBeenCalled()
+  })
+
+  it("no consulta la matriz de permisos: la decisión es por rol", async () => {
+    comoRol("admin")
+    await requirePageAdmin()
+    expect(rolRepo.findPermisosByNombre).not.toHaveBeenCalled()
   })
 })

@@ -131,3 +131,16 @@ export async function requirePagePermission(modulo: string, accion: string, fall
   if (!tienePermiso(user.rol, permisos, modulo, accion)) redirect(fallbackUrl)
   return { user }
 }
+
+/**
+ * Guarda de PÁGINA por rol admin (Server Components): el equivalente de requireAdmin para
+ * páginas. Las secciones /admin/* no son módulos de la matriz RBAC — son por rol —, así que
+ * no consulta gu_roles.permisos. Bloquea el acceso por URL directa, que un guard en useEffect
+ * no puede hacer (esconde la UI recién después de hidratar).
+ */
+export async function requirePageAdmin(fallbackUrl = "/dashboard") {
+  const user = await getAuthenticatedUser()
+  if (!user) redirect("/login")
+  if (!isAdmin(stringToUserRole(user.rol))) redirect(fallbackUrl)
+  return { user }
+}

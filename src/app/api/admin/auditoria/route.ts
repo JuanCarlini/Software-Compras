@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/auth/permissions-server"
-import { isAdmin, stringToUserRole } from "@/shared/permissions"
+import { requireAdmin } from "@/lib/auth/permissions-server"
 import { AuditService } from "@/lib/audit/audit.service"
 import { handleRouteError } from "@/lib/route/handle-route-error"
 
@@ -10,14 +9,8 @@ import { handleRouteError } from "@/lib/route/handle-route-error"
 // El I/O vive en AuditService.consultar (la ruta solo autoriza y parsea la query).
 export async function GET(request: NextRequest) {
   try {
-    const { error: authError, user } = await requireAuth()
+    const { error: authError } = await requireAdmin()
     if (authError) return authError
-    if (!isAdmin(stringToUserRole(user!.rol))) {
-      return NextResponse.json(
-        { error: "No tienes permisos para acceder a la auditoría" },
-        { status: 403 }
-      )
-    }
 
     const sp = request.nextUrl.searchParams
     const resultado = await AuditService.consultar({

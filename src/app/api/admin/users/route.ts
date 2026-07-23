@@ -1,28 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth, requireAdmin } from "@/lib/auth/permissions-server"
-import { isAdmin } from "@/shared/permissions"
-import { UserRole } from "@/models"
+import { requireAdmin } from "@/lib/auth/permissions-server"
 import { UsuarioService } from "@/services/usuario.service"
 import { AuditService } from "@/lib/audit/audit.service"
 import { handleRouteError } from "@/lib/route/handle-route-error"
 
 // GET /api/admin/users - Listar todos los usuarios (solo admin)
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // Verificar autenticación
-    const { error: authError, user } = await requireAuth()
-    if (authError) {
-      console.error("Error de autenticación:", authError)
-      return authError
-    }
-
-    // Verificar que sea admin
-    if (!isAdmin(user!.rol as UserRole)) {
-      return NextResponse.json(
-        { error: "No tienes permisos para acceder a esta sección" },
-        { status: 403 }
-      )
-    }
+    // requireAdmin en vez del requireAuth + isAdmin inline que había acá: el chequeo a mano
+    // hacía `user.rol as UserRole` (cast crudo de un string) en vez de stringToUserRole.
+    const { error: authError } = await requireAdmin()
+    if (authError) return authError
 
     const users = await UsuarioService.getAll()
     return NextResponse.json(users)

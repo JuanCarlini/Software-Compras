@@ -33,11 +33,19 @@ describe("tienePermiso", () => {
 
 // obs. plan-checker #1: cerrar el claim runtime del catálogo (Task 2), no solo con tsc.
 describe("esPermisoValido (catálogo)", () => {
-  it("el catálogo tiene exactamente 20 claves válidas", () => {
-    expect(PERMISOS_VALIDOS.size).toBe(20)
+  it("el catálogo tiene exactamente 22 claves válidas", () => {
+    expect(PERMISOS_VALIDOS.size).toBe(22)
   })
   it("par válido → true", () => {
     expect(esPermisoValido("ordenes_compra:ver")).toBe(true)
+  })
+  it("proyectos está en el catálogo (ver/crear), para que su ruta pueda gatear por permiso", () => {
+    expect(esPermisoValido("proyectos:ver")).toBe(true)
+    expect(esPermisoValido("proyectos:crear")).toBe(true)
+  })
+  it("proyectos no tiene aprobar ni borrar", () => {
+    expect(esPermisoValido("proyectos:aprobar")).toBe(false)
+    expect(esPermisoValido("proyectos:borrar")).toBe(false)
   })
   it("par no declarado (proveedores no tiene aprobar) → false", () => {
     expect(esPermisoValido("proveedores:aprobar")).toBe(false)

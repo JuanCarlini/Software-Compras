@@ -371,11 +371,25 @@ latencia sin comprar nada). El de `items/[id]/precio` no: `ItemService` existe a
 `usuario.repository.ts`, que además tiene la protección `SELECT_SIN_HASH`. Único lugar de la app donde
 dos capas leen la misma tabla con distinto criterio de columnas.
 
-### D9 · Huecos de autorización (fuera de alcance de este refactor, pero anotados)
-- `GET /api/proyectos` sin ningún gate (`proyectos/route.ts:9-16`); su POST usa `requireRole`, el único create fuera de `requirePermission`.
-- `(dashboard)/proveedores/[id]/editar/page.tsx` sin `requirePagePermission` — única página del circuito sin guarda server-side.
-- `(dashboard)/admin/layout.tsx` es `"use client"`: el gate admin es un `useEffect`+redirect (los datos sí están protegidos en la API).
-- El permiso `items:ver` del catálogo (`permissions-catalog.ts:23`) **no lo consulta ninguna ruta** — está muerto en la matriz.
+### D9 · Huecos de autorización — ✅ **RESUELTOS (2026-07-23), salvo el último**
+
+Se cerraron en una fase aparte del refactor de ubicación, con TDD (test fallando primero) —
+justamente porque son **cambio de comportamiento** y mezclarlos habría arruinado la propiedad
+"este diff solo movió archivos". Suite 282 → 354.
+
+| Hueco | Estado |
+|---|---|
+| `GET /api/proyectos` sin ningún gate (`proyectos/route.ts:9-16`); POST con `requireRole`, único create fuera de `requirePermission` | ✅ `proyectos` agregado al catálogo (ver/crear → 22 claves); GET y POST con `requirePermission`. ⚠️ Los roles de sistema no tienen `proyectos:*` en `gu_roles.permisos` — hoy solo admin. No rompe nada (0 consumidores), pero hay que darlos cuando se conecte el módulo |
+| `proveedores/[id]/editar` sin `requirePagePermission` | ✅ Server Component + `requirePagePermission("proveedores","crear","/proveedores")`; el client se extrajo a `views/proveedor-editar-client.tsx` |
+| `admin/layout.tsx` `"use client"` con guard en `useEffect` | ✅ Server Component + **`requirePageAdmin()`** (nuevo). Se borró además el guard duplicado e inalcanzable de `admin/usuarios/page.tsx` |
+| `admin/auditoria` y `admin/users` GET gateando a mano (D9-5) | ✅ Ambos a `requireAdmin`. El de users usaba `user.rol as UserRole`, un cast crudo en vez de `stringToUserRole` |
+| **`items:ver` muerto en la matriz** | ⏸️ **Sin resolver, a propósito.** Aplicarlo a los GET del catálogo rompería el alta de líneas de OC para un rol con `ordenes_compra:crear` pero sin `items:ver` (`views/item-combobox.tsx:62-79`). Quedó **firmado** en `GET_SIN_GATE_A_PROPOSITO` con el motivo; destrabarlo es decisión de producto |
+
+**Dos reglas duras nuevas para que no vuelva a pasar:** `src/app/(dashboard)/page-authz.test.ts`
+(toda página del dashboard con guarda server-side y sin `"use client"`) y un segundo describe en
+`route-authz.test.ts` (los GET llevan gate **o quedan firmados en una allowlist con el motivo** —
+convierte "sin gate por olvido" en "sin gate por decisión"). Ambas fallan el build.
+Límite conocido de las dos: la detección es por archivo, no por método.
 
 ### D10 · Código muerto confirmado (0 importadores)
 | Item | Evidencia |
