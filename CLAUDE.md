@@ -33,23 +33,33 @@ Next.js **15.2.6** (App Router) · React 18 · TypeScript 5 · Tailwind 3.4 + sh
 
 ## Arquitectura y convenciones
 
+> **Guía viva y autoritativa de la estructura: [`src/README.md`](src/README.md)** (creado 2026-07-23 con la
+> reorganización de `src/`). Explica cada carpeta, la frontera entre ellas y dónde poner un archivo nuevo.
+> El mapa detallado archivo-por-archivo + diagnóstico está en `docs/ARQUITECTURA_SRC_MAPA.md`.
+
 ```
 src/
-├── app/            # App Router: (auth), (dashboard), api/ por módulo
-├── controllers/    # Reglas de negocio. Archivos *.controller.ts, clases *Service (delegan el I/O al repo). También los *.test.ts (vitest)
+├── app/            # App Router: (auth), (dashboard), api/ por módulo. Las route.ts son los controladores HTTP reales
+├── services/       # Reglas de negocio (RENOMBRADO desde controllers/ el 2026-07-23). Archivos *.service.ts, clases *Service.
+│                   #   + totales.ts y transiciones.ts (dominio puro, venían de shared/). También los *.test.ts (vitest)
 ├── repositories/   # Capa de datos (A1, 2026-07-06 d): *.repository.ts, ÚNICA capa que ejecuta .from() de Supabase por dominio
 ├── models/         # Tipos/enums TS (UserRole, modelos por dominio)
-├── views/          # Componentes de dominio (forms/lists/details) + views/ui (shadcn, 27 componentes en uso)
-├── components/     # Genéricos (theme, user-menu) + components/items/
-├── lib/auth/       # auth.service.ts (JWT+bcrypt), auth.cookies.ts, rate-limit.ts (S3)
-├── lib/audit/      # audit.service.ts (bitácora server-side, T06)
-├── lib/supabase/   # service.ts (service_role, SERVER-ONLY) — sin client.ts (browser ya no habla con Supabase)
-├── shared/         # permissions.ts (+ requireRole/grupos de rol), permissions-server.ts, validaciones Zod (incl. factura-validation.ts), use-*.ts
-└── middleware.ts   # Verifica FIRMA del JWT con jose (ver Auth)
+├── views/          # SOLO pantallas de dominio (forms/lists/details) + los 3 de items. kebab-case, sin barrel
+├── components/     # Chrome y genéricos: app-sidebar, crear-button, status-badge, auth-context, theme-*, user-menu
+│   └── ui/         #   Primitivas shadcn (MOVIDO desde views/ui el 2026-07-23). Es la ruta que declara components.json
+├── hooks/          # use-orders, use-proveedores, use-dashboard, use-reportes, use-ordenes-pago (venían de shared/)
+├── lib/            # INFRAESTRUCTURA SERVER-ONLY (regla dura). utils.ts = cn()
+│   ├── auth/       #   auth.service.ts (JWT+bcrypt), auth.cookies.ts, rate-limit.ts (S3), permissions-server.ts (los gates)
+│   ├── route/      #   handle-route-error, http-error, parse-id, crud-route, estado-route (el kernel de las API routes)
+│   ├── audit/      #   audit.service.ts (bitácora server-side, T06)
+│   └── supabase/   #   service.ts (service_role, singleton, fail-fast) + database.types.ts
+├── shared/         # SOLO lo genuinamente compartido: validation/ (los 8 Zod), permissions{,-catalog}.ts (isomorfos),
+│                   #   api-client.ts (fetch del browser), date/format/search-utils, toast-helpers
+└── middleware.ts   # Verifica FIRMA del JWT con jose (ver Auth). Next.js obliga a que esté acá
 ```
 
-- Clases de negocio: `OrdenCompraService`, `CertificacionService`, `FacturaService`, `OrdenPagoService`, `ProveedorService`, `ProyectoService`, `ItemService`, `UsuarioService`, `RolService`. **Desde A1 (2026-07-06 d) cada uno delega el acceso a datos a su `*Repository`** (`src/repositories/`); los services no tienen `.from()`. (`ReporteController` y `ConfiguracionController` **borrados 2026-07-06 (d)** con los mocks D1/D2 → ya no quedan clases `*Controller` legacy; todo es `*Service`.) (`CajaService` y `AuthController` borrados 2026-07-06 — código muerto; el tipo `AuthUser` vivo sale de `models/user.model.ts` para la UI y de `lib/auth/auth.service.ts` para el server.)
-- **Orden al construir un módulo**: controller/service → API route → UI. No invertir.
+- Clases de negocio: `OrdenCompraService`, `CertificacionService`, `FacturaService`, `OrdenPagoService`, `ProveedorService`, `ProyectoService`, `ItemService`, `UsuarioService`, `RolService`, `CajaService`. **Desde A1 (2026-07-06 d) cada uno delega el acceso a datos a su `*Repository`** (`src/repositories/`); los services no tienen `.from()`. Desde 2026-07-23 la carpeta se llama `services/` y los archivos `*.service.ts`: **carpeta, archivo y clase dicen lo mismo**, y "controller" queda libre para lo que de verdad lo es (los `route.ts`). El barrel `@/services` exporta los 10 (antes faltaba `factura`).
+- **Orden al construir un módulo**: service → API route → UI. No invertir.
 - Antes de crear un componente, copiar el patrón de uno existente (ej. `src/views/certificacion-detail.tsx`).
 - Editar antes que duplicar. Reescritura completa solo cuando el archivo cambia sustancialmente.
 
@@ -151,6 +161,18 @@ Estado por ítem: T01 Arquitectura ✅ **RESUELTO 2026-07-06(d)** (refactor a 4 
 **Top 5 (orden de trabajo confirmado, arrancando 2026-07-04):** 1) ~~T06 auditoría funcional~~ **HECHO**, 2) ~~seguridad RLS/auth~~ **HECHO 2026-07-04** (+ S1/S2/S3/S4 endurecidos 2026-07-06 d), 3) ~~T09 tests~~ **ARRANCADO 2026-07-06 (d), ampliado 2026-07-21** (vitest + 188 tests; ampliar cobertura), 4) T07 resguardo (pg_dump + instructivos) — **pendiente**, 5) A02 gráfico + tríada GoF — **pendiente**. Pendiente transversal: ~~T01 refactor a repositorios~~ **HECHO 2026-07-06 (d)** (4 capas, `src/repositories/`). Anexos (Auditoría, Resguardo, reconciliación Patrones) = redacción en sesión aparte, texto antes de .docx.
 
 ## Changelog de sesiones
+
+- **2026-07-23** — **Auditoría de `src/` + reorganización ejecutada (8 pasos, 8 commits, sin push).** Pedido de Juan Andrés: "miro `src/` y no entiendo qué hace cada cosa". (1) **Fase read-only**: mapa archivo-por-archivo de los 229 archivos con 4 subagentes en paralelo (app / capas negocio-datos / frontend / shared+lib), grafo de imports resuelto por script. Informe completo en **`docs/ARQUITECTURA_SRC_MAPA.md`** (mapa + diagnóstico + veredicto MVC + plan). (2) **Veredicto sobre "volver a MVC"**: **no**. La estructura de 4 capas **ya es** MVC en su forma madura — `route.ts` = Controller real, `views/`+`page.tsx` = View, `repositories/`+`models/` = Model, `services/` = capa de servicio. Colapsarla perdería la testeabilidad (9 suites de services corren sin DB) sin ganar nada. **El problema era de rótulos y cajones, no de arquitectura.** (3) **Ejecución de los 8 pasos**, cada uno con gate `tsc --noEmit` + `vitest` y commit atómico:
+  - **P1** (`53fc61c`) borra muerto: `views/ui/{switch,toggle}.tsx` (0 importadores), `lib/auth/index.ts` (barrel sin consumidores), paths `@/routes` y `@/database` del tsconfig (carpetas ya borradas), deps `@radix-ui/react-{switch,toggle}`.
+  - **P2** (`193e314`) **`views/ui/` → `components/ui/`** — 142 imports en 46 archivos. `views/` pasa de 54 entradas de dos naturalezas a **solo pantallas de negocio**. Es el movimiento de mayor ROI.
+  - **P3** (`37e3e24`) `shared/utils.ts` (`cn`) → **`lib/utils.ts`** + `components.json` con `css: src/app/globals.css`. **Cerró un smell latente y destructivo**: el JSON declaraba `ui: @/components/ui` y `utils: @/lib/utils`, ninguno de los cuales existía → un `npx shadcn add X` habría creado una **segunda** carpeta de primitivas e importado de una ruta que no resuelve. El CLI estaba roto y nadie lo había notado.
+  - **P4** (`aa1454a`) frontera views↔components **invertida en 7 archivos**, corregida: a `components/` van `auth-context` (13 imp), `status-badge`+`status-colors`, `app-sidebar`, `crear-button`; a `components/ui/` van `list-shell` y `form-root-error`; y **`components/items/*` → `views/`** en kebab-case (era dominio puro viviendo entre genéricos), borrando su barrel.
+  - **P5** (`5a2b4ea`) **el paso de seguridad**: `shared/` → `lib/route/` (handle-route-error, http-error, parse-id, crud-route, estado-route + 4 tests) y `permissions-server.ts` → `lib/auth/`. Motivo real: `permissions-server` es **server-only** (importa `next/headers`), tiene 52 importadores y era **vecino alfabético** de `permissions.ts`, que es isomorfo y lo importan 8 componentes cliente — un autocompletado de distancia, sin `import 'server-only'` en ningún lado del repo. Ahora "todo lo de `lib/` es server-only" es **verdadero y completo**. También `route-authz.test.ts` → `app/api/` (testea el árbol de rutas, no `shared/`; verificado que sigue escaneando las 43 rutas = 44 tests y que su regex de gate es por símbolo, no por path). 144 imports.
+  - **P6** (`b43425a`) los 5 `use-*` → **`src/hooks/`** (+ `use-mobile` → `components/ui/`, es de shadcn). `components.json` ya declaraba `hooks: @/hooks`; ahora esa ruta existe. **`tsc` cazó 3 relativos colgando** (`./toast-helpers`, `./api-client`) — el gate haciendo su trabajo.
+  - **P7** (`4a09ed6`) `shared/validation/` (los 8 Zod + 2 tests) y **el dominio fuera del cajón**: `totales.ts` y `transiciones.ts` (las dos reglas de negocio más importantes que viven en TS) dejan de ser vecinas de `formatCurrency` y `cn` y pasan a la capa de negocio. `shared/` cae de **44 archivos a 9 entradas**.
+  - **P8** (`8068c88`) **`controllers/` → `services/`**, `*.controller.ts` → `*.service.ts` (10 + 9 tests), 57 imports, tsconfig `@/services`. Cierra la confusión #1: la carpeta decía "controllers", el archivo ".controller" y la clase "Service" — tres nombres para una cosa, mientras el controller HTTP real (`route.ts`) estaba en otro lado. De paso el barrel suma `factura.service`, que faltaba (era el origen de las dos convenciones de import conviviendo).
+  - (4) **`src/README.md`** — guía única (en vez de un README por carpeta): el flujo de punta a punta, qué va y qué NO va en cada carpeta, la frontera views↔components explicada, las 6 reglas duras y una tabla "dónde pongo un archivo nuevo".
+  - **Verificado: `tsc --noEmit` limpio · vitest 282/282 en los 8 pasos (baseline idéntico; el brief citaba 159, stale) · `next build` verde.** **Sin push.** **NO se agregó `server-only`** (el brief pedía cero dependencias nuevas) — queda como mejora de 1 línea por archivo en `lib/route/` y `lib/auth/permissions-server.ts`. **Pendientes que el mapa dejó documentados y este refactor NO tocó a propósito** (son cambios de comportamiento, no de ubicación): `GET /api/proyectos` sin gate; `proveedores/[id]/editar` sin `requirePagePermission`; `admin/layout.tsx` con guard solo client-side; el permiso `items:ver` que ninguna ruta consulta; `admin/auditoria/page.tsx` con 231 líneas de UI inline; `/activar` y `/suspender` duplicados; y ~8 endpoints sin consumidor (borrarlos es decisión de producto).
 
 - **2026-07-22 (cont. 5)** — **Módulo de seguridad estricto / RBAC production-ready** (brainstorming → spec → plan → ejecución con superpowers; spec en `docs/superpowers/specs/2026-07-22-rbac-hardening-design.md`, plan en `docs/superpowers/plans/`). Arranca de un bug reportado: un rol custom con "solo ver CE/FACT/OP" podía **crear** un certificado. Causa: solo `ordenes_compra` consultaba la matriz; CE/FACT/OP/proveedores/items gateaban con `requireRole` (grupo de rol), que ignora la matriz y trata a cualquier custom como "usuario". **Arco completo:** (1) roles custom **asignables** a usuarios (`544eda7` — dropdown listaba solo los 4 de sistema + `updateRol` tenía whitelist hardcodeado). (2) **CE/FACT/OP → `requirePermission`** (`d5bed51`, 14 rutas) + **items** (`9235af8`) + **proveedores** (`d090112`) → la matriz es autoritativa en TODO el circuito+catálogo. Behavior-preserving (el seed `rbac_01` ya dio los permisos 1:1 a los roles de sistema). (3) **UI por permiso**: botones de acción ocultos con `puede(modulo, accion)` (`db6c8db`, +`<CrearButton>`, +`/api/auth/me` devuelve `permisos`, +`puede` en auth-context). (4) **Hardening production-ready** (defensa en profundidad, sin tocar el JWT): **`requirePagePermission`** (`1574b31`, guarda server-side + 5 tests, redirect) → **guardas en las 15 páginas del circuito** (`9a9b345`, listas/detalles→ver, nueva→crear; convierte las `nueva`/detalles client a Server Components, extrae `<ProveedorDetailClient>`) bloquean el acceso por **URL directa**; **sidebar** oculta módulos sin `ver` (`963e2d7`); **regla dura enforced** `route-authz.test.ts` (`fe8fe9d`, escanea rutas y falla si un método mutante queda sin gate — verificado en negativo; de paso `admin/users/[id]/role` → `requireAdmin`). Suite **233 → 282 tests**. Todo con gate verde (tsc + vitest + next build) y commits atómicos. **Matices documentados:** "aprobar" incluye "anular" (mismo grupo, no separables en la matriz de hoy); los GET de catálogo (`items/search|categorias|precio`) quedan solo-auth a propósito (los usa el ItemSelector del form de OC). **Sin push.**
 
