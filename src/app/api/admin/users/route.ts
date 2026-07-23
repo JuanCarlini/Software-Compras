@@ -1,3 +1,4 @@
+import { PasswordSchema } from "@/shared/validation/password-validation"
 import { NextRequest, NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/auth/permissions-server"
 import { UsuarioService } from "@/services/usuario.service"
@@ -34,12 +35,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    if (String(password).length < 6) {
-      return NextResponse.json(
-        { error: "La contraseña debe tener al menos 6 caracteres" },
-        { status: 400 }
-      )
-    }
+    PasswordSchema.parse(password) // política única (CN-010); handleRouteError → 400
 
     const nuevo = await UsuarioService.create({ nombre, email, password, rol_id: Number(rol_id) })
 

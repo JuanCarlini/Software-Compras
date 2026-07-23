@@ -1,3 +1,4 @@
+import { PasswordSchema } from "@/shared/validation/password-validation"
 import { NextRequest, NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/auth/permissions-server"
 import { UsuarioService } from "@/services/usuario.service"
@@ -20,12 +21,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     const userId = parseId((await params).id)
     const { password } = await request.json()
 
-    if (!password || String(password).length < 6) {
-      return NextResponse.json(
-        { error: "La nueva contraseña debe tener al menos 6 caracteres" },
-        { status: 400 }
-      )
-    }
+    PasswordSchema.parse(password) // política única (CN-010); handleRouteError → 400
 
     await UsuarioService.resetPassword(userId, password)
 

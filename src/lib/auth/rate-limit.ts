@@ -37,3 +37,38 @@ export function registrarFallo(key: string, now: number): void {
 export function limpiarIntentos(key: string): void {
   store.delete(key)
 }
+
+/**
+ * IP del cliente, resistente al spoofing de `X-Forwarded-For` (CN-006).
+ *
+ * El error clásico es tomar el PRIMER elemento del XFF: esa es la parte que pone el
+ * cliente — cada proxy AGREGA su valor observado al final, no reemplaza el principio.
+ * Rotando el header, un atacante obtenía una clave de rate-limit nueva por intento y el
+ * bloqueo no se disparaba nunca.
+ *
+ * `x-real-ip` lo setea la plataforma (Vercel) y el cliente no puede falsificarlo, así que
+ * va primero. Como fallback, el último salto del XFF, que es el que agregó el proxy de
+ * confianza más cercano.
+ */
+export function resolverIp(headers: Headers): string {
+  const real = headers.get("x-real-ip")?.trim()
+  if (real) return real
+
+  const saltos = headers.get("x-forwarded-for")?.split(",").map((s) => s.trim()).filter(Boolean) ?? []
+  return saltos[saltos.length - 1] || "unknown"
+}
+
+/**
+ * Las dos claves de rate-limit de un intento de login.
+ *
+ * `porIpEmail` es best-effort (la IP se puede rotar). `porEmail` es la que de verdad frena
+ * la fuerza bruta contra una cuenta concreta, porque no depende de ningún header.
+ * ponytail: el costo es que un atacante puede bloquear la cuenta de un tercero a propósito
+ * (DoS de login). Aceptable acá — la ventana son 15 minutos y el alta de usuarios es por
+ * admin. Si molestara, el upgrade es el mismo de siempre: contador compartido en KV con
+ * desbloqueo por email al dueño de la cuenta.
+ */
+export function clavesDeLogin(ip: string, email: string): { porEmail: string; porIpEmail: string } {
+  const normalizado = String(email).toLowerCase()
+  return { porEmail: `email:${normalizado}`, porIpEmail: `${ip}:${normalizado}` }
+}

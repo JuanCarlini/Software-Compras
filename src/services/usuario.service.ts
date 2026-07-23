@@ -1,3 +1,4 @@
+import { BCRYPT_ROUNDS } from "@/shared/validation/password-validation"
 import bcrypt from "bcryptjs"
 import { UsuarioRepository } from "@/repositories/usuario.repository"
 import { RolRepository } from "@/repositories/rol.repository"
@@ -45,7 +46,7 @@ export class UsuarioService {
       throw new HttpError(409, "El email ya está registrado")
     }
 
-    const password_hash = await bcrypt.hash(data.password, 10)
+    const password_hash = await bcrypt.hash(data.password, BCRYPT_ROUNDS)
 
     return UsuarioRepository.insert({
       nombre: data.nombre,
@@ -107,7 +108,7 @@ export class UsuarioService {
 
   // Reset administrativo: pisa la clave sin pedir la anterior (distinto de changePassword)
   static async resetPassword(id: number, newPassword: string) {
-    const password_hash = await bcrypt.hash(newPassword, 10)
+    const password_hash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS)
     await UsuarioRepository.updatePassword(id, password_hash)
     return true
   }

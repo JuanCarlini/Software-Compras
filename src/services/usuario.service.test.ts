@@ -1,3 +1,4 @@
+import { BCRYPT_ROUNDS } from "@/shared/validation/password-validation"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import bcrypt from "bcryptjs"
 import { UsuarioRepository } from "@/repositories/usuario.repository"
@@ -44,7 +45,7 @@ describe("UsuarioService.create", () => {
 
     await UsuarioService.create({ nombre: "A", email: "a@b.com", password: "secreto", rol_id: 3 })
 
-    expect(bcryptMock.hash).toHaveBeenCalledWith("secreto", 10)
+    expect(bcryptMock.hash).toHaveBeenCalledWith("secreto", BCRYPT_ROUNDS)
     expect(repo.insert).toHaveBeenCalledWith({
       nombre: "A",
       email: "a@b.com",
@@ -61,7 +62,7 @@ describe("UsuarioService.resetPassword", () => {
 
     const ok = await UsuarioService.resetPassword(5, "nueva")
 
-    expect(bcryptMock.hash).toHaveBeenCalledWith("nueva", 10)
+    expect(bcryptMock.hash).toHaveBeenCalledWith("nueva", BCRYPT_ROUNDS)
     expect(repo.updatePassword).toHaveBeenCalledWith(5, "hash(nueva)")
     expect(ok).toBe(true)
   })

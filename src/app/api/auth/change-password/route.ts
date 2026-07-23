@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/auth/permissions-server"
+import { setAuthCookie } from "@/lib/auth/auth.cookies"
 import { AuthService } from "@/lib/auth/auth.service"
 import { AuditService } from "@/lib/audit/audit.service"
+import { estaBloqueado, registrarFallo, limpiarIntentos } from "@/lib/auth/rate-limit"
+import { PasswordSchema } from "@/shared/validation/password-validation"
 import { handleRouteError } from "@/lib/route/handle-route-error"
 
 // POST /api/auth/change-password - El usuario autenticado cambia su propia clave
@@ -19,28 +22,46 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    if (String(newPassword).length < 6) {
+    // Política única y compartida (CN-010): antes era un `length < 6` inline.
+    // handleRouteError traduce el ZodError a 400 con el detalle.
+    PasswordSchema.parse(newPassword)
+
+    // Rate-limit del cambio de clave (CN-007). Sin esto, con una sesión robada se podía
+    // forzar la contraseña ACTUAL a ritmo ilimitado — el 400 de "incorrecta" es un
+    // oráculo perfecto —, que es el paso previo a tomar la cuenta por completo.
+    const now = Date.now()
+    const rlKey = `chpw:${user!.id}`
+    const rl = estaBloqueado(rlKey, now)
+    if (rl.bloqueado) {
       return NextResponse.json(
-        { error: "La nueva contraseña debe tener al menos 6 caracteres" },
-        { status: 400 }
+        { error: "Demasiados intentos fallidos. Probá de nuevo más tarde." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } }
       )
     }
 
     const ok = await AuthService.changePassword(user!.id, oldPassword, newPassword)
 
     if (!ok) {
+      registrarFallo(rlKey, now)
       return NextResponse.json(
         { error: "La contraseña actual es incorrecta" },
         { status: 400 }
       )
     }
+    limpiarIntentos(rlKey)
+
+    // El cambio de clave invalida TODAS las sesiones previas (CN-009), incluida la del que
+    // acaba de cambiarla. Se le devuelve una cookie fresca para que siga trabajando: el
+    // resultado neto es que solo sobrevive la sesión desde la que se hizo el cambio.
+    const actualizado = await AuthService.getUserById(user!.id)
+    if (actualizado) await setAuthCookie(AuthService.emitirToken(actualizado))
 
     await AuditService.registrar({
       usuarioId: user!.id,
       tabla: "gu_usuario",
       registroId: user!.id,
       accion: "actualizar",
-      detalle: "Cambio de contraseña propio",
+      detalle: "Cambio de contraseña propio (las demás sesiones quedaron invalidadas)",
     })
 
     return NextResponse.json({ success: true, message: "Contraseña actualizada" })

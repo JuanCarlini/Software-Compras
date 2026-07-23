@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { AuthService } from '@/lib/auth/auth.service'
 import { setAuthCookie } from '@/lib/auth/auth.cookies'
 import { AuditService } from '@/lib/audit/audit.service'
-import { estaBloqueado, registrarFallo, limpiarIntentos } from '@/lib/auth/rate-limit'
+import { estaBloqueado, registrarFallo, limpiarIntentos, resolverIp, clavesDeLogin } from '@/lib/auth/rate-limit'
 import { handleRouteError } from '@/lib/route/handle-route-error'
 
 export async function POST(request: NextRequest) {
@@ -27,11 +27,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // S3: rate-limiting por IP+email contra fuerza bruta
+    // S3: rate-limiting contra fuerza bruta. DOS contadores (CN-006): el de ip+email es
+    // best-effort porque la IP se puede rotar; el de email solo no depende de ningún
+    // header, así que es el que de verdad frena el ataque contra una cuenta.
     const now = Date.now()
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
-    const rlKey = `${ip}:${String(email).toLowerCase()}`
-    const rl = estaBloqueado(rlKey, now)
+    const ip = resolverIp(request.headers)
+    const { porEmail, porIpEmail } = clavesDeLogin(ip, email)
+
+    const rl = estaBloqueado(porEmail, now).bloqueado
+      ? estaBloqueado(porEmail, now)
+      : estaBloqueado(porIpEmail, now)
     if (rl.bloqueado) {
       return NextResponse.json(
         { error: "Demasiados intentos fallidos. Probá de nuevo más tarde." },
@@ -43,15 +48,19 @@ export async function POST(request: NextRequest) {
     const result = await AuthService.login(email, password)
 
     if (!result) {
-      registrarFallo(rlKey, now)
+      registrarFallo(porEmail, now)
+      registrarFallo(porIpEmail, now)
+      // Bitácora: el intento fallido queda registrado y es investigable (CN-008).
+      await AuditService.registrarLoginFallido(String(email), ip)
       return NextResponse.json(
         { error: "Credenciales inválidas" },
         { status: 401 }
       )
     }
 
-    // Login OK: limpiar el contador de intentos
-    limpiarIntentos(rlKey)
+    // Login OK: limpiar ambos contadores
+    limpiarIntentos(porEmail)
+    limpiarIntentos(porIpEmail)
 
     // Establecer cookie de autenticación
     await setAuthCookie(result.token)

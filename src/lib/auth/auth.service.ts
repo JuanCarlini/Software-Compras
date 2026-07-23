@@ -1,3 +1,4 @@
+import { BCRYPT_ROUNDS } from "@/shared/validation/password-validation"
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { createClient } from '@/lib/supabase/service'
@@ -18,6 +19,9 @@ export interface AuthUser {
   rol_id: number
   rol_nombre?: string
   estado: 'activo' | 'inactivo'
+  // Marca de última modificación de la fila. La usa getCurrentUser para invalidar tokens
+  // emitidos antes de un cambio de credencial (CN-009, ver session-freshness.ts).
+  updated_at?: string | null
 }
 
 export interface JWTPayload {
@@ -26,6 +30,9 @@ export interface JWTPayload {
   nombre: string
   rolId: number
   rolNombre?: string
+  // Claim estándar que jsonwebtoken agrega al firmar y devuelve al verificar. Se declara
+  // para poder compararlo con gu_usuario.updated_at (CN-009); nunca se setea a mano.
+  iat?: number
 }
 
 export class AuthService {
@@ -99,6 +106,25 @@ export class AuthService {
   }
 
   /**
+   * Emite un token nuevo para un usuario ya autenticado.
+   *
+   * Lo usa el cambio de clave propio: como la invalidación por `updated_at` (CN-009) mata
+   * TODAS las sesiones anteriores —incluida la del que está cambiando su propia clave—,
+   * hay que devolverle una cookie fresca. El efecto neto es el deseado: el usuario sigue
+   * trabajando y cualquier otra sesión (la del atacante) queda muerta.
+   */
+  static emitirToken(user: AuthUser): string {
+    const payload: JWTPayload = {
+      userId: user.id,
+      email: user.email,
+      nombre: user.nombre,
+      rolId: user.rol_id,
+      rolNombre: user.rol_nombre,
+    }
+    return jwt.sign(payload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN })
+  }
+
+  /**
    * Verificar token JWT
    */
   static async verifyToken(token: string): Promise<JWTPayload | null> {
@@ -126,6 +152,7 @@ export class AuthService {
           nombre,
           rol_id,
           estado,
+          updated_at,
           gu_roles (
             nombre
           )
@@ -144,7 +171,8 @@ export class AuthService {
         nombre: usuario.nombre,
         rol_id: usuario.rol_id,
         rol_nombre: rolNombreDe(usuario.gu_roles),
-        estado: usuario.estado ?? 'inactivo'
+        estado: usuario.estado ?? 'inactivo',
+        updated_at: usuario.updated_at
       }
     } catch (error) {
       console.error('Error al obtener usuario:', error)
@@ -178,7 +206,7 @@ export class AuthService {
       }
 
       // Hashear nueva contraseña
-      const newPasswordHash = await bcrypt.hash(newPassword, 10)
+      const newPasswordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS)
 
       // Actualizar contraseña
       const { error: updateError } = await supabase

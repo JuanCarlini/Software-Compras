@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/service'
 import { getCurrentUser } from '@/lib/auth/auth.cookies'
 import { HttpError } from '@/lib/route/http-error'
+import { UsuarioRepository } from '@/repositories/usuario.repository'
 
 // Valores del enum audit_accion (columna gu_audit_log.accion). La bitácora
 // (gu_auditoria.accion) es texto libre y acepta cualquier filtro.
@@ -19,8 +20,10 @@ export interface ConsultaAuditoria {
 // identifica al usuario, a gu_auditoria. Complementa el control de cambios que los
 // triggers escriben en gu_audit_log (ver supabase/migration_auditoria_t06.sql).
 
+// gu_auditoria.accion es TEXTO LIBRE (el enum audit_accion es de gu_audit_log), así que
+// sumar un valor acá no necesita migración.
 export type AccionAuditoria =
-  | 'login' | 'logout'
+  | 'login' | 'login_fallido' | 'logout'
   | 'crear' | 'actualizar' | 'eliminar'
   | 'aprobar' | 'rechazar' | 'anular'
   | 'activar' | 'desactivar' | 'resetear'
@@ -61,6 +64,34 @@ export class AuditService {
     const user = await getCurrentUser()
     if (!user) return
     await AuditService.registrar({ usuarioId: user.id, ...params })
+  }
+
+  /**
+   * Intento de login fallido (CN-008). Antes el único rastro era un console.error sin
+   * email ni IP: un ataque de fuerza bruta o credential stuffing no dejaba ninguna
+   * evidencia investigable, y el admin no podía verlo en /admin/auditoria.
+   *
+   * gu_auditoria.usuario_id es NOT NULL, así que solo se puede persistir cuando el email
+   * corresponde a un usuario real. Para un email inexistente queda un warn en el log del
+   * servidor — que además es la señal de enumeración de usuarios.
+   */
+  static async registrarLoginFallido(email: string, ip: string): Promise<void> {
+    try {
+      const usuario = await UsuarioRepository.findByEmail(email)
+      if (!usuario) {
+        console.warn(`login_fallido email_inexistente=${email} ip=${ip}`)
+        return
+      }
+      await AuditService.registrar({
+        usuarioId: usuario.id,
+        tabla: 'sesion',
+        registroId: usuario.id,
+        accion: 'login_fallido',
+        detalle: `Login fallido para ${email} desde ${ip}`,
+      })
+    } catch (error) {
+      console.error('AuditService.registrarLoginFallido falló (no bloqueante):', error)
+    }
   }
 
   /**
