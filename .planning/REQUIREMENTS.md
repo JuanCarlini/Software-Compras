@@ -48,15 +48,21 @@ Fuente: `docs/superpowers/specs/2026-07-20-roles-permisos-design.md`.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PERM-01 | Phase 1 | Pending |
-| PERM-02 | Phase 1 | Pending (schema aplicado por sesión externa Supabase) |
-| PERM-03 | Phase 1 | Pending (seed aplicado por sesión externa Supabase) |
-| PERM-04 | Phase 1 | Pending |
-| PERM-05 | Phase 1 | Pending |
-| PERM-09 | Phase 1 | Pending |
-| PERM-06 | Phase 2 | Pending |
-| PERM-07 | Phase 2 | Pending |
-| PERM-08 | Phase 2 | Pending |
-| PERM-10 | Phase 2 | Pending |
+| PERM-01 | Phase 1 | ✅ Done — `shared/permissions-catalog.ts` (7 módulos / 22 claves) |
+| PERM-02 | Phase 1 | ✅ Done — `gu_roles.permisos text[]` (aplicado por la sesión Supabase) |
+| PERM-03 | Phase 1 | ✅ Done — seed de los 4 roles del sistema |
+| PERM-04 | Phase 1 | ✅ Done — `requirePermission` en `lib/auth/permissions-server.ts` |
+| PERM-05 | Phase 1 | ✅ Done — admin short-circuit en `tienePermiso` |
+| PERM-09 | Phase 1 | ✅ Done — tests unit del chequeo puro + catálogo |
+| PERM-06 | Phase 2 | ✅ Done — rutas de ordenes_compra sobre `requirePermission` |
+| PERM-07 | Phase 2 | ✅ Done — `views/rol-permisos-matrix.tsx` en la tab Roles |
+| PERM-08 | Phase 2 | ✅ Done — validación vs catálogo (400) + guarda anti-lockout de admin |
+| PERM-10 | Phase 2 | ✅ Done — E2E verde contra la base real (ver 02-01-SUMMARY.md) |
 
-**Cobertura: 10/10 requirements v1 mapeados. Sin huérfanos, sin duplicados.**
+**Cobertura: 10/10 requirements v1 completados. Milestone RBAC COMPLETO.**
+
+Diferidos (v2), estado actualizado:
+- **PERM-R1** (rollout a los otros módulos): ✅ **cumplido de hecho** — hoy hay 29 rutas con
+  `requirePermission` y 0 con `requireRole`.
+- **PERM-R2** (retirar `ROLES_*` / `stringToUserRole` / `requireRole`): **habilitado** — ya no
+  quedan consumidores reales fuera de sus propios tests. Pendiente de ejecutar.
