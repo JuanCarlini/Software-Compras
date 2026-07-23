@@ -1,5 +1,20 @@
 # 🔐 CONFIGURACIÓN DE AUTENTICACIÓN - SUPABASE
 
+> ## ⚠️ DOCUMENTO OBSOLETO — NO SEGUIR ESTAS INSTRUCCIONES
+>
+> Describe un diseño que **el proyecto nunca implementó**: Supabase Auth, tabla
+> `perfiles_usuario`, IDs UUID y registro público por `/signup`.
+>
+> **Lo que el sistema usa realmente:** JWT propio firmado con `JWT_SECRET` (`jsonwebtoken` +
+> `bcryptjs`, verificado con `jose` en el middleware), tabla `gu_usuario` con PK `BIGINT`, y
+> **registro público cerrado** — las altas las hace un admin desde `/admin/usuarios`.
+> Ver la sección "Autenticación y permisos" de `CLAUDE.md`, que sí está al día.
+>
+> Se conserva solo como referencia histórica (discrepancia #1 del `CLAUDE.md`: su borrado
+> requiere el OK de Juan Andrés). **Las credenciales de ejemplo fueron redactadas el
+> 2026-07-23**: este archivo está en un repositorio público y tenía la contraseña real del
+> administrador en texto plano (auditoría CN-003).
+
 ## 📋 PASOS PARA CONFIGURAR LOGIN/SIGNUP
 
 ### 1. Ejecutar Schema en Supabase
@@ -28,7 +43,7 @@ Ve a tu Dashboard de Supabase → SQL Editor y ejecuta:
 2. Click en **Add user** → **Create new user**
 3. Ingresa:
    - Email: `admin@gestion.com`
-   - Password: `admin123`
+   - Password: `<REDACTADO — usar una clave fuerte y única>`
    - User Metadata (JSON):
    ```json
    {
@@ -49,7 +64,7 @@ Ve a tu Dashboard de Supabase → SQL Editor y ejecuta:
 ```
 URL: http://localhost:3000/login
 Email: admin@gestion.com
-Password: admin123
+Password: <REDACTADO>
 ```
 
 **Verificar en Supabase:**

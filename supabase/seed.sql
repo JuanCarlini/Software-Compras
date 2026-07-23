@@ -5,9 +5,24 @@ INSERT INTO gu_roles (nombre, descripcion) VALUES
   ('Supervisor', 'Usuario con permisos de supervisión')
 ON CONFLICT DO NOTHING;
 
--- Insertar usuario administrador (password: admin123)
+-- Insertar usuario administrador.
+--
+-- La credencial NO va en este archivo: el repositorio es público, así que un hash o una
+-- clave literal acá equivalen a publicar el acceso de administrador del sistema.
+-- (Auditoría 2026-07-23, CN-003: antes esto tenía la contraseña en texto plano en el
+--  comentario y su hash bcrypt en el INSERT.)
+--
+-- Generar el hash con la MISMA librería y costo que usa la app (bcryptjs, ver
+-- src/services/usuario.service.ts):
+--   node -e "console.log(require('bcryptjs').hashSync(process.argv[1], 10))" 'LA-CLAVE'
+--
+-- Y correr este seed pasando las dos variables:
+--   psql -v ADMIN_EMAIL="admin@tu-dominio.com" -v ADMIN_PASSWORD_HASH='<hash>' -f seed.sql
+--
+-- Usar una clave fuerte y única. Si se corre sin las variables, psql aborta — que es el
+-- comportamiento buscado: mejor fallar ruidosamente que sembrar una credencial conocida.
 INSERT INTO gu_usuario (nombre, email, password_hash, rol_id, estado) VALUES
-  ('Administrador', 'admin@gestionuno.com', '$2b$10$T58XeMtS.J6fCyw6HxXyxO1DzWsS3kd2AFYMlljD7impAHF.lY5fO', 1, 'activo')
+  ('Administrador', :'ADMIN_EMAIL', :'ADMIN_PASSWORD_HASH', 1, 'activo')
 ON CONFLICT (email) DO NOTHING;
 
 -- Insertar datos de ejemplo en proveedores
