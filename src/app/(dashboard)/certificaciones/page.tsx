@@ -1,5 +1,5 @@
 import { CertificacionesList } from "@/views/certificaciones-list"
-import { CrearButton } from "@/views/crear-button"
+import { CrearButton } from "@/components/crear-button"
 import { requirePagePermission } from "@/shared/permissions-server"
 
 export default async function CertificacionesPage() {

@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { formatDateShort } from "@/shared/date-utils"
 import { formatCurrency } from "@/shared/format-utils"
-import { StatusBadge } from "@/shared/status-badge"
-import { useAuth } from "@/shared/auth-context"
+import { StatusBadge } from "@/components/status-badge"
+import { useAuth } from "@/components/auth-context"
 import { showErrorToast } from "@/shared/toast-helpers"
 import {
   Loader2,

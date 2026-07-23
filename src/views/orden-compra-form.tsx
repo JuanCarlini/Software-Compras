@@ -12,12 +12,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { FormRootError } from "@/views/form-root-error"
+import { FormRootError } from "@/components/ui/form-root-error"
 import { Loader2, Plus, Trash2, ShoppingCart } from "lucide-react"
 import { Proveedor, Item } from "@/models"
 import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
 import { formatCurrency } from "@/shared/format-utils"
-import { ItemSelector } from "@/components/items"
+import { ItemSelector } from "@/views/item-selector"
 
 // Migrado a RHF+Zod (2026-07-22, patrón híbrido = certificacion-form): la CABECERA
 // (proveedor, fecha, moneda, observaciones) va por react-hook-form + zodResolver con

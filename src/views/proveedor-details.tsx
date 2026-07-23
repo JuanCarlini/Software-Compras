@@ -15,8 +15,8 @@ import {
 import Link from "next/link"
 import { Proveedor, EstadoProveedor } from "@/models"
 import { useState } from "react"
-import { StatusBadge } from "@/shared/status-badge"
-import { useAuth } from "@/shared/auth-context"
+import { StatusBadge } from "@/components/status-badge"
+import { useAuth } from "@/components/auth-context"
 import { canModificarProveedor, stringToUserRole } from "@/shared/permissions"
 
 interface Props {

@@ -1,8 +1,8 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/views/app-sidebar"
+import { AppSidebar } from "@/components/app-sidebar"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenu } from "@/components/user-menu"
-import { AuthProvider } from "@/shared/auth-context"
+import { AuthProvider } from "@/components/auth-context"
 
 export default function DashboardLayout({
   children,

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/shared/auth-context"
+import { useAuth } from "@/components/auth-context"
 import { isAdmin, stringToUserRole } from "@/shared/permissions"
 import { showErrorToast } from "@/shared/toast-helpers"
 import { Loader2 } from "lucide-react"

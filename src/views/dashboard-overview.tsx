@@ -17,7 +17,7 @@ import {
 import { useDashboard } from "@/shared/use-dashboard"
 import { formatCurrency } from "@/shared/format-utils"
 import { formatDateShort } from "@/shared/date-utils"
-import { StatusBadge } from "@/shared/status-badge"
+import { StatusBadge } from "@/components/status-badge"
 
 const getTipoIcon = (tipo: string) => {
   switch (tipo) {

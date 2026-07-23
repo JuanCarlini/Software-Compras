@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
 import { formatCurrency } from "@/shared/format-utils"
 import { formatDateShort } from "@/shared/date-utils"
-import { StatusBadge } from "@/shared/status-badge"
+import { StatusBadge } from "@/components/status-badge"
 
 // View-models de esta vista (cabecera de OC + líneas + proveedor). Numéricos como string
 // desde Postgres → Number() en el render.

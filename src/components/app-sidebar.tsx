@@ -15,7 +15,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { useAuth } from "@/shared/auth-context"
+import { useAuth } from "@/components/auth-context"
 import { isAdmin, stringToUserRole } from "@/shared/permissions"
 import { Button } from "@/components/ui/button"
 

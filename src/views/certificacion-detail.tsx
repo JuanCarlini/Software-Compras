@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, FileText, Calendar, Building2, User, Check, X } from "lucide-react"
 import { showErrorToast, showSuccessToast } from "@/shared/toast-helpers"
 import { formatCurrency } from "@/shared/format-utils"
-import { useAuth } from "@/shared/auth-context"
-import { StatusBadge } from "@/shared/status-badge"
+import { useAuth } from "@/components/auth-context"
+import { StatusBadge } from "@/components/status-badge"
 import {
   AlertDialog,
   AlertDialogAction,

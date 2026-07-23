@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import { Item } from "@/models"
-import { ItemQuickCreateDialog } from "./ItemQuickCreateDialog"
-import { ItemCombobox } from "./ItemCombobox"
+import { ItemQuickCreateDialog } from "./item-quick-create-dialog"
+import { ItemCombobox } from "./item-combobox"
 
 interface ItemSelectorProps {
   value?: number | null

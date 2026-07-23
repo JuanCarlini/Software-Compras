@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
-import { useAuth } from "@/shared/auth-context"
+import { useAuth } from "@/components/auth-context"
 
 // Botón "Nueva X" que solo aparece si el rol tiene el permiso `modulo:crear`. El backend
 // igual gatea el POST (requirePermission) — esto es la contraparte de UI para no mostrar

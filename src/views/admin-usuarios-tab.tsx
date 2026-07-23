@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, User, UserPlus, KeyRound, UserX, UserCheck } from "lucide-react"
 import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
 import { api } from "@/shared/api-client"
-import { useAuth } from "@/shared/auth-context"
+import { useAuth } from "@/components/auth-context"
 import { roleLabels, roleIcons, roleColors, type UserData, type RolData } from "@/views/admin-users-shared"
 
 interface UsuariosTabProps {

@@ -7,12 +7,12 @@ import { Badge } from "@/components/ui/badge"
 import { SearchBar } from "@/components/ui/search-bar"
 import { SearchStats } from "@/components/ui/search-stats"
 import { Eye } from "lucide-react"
-import { ListShell } from "@/views/list-shell"
+import { ListShell } from "@/components/ui/list-shell"
 import Link from "next/link"
 import { searchWithScore } from "@/shared/search-utils"
 import { formatCurrency } from "@/shared/format-utils"
 import { showErrorToast } from "@/shared/toast-helpers"
-import { StatusBadge } from "@/shared/status-badge"
+import { StatusBadge } from "@/components/status-badge"
 
 export function CertificacionesList() {
   const [certificaciones, setCertificaciones] = useState<any[]>([])
