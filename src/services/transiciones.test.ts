@@ -1,13 +1,11 @@
 import { describe, it, expect } from "vitest"
 import {
   puedeTransicionar,
-  rolRequerido,
   accionRequerida,
   TRANSICIONES_APROBACION,
   TRANSICIONES_FACTURA,
   TRANSICIONES_OP,
 } from "./transiciones"
-import { ROLES_APROBACION, ROLES_ESCRITURA } from "@/shared/permissions"
 
 describe("puedeTransicionar", () => {
   it("permite borrador -> en_aprobacion en OC/CE", () => {
@@ -40,20 +38,6 @@ describe("puedeTransicionar", () => {
 
   it("OP: pagado es terminal", () => {
     expect(puedeTransicionar(TRANSICIONES_OP, "pagado", "anulado")).toBe(false)
-  })
-})
-
-describe("rolRequerido", () => {
-  it.each(["aprobado", "rechazado", "anulado", "pagado"])(
-    "%s exige supervisor o admin",
-    (estado) => {
-      expect(rolRequerido(estado)).toBe(ROLES_APROBACION)
-    }
-  )
-
-  it("mandar a aprobar o finalizar alcanza con escritura", () => {
-    expect(rolRequerido("en_aprobacion")).toBe(ROLES_ESCRITURA)
-    expect(rolRequerido("finalizado")).toBe(ROLES_ESCRITURA)
   })
 })
 

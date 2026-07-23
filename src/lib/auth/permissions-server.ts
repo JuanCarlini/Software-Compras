@@ -1,4 +1,3 @@
-import { UserRole } from "@/models"
 import { NextResponse } from "next/server"
 import { redirect } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth/auth.cookies"
@@ -69,33 +68,10 @@ export async function requireAdmin() {
 }
 
 /**
- * Como requireAuth, pero además exige que el rol del usuario esté en la lista permitida.
- * Base de la autorización por rol en rutas mutantes (S1): el middleware sólo autentica.
- * Usar con los grupos de shared/permissions.ts (ROLES_ESCRITURA / ROLES_DESTRUCTIVO).
- * Solo para usar en API Routes.
- */
-export async function requireRole(rolesPermitidos: UserRole[]) {
-  const { error, user } = await requireAuth()
-  if (error) return { error, user: null }
-
-  if (!rolesPermitidos.includes(stringToUserRole(user!.rol))) {
-    return {
-      error: NextResponse.json(
-        { error: "No tenés permisos para realizar esta acción" },
-        { status: 403 }
-      ),
-      user: null
-    }
-  }
-
-  return { error: null, user }
-}
-
-/**
  * RBAC real (PERM-04): autoriza por PERMISO del rol (`modulo:accion`), no por grupo de rol
  * hardcodeado. Resuelve los permisos del rol frescos por request (sin staleness de JWT ni
  * re-login) y delega la decisión a `tienePermiso` (admin short-circuit + membership, PERM-05).
- * Mismo shape { error, user } que requireRole. Solo para API Routes.
+ * Solo para API Routes.
  */
 export async function requirePermission(modulo: string, accion: string) {
   const { error, user } = await requireAuth()

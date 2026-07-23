@@ -27,11 +27,13 @@ const ALLOWLIST = [
   "auth/change-password/route.ts",
 ].map((p) => p.split("/").join(sep))
 
-// Un gate válido: la matriz (requirePermission), un grupo de rol (requireRole),
-// admin (requireAdmin), o las route-factories que llevan `autorizar` adentro.
+// Un gate válido: la matriz (requirePermission), admin (requireAdmin), o las route-factories
+// que llevan `autorizar` adentro. `requireRole` salió de la lista en PERM-R2: los grupos de
+// rol se retiraron cuando el RBAC por permisos los dejó sin consumidores, así que aceptarlo
+// como gate válido sería aceptar algo que ya no existe.
 // Se exige la LLAMADA (`nombre(`), no la mención: con el regex a secas, un archivo que
 // importa el gate y no lo invoca pasaba el test. Verificado en negativo saboteando una ruta.
-const GATE = /(requirePermission|requireRole|requireAdmin|createRoute|estadoRoute|getByIdRoute)\s*\(/
+const GATE = /(requirePermission|requireAdmin|createRoute|estadoRoute|getByIdRoute)\s*\(/
 const MUTATING = /export\s+(async\s+function|const)\s+(POST|PUT|PATCH|DELETE)\b/
 
 const files = routeFiles(API_DIR).map((f) => [relative(API_DIR, f), f] as const)

@@ -1,6 +1,4 @@
 import type { EstadoAprobacion, EstadoFactura, EstadoOp } from "@/models/enums"
-import type { UserRole } from "@/models/user.model"
-import { ROLES_APROBACION, ROLES_ESCRITURA } from "@/shared/permissions"
 
 // Qué transiciones existen. Es el grafo, NO el gate: las reglas de negocio
 // (≥1 línea, ≤100%, Σcajas=total) son triggers en Postgres y devuelven 422.
@@ -39,15 +37,9 @@ export function puedeTransicionar<E extends string>(grafo: Grafo<E>, desde: E, h
 
 const REQUIERE_APROBACION = new Set(["aprobado", "rechazado", "anulado", "pagado"])
 
-// El rol depende del DESTINO, no del documento: mandar a aprobar es escritura;
-// aprobar/rechazar/anular/pagar es supervisor o admin.
-export function rolRequerido(destino: string): UserRole[] {
-  return REQUIERE_APROBACION.has(destino) ? ROLES_APROBACION : ROLES_ESCRITURA
-}
-
-// Igual criterio que rolRequerido, pero en el vocabulario de permisos RBAC (modulo:accion):
+// El permiso depende del DESTINO, no del documento (vocabulario RBAC modulo:accion):
 // aprobar/rechazar/anular/pagar → 'aprobar'; mandar-a-aprobar/volver-a-borrador → 'crear'.
-// Reusa el mismo REQUIERE_APROBACION para no duplicar el criterio.
+// (Reemplazó a rolRequerido, retirado en PERM-R2 junto con los grupos de rol.)
 export function accionRequerida(destino: string): "aprobar" | "crear" {
   return REQUIERE_APROBACION.has(destino) ? "aprobar" : "crear"
 }

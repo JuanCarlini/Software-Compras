@@ -64,5 +64,10 @@ Fuente: `docs/superpowers/specs/2026-07-20-roles-permisos-design.md`.
 Diferidos (v2), estado actualizado:
 - **PERM-R1** (rollout a los otros módulos): ✅ **cumplido de hecho** — hoy hay 29 rutas con
   `requirePermission` y 0 con `requireRole`.
-- **PERM-R2** (retirar `ROLES_*` / `stringToUserRole` / `requireRole`): **habilitado** — ya no
-  quedan consumidores reales fuera de sus propios tests. Pendiente de ejecutar.
+- **PERM-R2** (retirar los grupos de rol): ✅ **Done** — se retiraron `requireRole`,
+  `ROLES_ESCRITURA/DESTRUCTIVO/APROBACION` y `rolRequerido` (+ sus tests), y `requireRole`
+  salió de la regex de gates válidos de `route-authz.test.ts`.
+  **`stringToUserRole` e `isAdmin` NO se retiraron: siguen vivos** — los usan `requireAdmin`,
+  `requirePageAdmin` (las secciones `/admin/*` son por ROL, no módulos de la matriz) y el
+  gating de botones en 5 vistas + el sidebar. Igual `canAnularDocumento` y
+  `canModificarProveedor`. Retirarlos sería romper la UI y el gate de admin.

@@ -1,14 +1,9 @@
 import { UserRole } from "@/models"
 
-// Grupos de roles para autorizar rutas (S1). Centralizado a propósito:
-// cambiar acá impacta a TODAS las rutas que usan requireRole.
-export const ROLES_ESCRITURA: UserRole[] = [UserRole.ADMIN, UserRole.SUPERVISOR, UserRole.USUARIO] // crear/editar (readonly excluido)
-export const ROLES_DESTRUCTIVO: UserRole[] = [UserRole.ADMIN, UserRole.SUPERVISOR] // borrar/anular/aprobar
-// ponytail: si el negocio quiere que 'usuario' borre sus borradores, agregar UserRole.USUARIO a ROLES_DESTRUCTIVO — un solo lugar.
-
-// Aprobar / rechazar / anular / pagar. Hoy es el mismo set que ROLES_DESTRUCTIVO, nombrado
-// por intención: si mañana 'usuario' puede borrar sus borradores pero no aprobar, se separan acá.
-export const ROLES_APROBACION: UserRole[] = [UserRole.ADMIN, UserRole.SUPERVISOR]
+// PERM-R2: los grupos de rol (ROLES_ESCRITURA/DESTRUCTIVO/APROBACION) y requireRole se
+// retiraron cuando el RBAC por permisos (modulo:accion) los dejó sin consumidores: hoy las
+// rutas autorizan con requirePermission contra gu_roles.permisos. Lo que queda acá son los
+// helpers por ROL que siguen vivos (secciones /admin/* y gating de botones en la UI).
 
 /**
  * Verifica si un usuario tiene permiso para anular documentos

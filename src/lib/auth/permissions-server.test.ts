@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { getCurrentUser } from "@/lib/auth/auth.cookies"
 import { RolRepository } from "@/repositories/rol.repository"
-import { ROLES_ESCRITURA } from "@/shared/permissions"
-import { requireAuth, requireAdmin, requireRole, requirePermission, requirePagePermission, requirePageAdmin } from "./permissions-server"
+import { requireAuth, requireAdmin, requirePermission, requirePagePermission, requirePageAdmin } from "./permissions-server"
 import { redirect } from "next/navigation"
 
 // Enforcement RBAC (S1): la barrera de autorización de toda ruta mutante. Antes sin un
@@ -56,25 +55,6 @@ describe("requireAdmin", () => {
   it("pasa si es admin", async () => {
     comoRol("admin")
     expect((await requireAdmin()).error).toBeNull()
-  })
-})
-
-describe("requireRole", () => {
-  it("401 sin usuario", async () => {
-    getUser.mockResolvedValue(null as any)
-    expect((await requireRole(ROLES_ESCRITURA)).error?.status).toBe(401)
-  })
-
-  it("403 si el rol no está en la lista (readonly fuera de ESCRITURA)", async () => {
-    comoRol("readonly")
-    const { error, user } = await requireRole(ROLES_ESCRITURA)
-    expect(user).toBeNull()
-    expect(error?.status).toBe(403)
-  })
-
-  it("pasa si el rol está en la lista", async () => {
-    comoRol("usuario")
-    expect((await requireRole(ROLES_ESCRITURA)).error).toBeNull()
   })
 })
 
