@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
+import { getJwtSecret } from '@/lib/auth/jwt-secret'
 
 // Registro público deshabilitado: los usuarios los da de alta el admin (decisión 2026-07-04)
 const publicRoutes = ['/login', '/api/auth/login']
@@ -7,11 +8,14 @@ const authRoutes = ['/login']
 
 async function verificarToken(token: string): Promise<boolean> {
   // Se lee en cada request (no a nivel de módulo: eso rompe el build de Next).
-  const secret = process.env.JWT_SECRET
-  if (!secret) {
-    // Fail-CLOSED: sin secreto no se puede validar → el token se trata como inválido
-    // (el usuario cae a /login o recibe 401), nunca se deja pasar.
-    console.error('JWT_SECRET no está configurada en el entorno.')
+  // Misma validación de fuerza que usa AuthService al firmar: un secreto ausente O débil
+  // se trata igual. Fail-CLOSED: el token se considera inválido (el usuario cae a /login
+  // o recibe 401), nunca se deja pasar.
+  let secret: string
+  try {
+    secret = getJwtSecret()
+  } catch (e) {
+    console.error(e instanceof Error ? e.message : 'JWT_SECRET inválida')
     return false
   }
   try {

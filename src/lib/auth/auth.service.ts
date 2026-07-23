@@ -1,19 +1,9 @@
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { createClient } from '@/lib/supabase/service'
+import { getJwtSecret } from '@/lib/auth/jwt-secret'
 
 const JWT_EXPIRES_IN = '7d'
-
-// Se resuelve en tiempo de request, NO al importar el módulo: un throw a nivel de
-// módulo rompe el "Collecting page data" de `next build` (Next importa cada ruta).
-// Sigue siendo fail-fast, pero sólo cuando de verdad se firma/verifica un token.
-function getJwtSecret(): string {
-  const secret = process.env.JWT_SECRET
-  if (!secret) {
-    throw new Error('JWT_SECRET no está configurada. Definila en .env.local / variables de entorno del deploy.')
-  }
-  return secret
-}
 
 // El join gu_roles(nombre) es many-to-one: en runtime llega como objeto,
 // pero el cliente sin tipar lo infiere como array
