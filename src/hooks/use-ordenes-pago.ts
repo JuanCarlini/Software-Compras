@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { OrdenPago } from "@/models"
-import { showSuccessToast, showErrorToast, toastMessages } from "./toast-helpers"
-import { api } from "./api-client"
+import { showSuccessToast, showErrorToast, toastMessages } from "@/shared/toast-helpers"
+import { api } from "@/shared/api-client"
 
 // Fila de OP enriquecida con el join de proveedor que hace OrdenPagoService.getAll
 export type OrdenPagoRow = OrdenPago & { proveedor_nombre?: string }

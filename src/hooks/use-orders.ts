@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { OrdenCompra } from "@/models"
-import { showSuccessToast, showErrorToast, toastMessages } from "./toast-helpers"
-import { api } from "./api-client"
+import { showSuccessToast, showErrorToast, toastMessages } from "@/shared/toast-helpers"
+import { api } from "@/shared/api-client"
 
 export function useOrders() {
   const [orders, setOrders] = useState<OrdenCompra[]>([])

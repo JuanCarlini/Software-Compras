@@ -1,6 +1,6 @@
 "use client"
 
-import { useReportes } from "@/shared/use-reportes"
+import { useReportes } from "@/hooks/use-reportes"
 import { ReportesDashboard } from "@/views/reportes-dashboard"
 import { Card, CardContent } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"

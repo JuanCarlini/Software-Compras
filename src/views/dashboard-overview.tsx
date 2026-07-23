@@ -14,7 +14,7 @@ import {
   Loader2,
   RefreshCw
 } from "lucide-react"
-import { useDashboard } from "@/shared/use-dashboard"
+import { useDashboard } from "@/hooks/use-dashboard"
 import { formatCurrency } from "@/shared/format-utils"
 import { formatDateShort } from "@/shared/date-utils"
 import { StatusBadge } from "@/components/status-badge"

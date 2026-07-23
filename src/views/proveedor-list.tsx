@@ -7,7 +7,7 @@ import { Eye, Edit, CheckCircle, XCircle, Building2, Mail, Phone, MapPin } from 
 import { ListShell } from "@/components/ui/list-shell"
 import Link from "next/link"
 import { useState } from "react"
-import { useProveedores } from "@/shared/use-proveedores"
+import { useProveedores } from "@/hooks/use-proveedores"
 import { EstadoProveedor } from "@/models"
 import { searchWithScore } from "@/shared/search-utils"
 import { SearchStats } from "@/components/ui/search-stats"

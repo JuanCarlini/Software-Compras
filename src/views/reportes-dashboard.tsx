@@ -11,7 +11,7 @@ import {
   Users,
   ShoppingCart
 } from "lucide-react"
-import { useReportes } from "@/shared/use-reportes"
+import { useReportes } from "@/hooks/use-reportes"
 import { formatCurrency } from "@/shared/format-utils"
 
 export function ReportesDashboard() {
