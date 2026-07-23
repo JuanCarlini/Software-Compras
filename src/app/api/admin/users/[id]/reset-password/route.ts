@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/auth/permissions-server"
-import { UsuarioService } from "@/controllers/usuario.controller"
+import { UsuarioService } from "@/services/usuario.service"
 import { AuditService } from "@/lib/audit/audit.service"
 import { parseId } from "@/lib/route/parse-id"
 import { handleRouteError } from "@/lib/route/handle-route-error"

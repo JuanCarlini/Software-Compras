@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAuth, requireAdmin } from "@/lib/auth/permissions-server"
 import { isAdmin } from "@/shared/permissions"
 import { UserRole } from "@/models"
-import { UsuarioService } from "@/controllers/usuario.controller"
+import { UsuarioService } from "@/services/usuario.service"
 import { AuditService } from "@/lib/audit/audit.service"
 import { handleRouteError } from "@/lib/route/handle-route-error"
 

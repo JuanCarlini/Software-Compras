@@ -22,7 +22,7 @@
       "@/*": ["./src/*"],
       "@/models": ["./src/models"],
       "@/views": ["./src/views"], 
-      "@/controllers": ["./src/controllers"],
+      "@/services": ["./src/services"],
       "@/shared": ["./src/shared"]
     }
   },

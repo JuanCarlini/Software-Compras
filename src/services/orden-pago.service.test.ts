@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { OrdenPagoRepository } from "@/repositories/orden-pago.repository"
-import { OrdenPagoService } from "./orden-pago.controller"
+import { OrdenPagoService } from "./orden-pago.service"
 
 vi.mock("@/repositories/orden-pago.repository", () => ({
   OrdenPagoRepository: {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { ProveedorService } from "@/controllers"
+import { ProveedorService } from "@/services"
 import { requirePermission } from "@/lib/auth/permissions-server"
 import { CreateProveedorSchema } from "@/shared/validation/proveedor-validation"
 import { handleRouteError } from "@/lib/route/handle-route-error"

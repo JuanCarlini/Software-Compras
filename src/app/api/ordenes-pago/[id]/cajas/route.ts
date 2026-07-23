@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { OrdenPagoService } from "@/controllers"
+import { OrdenPagoService } from "@/services"
 import { AgregarCajaSchema } from "@/shared/validation/orden-pago-validation"
 import { requirePermission } from "@/lib/auth/permissions-server"
 import { parseId } from "@/lib/route/parse-id"

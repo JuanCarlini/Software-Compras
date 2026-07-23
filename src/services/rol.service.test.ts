@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { RolRepository } from "@/repositories/rol.repository"
-import { RolService } from "./rol.controller"
+import { RolService } from "./rol.service"
 
 vi.mock("@/repositories/rol.repository", () => ({
   RolRepository: {

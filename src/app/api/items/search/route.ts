@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { ItemService } from "@/controllers"
+import { ItemService } from "@/services"
 import { handleRouteError } from "@/lib/route/handle-route-error"
 
 // GET /api/items/search?query=texto - Buscar items por nombre o descripción

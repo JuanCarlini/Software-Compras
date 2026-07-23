@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { ItemService } from "@/controllers"
+import { ItemService } from "@/services"
 import { CreateItemSchema } from "@/shared/validation/item-validation"
 import { requirePermission } from "@/lib/auth/permissions-server"
 import { handleRouteError } from "@/lib/route/handle-route-error"

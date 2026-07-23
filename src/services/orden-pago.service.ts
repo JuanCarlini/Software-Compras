@@ -1,6 +1,6 @@
 import { OrdenPagoRepository } from "@/repositories/orden-pago.repository"
 import { HttpError } from "@/lib/route/http-error"
-import { puedeTransicionar, TRANSICIONES_OP } from "@/controllers/transiciones"
+import { puedeTransicionar, TRANSICIONES_OP } from "@/services/transiciones"
 import type {
   CreateOrdenPagoData,
   CreateLineaFactura,

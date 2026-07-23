@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/auth/permissions-server"
 import { parseId } from "@/lib/route/parse-id"
 import { handleRouteError } from "@/lib/route/handle-route-error"
-import { UsuarioService } from "@/controllers/usuario.controller"
+import { UsuarioService } from "@/services/usuario.service"
 import { AuditService } from "@/lib/audit/audit.service"
 
 // PATCH /api/admin/users/[id]/role - Actualizar rol de un usuario (solo admin).

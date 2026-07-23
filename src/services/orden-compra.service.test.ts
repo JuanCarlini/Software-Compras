@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { OrdenCompraRepository } from "@/repositories/orden-compra.repository"
 import { ItemPrecioRepository } from "@/repositories/item-precio.repository"
-import { ItemService } from "./item.controller"
-import { OrdenCompraService } from "./orden-compra.controller"
+import { ItemService } from "./item.service"
+import { OrdenCompraService } from "./orden-compra.service"
 
 vi.mock("@/repositories/orden-compra.repository", () => ({
   OrdenCompraRepository: {
@@ -24,7 +24,7 @@ vi.mock("@/repositories/orden-compra.repository", () => ({
 vi.mock("@/repositories/item-precio.repository", () => ({
   ItemPrecioRepository: { findPrecio: vi.fn(), upsertPrecio: vi.fn() },
 }))
-vi.mock("./item.controller", () => ({
+vi.mock("./item.service", () => ({
   ItemService: { getById: vi.fn() },
 }))
 

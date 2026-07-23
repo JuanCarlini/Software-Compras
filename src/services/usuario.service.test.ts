@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import bcrypt from "bcryptjs"
 import { UsuarioRepository } from "@/repositories/usuario.repository"
 import { RolRepository } from "@/repositories/rol.repository"
-import { UsuarioService } from "./usuario.controller"
+import { UsuarioService } from "./usuario.service"
 
 vi.mock("@/repositories/usuario.repository", () => ({
   UsuarioRepository: {

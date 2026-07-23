@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { OrdenCompraService } from "@/controllers"
+import { OrdenCompraService } from "@/services"
 import { requirePermission } from "@/lib/auth/permissions-server"
 import { parseId } from "@/lib/route/parse-id"
 import { handleRouteError } from "@/lib/route/handle-route-error"

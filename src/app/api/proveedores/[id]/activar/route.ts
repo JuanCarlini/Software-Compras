@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { ProveedorService } from "@/controllers"
+import { ProveedorService } from "@/services"
 import { requirePermission } from "@/lib/auth/permissions-server"
 import { EstadoProveedor } from "@/models"
 import { parseId } from "@/lib/route/parse-id"

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { CajaService } from "@/controllers"
+import { CajaService } from "@/services"
 import { UpdateCajaSchema } from "@/shared/validation/caja-validation"
 import { requireAdmin } from "@/lib/auth/permissions-server"
 import { parseId } from "@/lib/route/parse-id"

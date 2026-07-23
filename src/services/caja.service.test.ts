@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { CajaRepository } from "@/repositories/caja.repository"
-import { CajaService } from "./caja.controller"
+import { CajaService } from "./caja.service"
 
 vi.mock("@/repositories/caja.repository", () => ({
   CajaRepository: {

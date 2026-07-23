@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { ProyectoService } from "@/controllers/proyecto.controller"
+import { ProyectoService } from "@/services/proyecto.service"
 import { CreateProyectoSchema } from "@/shared/validation/proyecto-validation"
 import { requireRole } from "@/lib/auth/permissions-server"
 import { ROLES_ESCRITURA } from "@/shared/permissions"

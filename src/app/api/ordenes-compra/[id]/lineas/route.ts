@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { OrdenCompraService } from "@/controllers"
+import { OrdenCompraService } from "@/services"
 import { CreateOrdenCompraLineaSchema } from "@/shared/validation/orden-compra-validation"
 import { requirePermission } from "@/lib/auth/permissions-server"
 import { parseId } from "@/lib/route/parse-id"

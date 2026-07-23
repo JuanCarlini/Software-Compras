@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { FacturaRepository } from "@/repositories/factura.repository"
-import { FacturaService } from "./factura.controller"
+import { FacturaService } from "./factura.service"
 
 vi.mock("@/repositories/factura.repository", () => ({
   FacturaRepository: {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { CertificacionService } from "@/controllers/certificacion.controller"
+import { CertificacionService } from "@/services/certificacion.service"
 import { UpdateCertificacionSchema } from "@/shared/validation/certificacion-validation"
 import { requirePermission } from "@/lib/auth/permissions-server"
 import { parseId } from "@/lib/route/parse-id"
