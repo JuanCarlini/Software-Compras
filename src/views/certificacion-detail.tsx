@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { use } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
-import { Button } from "@/views/ui/button"
-import { Badge } from "@/views/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, FileText, Calendar, Building2, User, Check, X } from "lucide-react"
 import { showErrorToast, showSuccessToast } from "@/shared/toast-helpers"
 import { formatCurrency } from "@/shared/format-utils"
@@ -20,7 +20,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/views/ui/alert-dialog"
+} from "@/components/ui/alert-dialog"
 
 // View-model que devuelve GET /api/certificaciones/[id] (cabecera + joins derivados +
 // líneas). Los numéricos llegan como string desde Postgres (supabase-js) → se coercionan

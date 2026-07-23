@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/views/ui/card"
-import { Button } from "@/views/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
 import { formatCurrency } from "@/shared/format-utils"
 import { formatDateShort } from "@/shared/date-utils"

@@ -1,8 +1,8 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
-import { Button } from "@/views/ui/button"
-import { Badge } from "@/views/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { 
   ShoppingCart, 
   CreditCard, 

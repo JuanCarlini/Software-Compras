@@ -2,7 +2,7 @@
 
 import { useReportes } from "@/shared/use-reportes"
 import { ReportesDashboard } from "@/views/reportes-dashboard"
-import { Card, CardContent } from "@/views/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"
 
 // /reportes = dashboard de indicadores reales (calculados desde OC + proveedores).

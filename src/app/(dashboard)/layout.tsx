@@ -1,4 +1,4 @@
-import { SidebarProvider, SidebarTrigger } from "@/views/ui/sidebar"
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/views/app-sidebar"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenu } from "@/components/user-menu"

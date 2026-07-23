@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { use } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
-import { Button } from "@/views/ui/button"
-import { Badge } from "@/views/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Building2, Calendar, FileCheck, Check, X } from "lucide-react"
 import { showErrorToast, showSuccessToast } from "@/shared/toast-helpers"
 import { formatCurrency } from "@/shared/format-utils"
@@ -20,7 +20,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/views/ui/alert-dialog"
+} from "@/components/ui/alert-dialog"
 
 // View-model de GET /api/facturas/[id] (cabecera + joins de proveedor + imputaciones +
 // líneas). Numéricos como string desde Postgres → Number() en el render.

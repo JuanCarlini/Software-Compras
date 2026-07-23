@@ -1,5 +1,5 @@
 import { OrdenCompraForm } from "@/views/orden-compra-form"
-import { Button } from "@/views/ui/button"
+import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { requirePagePermission } from "@/shared/permissions-server"

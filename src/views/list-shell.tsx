@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { Card, CardContent } from "@/views/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"
 
 // Estados uniformes de las listas del circuito (loading / error). El resto — título,

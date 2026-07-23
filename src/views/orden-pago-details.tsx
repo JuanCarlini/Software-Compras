@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/views/ui/card"
-import { Button } from "@/views/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { formatDateShort } from "@/shared/date-utils"
 import { formatCurrency } from "@/shared/format-utils"
 import { StatusBadge } from "@/shared/status-badge"

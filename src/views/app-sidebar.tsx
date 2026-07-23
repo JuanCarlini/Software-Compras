@@ -14,10 +14,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/views/ui/sidebar"
+} from "@/components/ui/sidebar"
 import { useAuth } from "@/shared/auth-context"
 import { isAdmin, stringToUserRole } from "@/shared/permissions"
-import { Button } from "@/views/ui/button"
+import { Button } from "@/components/ui/button"
 
 // `modulo` = clave de la matriz; si está, el item solo se muestra con permiso `ver`.
 // Dashboard y Reportes no son módulos de matriz → siempre visibles.

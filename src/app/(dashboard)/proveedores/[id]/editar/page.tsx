@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { ProveedorForm } from "@/views/proveedor-form"
-import { Card, CardContent } from "@/views/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Loader2, ArrowLeft } from "lucide-react"
-import { Button } from "@/views/ui/button"
+import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Proveedor } from "@/models"
 

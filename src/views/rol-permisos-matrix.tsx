@@ -1,6 +1,6 @@
 "use client"
 
-import { Checkbox } from "@/views/ui/checkbox"
+import { Checkbox } from "@/components/ui/checkbox"
 import { PERMISOS_CATALOGO, ACCION_LABEL, type Accion } from "@/shared/permissions-catalog"
 
 interface Props {

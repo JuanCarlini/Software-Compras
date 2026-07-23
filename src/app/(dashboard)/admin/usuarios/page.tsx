@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Card, CardContent } from "@/views/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/views/ui/tabs"
+import { Card, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2 } from "lucide-react"
 import { showErrorToast } from "@/shared/toast-helpers"
 import { api } from "@/shared/api-client"

@@ -5,7 +5,7 @@ import { Check, ChevronsUpDown, Plus, Loader2 } from "lucide-react"
 import { cn } from "@/shared/utils"
 import { Item } from "@/models"
 
-import { Button } from "@/views/ui/button"
+import { Button } from "@/components/ui/button"
 import {
   Command,
   CommandEmpty,
@@ -13,12 +13,12 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/views/ui/command"
+} from "@/components/ui/command"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/views/ui/popover"
+} from "@/components/ui/popover"
 
 interface ItemComboboxProps {
   value?: number | null

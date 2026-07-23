@@ -1,6 +1,6 @@
 "use client"
 
-import { Button } from "@/views/ui/button"
+import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/shared/auth-context"

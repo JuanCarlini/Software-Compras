@@ -1,4 +1,4 @@
-import { Badge } from "@/views/ui/badge"
+import { Badge } from "@/components/ui/badge"
 import { getStatusStyle } from "./status-colors"
 import { LABEL_ESTADO } from "@/models/enums"
 

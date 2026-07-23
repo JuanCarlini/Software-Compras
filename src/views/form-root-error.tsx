@@ -1,7 +1,7 @@
 "use client"
 
 import { useFormContext } from "react-hook-form"
-import { Alert, AlertDescription } from "@/views/ui/alert"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 
 // Muestra el error de nivel formulario (form.setError("root", ...)) que usan los forms del

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { ProveedorDetails } from "@/views/proveedor-details"
-import { Card, CardContent } from "@/views/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"
 import { Proveedor } from "@/models"
 

@@ -1,8 +1,8 @@
 "use client"
 
 import { Search, X } from "lucide-react"
-import { Input } from "@/views/ui/input"
-import { Button } from "@/views/ui/button"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 
 interface SearchBarProps {
   value: string

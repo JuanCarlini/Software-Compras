@@ -14,7 +14,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/views/ui/dialog"
+} from "@/components/ui/dialog"
 import {
   Form,
   FormControl,
@@ -23,17 +23,17 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/views/ui/form"
-import { Input } from "@/views/ui/input"
-import { Textarea } from "@/views/ui/textarea"
-import { Button } from "@/views/ui/button"
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/views/ui/select"
+} from "@/components/ui/select"
 import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
 
 interface ItemQuickCreateDialogProps {

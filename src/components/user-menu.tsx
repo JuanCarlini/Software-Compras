@@ -3,15 +3,15 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { LogOut, Loader2, KeyRound } from "lucide-react"
-import { Button } from "@/views/ui/button"
-import { Input } from "@/views/ui/input"
-import { Label } from "@/views/ui/label"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/views/ui/dialog"
+} from "@/components/ui/dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +19,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/views/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu"
 import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
 
 interface UserMenuProps {
