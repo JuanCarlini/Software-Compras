@@ -1,0 +1,58 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# scratch / logs temporales
+scratch_*.log
+
+# env files
+.env*
+
+# material criptográfico — NUNCA commitear.
+# Antecedente real (auditoría 2026-07-23): dos scripts one-shot de migración con una
+# service_role key de Supabase hardcodeada quedaron en el historial de este repo, que es
+# público. Borrar el archivo no lo saca de la historia; esto evita que vuelva a entrar.
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+id_rsa*
+id_ed25519*
+credentials.json
+service-account*.json
+.npmrc
+.pypirc
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# claude code (config local de permisos)
+.claude/settings.local.json
+
+# skills instaladas localmente por el CLI `skills` (viven global en ~/.claude/skills)
+.claude/skills/
+.agents/
+skills-lock.json
+
+# graphify (salida generada + backup)
+graphify-out/
+CLAUDE.graphify.bak.md
