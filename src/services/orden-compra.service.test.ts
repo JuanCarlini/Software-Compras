@@ -160,6 +160,67 @@ describe("Guarda: las líneas solo se tocan con la OC editable", () => {
   })
 })
 
+// Las LÍNEAS ya estaban protegidas (arriba) por getEditable + el trigger trg_loc_oc_editable.
+// La CABECERA no tenía ninguna guarda: cualquiera con `ordenes_compra:crear` podía reasignar
+// una OC ya APROBADA a otro proveedor, o cambiarle la moneda, arrastrando las certificaciones
+// y facturas que cuelgan de ella. Es justo el control que el producto existe para hacer
+// cumplir ("nada se salta etapas"), y no hay trigger que lo cubra en la DB.
+describe("Guarda: la cabecera solo se modifica con la OC editable", () => {
+  it.each(["en_aprobacion", "aprobado", "anulado"])(
+    "update de cabecera en una OC %s devuelve 422",
+    async (estado) => {
+      repo.findById.mockResolvedValue({ id: 55, proveedor_id: 2, estado } as never)
+      await expect(OrdenCompraService.update(55, { proveedor_id: 99 })).rejects.toMatchObject({ status: 422 })
+      expect(repo.update).not.toHaveBeenCalled()
+    }
+  )
+
+  it.each(["en_aprobacion", "aprobado", "anulado"])(
+    "delete de una OC %s devuelve 422",
+    async (estado) => {
+      repo.findById.mockResolvedValue({ id: 55, proveedor_id: 2, estado } as never)
+      await expect(OrdenCompraService.delete(55)).rejects.toMatchObject({ status: 422 })
+      expect(repo.deleteById).not.toHaveBeenCalled()
+    }
+  )
+
+  it("update en borrador sí pasa", async () => {
+    repo.findById.mockResolvedValue(OC_BORRADOR as never)
+    repo.update.mockResolvedValue({ ...OC_BORRADOR, proveedor_id: 99 } as never)
+    await expect(OrdenCompraService.update(55, { proveedor_id: 99 })).resolves.toBeDefined()
+    expect(repo.update).toHaveBeenCalledWith(55, { proveedor_id: 99 })
+  })
+
+  it("update/delete en una OC rechazada sí pasan (vuelve a ser editable)", async () => {
+    repo.findById.mockResolvedValue({ id: 55, proveedor_id: 2, estado: "rechazado" } as never)
+    repo.update.mockResolvedValue({ id: 55 } as never)
+    repo.deleteById.mockResolvedValue(true)
+    await expect(OrdenCompraService.update(55, { tarea: "x" })).resolves.toBeDefined()
+    await expect(OrdenCompraService.delete(55)).resolves.toBe(true)
+  })
+
+  it("update de una OC inexistente devuelve 404", async () => {
+    repo.findById.mockResolvedValue(null as never)
+    await expect(OrdenCompraService.update(404, { tarea: "x" })).rejects.toMatchObject({ status: 404 })
+  })
+
+  // REGRESIÓN: la guarda va en update(), NO en el repositorio. Si se pusiera abajo,
+  // rompería estos dos caminos, que tocan la misma tabla a propósito sobre OCs no editables.
+  it("cambiarEstado sigue funcionando sobre una OC no editable (usa updateEstado, no update)", async () => {
+    repo.findById.mockResolvedValue({ id: 55, proveedor_id: 2, estado: "en_aprobacion" } as never)
+    repo.updateEstado.mockResolvedValue({ id: 55, estado: "aprobado" } as never)
+    await expect(OrdenCompraService.cambiarEstado(55, "aprobado")).resolves.toBeDefined()
+    expect(repo.updateEstado).toHaveBeenCalledWith(55, "aprobado")
+  })
+
+  it("recalcularCabecera sigue funcionando sobre una OC no editable (va directo al repo)", async () => {
+    repo.findById.mockResolvedValue({ id: 55, proveedor_id: 2, estado: "aprobado" } as never)
+    repo.findLineasByOrdenId.mockResolvedValue([{ total_neto: 100, total_con_iva: 121 }] as never)
+    await expect(OrdenCompraService.recalcularCabecera(55)).resolves.toBeUndefined()
+    expect(repo.update).toHaveBeenCalled()
+  })
+})
+
 describe("OrdenCompraService.updateLine / deleteLine — recálculo de cabecera", () => {
   beforeEach(() => {
     repo.findLineaById.mockResolvedValue({

@@ -188,11 +188,18 @@ export class OrdenCompraService {
     return OrdenCompraRepository.updateEstado(id, destino)
   }
 
+  // La cabecera se protege igual que las líneas: sin esta guarda, cualquiera con
+  // `ordenes_compra:crear` podía reasignar una OC ya APROBADA a otro proveedor o cambiarle
+  // la moneda, arrastrando las certificaciones y facturas que cuelgan de ella. A diferencia
+  // de las líneas (que además tienen el trigger trg_loc_oc_editable), acá la app es el único
+  // punto de control: la DB no lo cubre.
   static async update(id: number, payload: TablesUpdate<"gu_ordenesdecompra">): Promise<OrdenCompra | null> {
+    await OrdenCompraService.getEditable(id)
     return OrdenCompraRepository.update(id, payload)
   }
 
   static async delete(id: number): Promise<boolean> {
+    await OrdenCompraService.getEditable(id)
     return OrdenCompraRepository.deleteById(id)
   }
 
@@ -209,12 +216,14 @@ export class OrdenCompraService {
     return OrdenCompraRepository.findLocRollups(ordenId)
   }
 
-  // Devuelve la OC si sus líneas se pueden tocar; si no, 404 / 422.
+  // Devuelve la OC si admite cambios (cabecera, líneas o borrado); si no, 404 / 422.
+  // El mensaje es genérico a propósito: la usan tanto los caminos de líneas como los de
+  // cabecera, y "no admite cambios" es cierto para los tres.
   private static async getEditable(ocId: number): Promise<OrdenCompra> {
     const oc = await OrdenCompraRepository.findById(ocId)
     if (!oc) throw new HttpError(404, "Orden de compra no encontrada")
     if (!ESTADOS_EDITABLES.includes(oc.estado)) {
-      throw new HttpError(422, `No se pueden modificar las líneas de una orden de compra en estado "${oc.estado}"`)
+      throw new HttpError(422, `Una orden de compra en estado "${oc.estado}" no admite cambios`)
     }
     return oc
   }
