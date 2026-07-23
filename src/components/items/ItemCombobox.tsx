@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Check, ChevronsUpDown, Plus, Loader2 } from "lucide-react"
-import { cn } from "@/shared/utils"
+import { cn } from "@/lib/utils"
 import { Item } from "@/models"
 
 import { Button } from "@/components/ui/button"
