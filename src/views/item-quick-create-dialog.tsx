@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2 } from "lucide-react"
-import { CreateItemSchema, CreateItemFormData } from "@/shared/item-validation"
+import { CreateItemSchema, CreateItemFormData } from "@/shared/validation/item-validation"
 import { Item, ItemCategoria, UnidadMedida } from "@/models"
 
 import {

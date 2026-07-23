@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ProveedorService } from "@/controllers"
 import { requirePermission } from "@/lib/auth/permissions-server"
-import { UpdateProveedorSchema } from "@/shared/proveedor-validation"
+import { UpdateProveedorSchema } from "@/shared/validation/proveedor-validation"
 import { parseId } from "@/lib/route/parse-id"
 import { handleRouteError } from "@/lib/route/handle-route-error"
 import { getByIdRoute } from "@/lib/route/crud-route"

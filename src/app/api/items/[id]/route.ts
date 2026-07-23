@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ItemService } from "@/controllers"
-import { UpdateItemSchema } from "@/shared/item-validation"
+import { UpdateItemSchema } from "@/shared/validation/item-validation"
 import { requirePermission } from "@/lib/auth/permissions-server"
 import { parseId } from "@/lib/route/parse-id"
 import { handleRouteError } from "@/lib/route/handle-route-error"

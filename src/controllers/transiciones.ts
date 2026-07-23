@@ -1,6 +1,6 @@
 import type { EstadoAprobacion, EstadoFactura, EstadoOp } from "@/models/enums"
 import type { UserRole } from "@/models/user.model"
-import { ROLES_APROBACION, ROLES_ESCRITURA } from "./permissions"
+import { ROLES_APROBACION, ROLES_ESCRITURA } from "@/shared/permissions"
 
 // Qué transiciones existen. Es el grafo, NO el gate: las reglas de negocio
 // (≥1 línea, ≤100%, Σcajas=total) son triggers en Postgres y devuelven 422.

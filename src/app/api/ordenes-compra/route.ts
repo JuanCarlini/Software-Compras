@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { OrdenCompraService } from "@/controllers"
-import { CreateOrdenCompraSchema } from "@/shared/orden-compra-validation"
+import { CreateOrdenCompraSchema } from "@/shared/validation/orden-compra-validation"
 import { requirePermission } from "@/lib/auth/permissions-server"
 import { handleRouteError } from "@/lib/route/handle-route-error"
 import { createRoute } from "@/lib/route/crud-route"

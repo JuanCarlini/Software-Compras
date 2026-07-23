@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { CajaService } from "@/controllers"
-import { UpdateCajaSchema } from "@/shared/caja-validation"
+import { UpdateCajaSchema } from "@/shared/validation/caja-validation"
 import { requireAdmin } from "@/lib/auth/permissions-server"
 import { parseId } from "@/lib/route/parse-id"
 import { handleRouteError } from "@/lib/route/handle-route-error"

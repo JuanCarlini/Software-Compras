@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { CertificacionService } from "@/controllers/certificacion.controller"
-import { CreateCertificacionSchema } from "@/shared/certificacion-validation"
+import { CreateCertificacionSchema } from "@/shared/validation/certificacion-validation"
 import { requirePermission } from "@/lib/auth/permissions-server"
 import { handleRouteError } from "@/lib/route/handle-route-error"
 import { createRoute } from "@/lib/route/crud-route"

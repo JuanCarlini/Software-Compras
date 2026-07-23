@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { ItemService } from "@/controllers"
-import { CreateItemSchema } from "@/shared/item-validation"
+import { CreateItemSchema } from "@/shared/validation/item-validation"
 import { requirePermission } from "@/lib/auth/permissions-server"
 import { handleRouteError } from "@/lib/route/handle-route-error"
 import { createRoute } from "@/lib/route/crud-route"

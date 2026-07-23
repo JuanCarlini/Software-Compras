@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { FacturaService } from "@/controllers/factura.controller"
-import { CreateFacturaSchema } from "@/shared/factura-validation"
+import { CreateFacturaSchema } from "@/shared/validation/factura-validation"
 import { requirePermission } from "@/lib/auth/permissions-server"
 import { handleRouteError } from "@/lib/route/handle-route-error"
 import { createRoute } from "@/lib/route/crud-route"

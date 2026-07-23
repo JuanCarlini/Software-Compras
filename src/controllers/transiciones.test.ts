@@ -7,7 +7,7 @@ import {
   TRANSICIONES_FACTURA,
   TRANSICIONES_OP,
 } from "./transiciones"
-import { ROLES_APROBACION, ROLES_ESCRITURA } from "./permissions"
+import { ROLES_APROBACION, ROLES_ESCRITURA } from "@/shared/permissions"
 
 describe("puedeTransicionar", () => {
   it("permite borrador -> en_aprobacion en OC/CE", () => {

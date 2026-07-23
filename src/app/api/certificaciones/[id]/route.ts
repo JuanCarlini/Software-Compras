@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { CertificacionService } from "@/controllers/certificacion.controller"
-import { UpdateCertificacionSchema } from "@/shared/certificacion-validation"
+import { UpdateCertificacionSchema } from "@/shared/validation/certificacion-validation"
 import { requirePermission } from "@/lib/auth/permissions-server"
 import { parseId } from "@/lib/route/parse-id"
 import { handleRouteError } from "@/lib/route/handle-route-error"

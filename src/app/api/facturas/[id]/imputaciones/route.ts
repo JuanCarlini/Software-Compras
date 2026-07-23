@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { FacturaService } from "@/controllers/factura.controller"
-import { ImputarSchema } from "@/shared/factura-validation"
+import { ImputarSchema } from "@/shared/validation/factura-validation"
 import { requirePermission } from "@/lib/auth/permissions-server"
 import { parseId } from "@/lib/route/parse-id"
 import { handleRouteError } from "@/lib/route/handle-route-error"

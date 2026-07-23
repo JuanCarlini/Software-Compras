@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { OrdenPagoService } from "@/controllers"
-import { CreateOrdenPagoSchema } from "@/shared/orden-pago-validation"
+import { CreateOrdenPagoSchema } from "@/shared/validation/orden-pago-validation"
 import { requirePermission } from "@/lib/auth/permissions-server"
 import { handleRouteError } from "@/lib/route/handle-route-error"
 import { createRoute } from "@/lib/route/crud-route"

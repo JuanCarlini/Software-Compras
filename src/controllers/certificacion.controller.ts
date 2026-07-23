@@ -2,8 +2,8 @@ import type { TablesUpdate } from "@/lib/supabase/database.types"
 import { CertificacionRepository } from "@/repositories/certificacion.repository"
 import { OrdenCompraRepository } from "@/repositories/orden-compra.repository"
 import { HttpError } from "@/lib/route/http-error"
-import { totalesDeCertificacion } from "@/shared/totales"
-import { puedeTransicionar, TRANSICIONES_APROBACION } from "@/shared/transiciones"
+import { totalesDeCertificacion } from "@/controllers/totales"
+import { puedeTransicionar, TRANSICIONES_APROBACION } from "@/controllers/transiciones"
 import type { CreateCertificacionLinea, EstadoAprobacion } from "@/models"
 
 interface CreateCertificacionInput {

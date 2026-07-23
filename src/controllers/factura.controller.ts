@@ -1,7 +1,7 @@
 import { FacturaRepository } from "@/repositories/factura.repository"
 import { HttpError } from "@/lib/route/http-error"
-import { totalesDeLinea, totalesDeCabecera, IVA_DEFAULT } from "@/shared/totales"
-import { puedeTransicionar, TRANSICIONES_FACTURA } from "@/shared/transiciones"
+import { totalesDeLinea, totalesDeCabecera, IVA_DEFAULT } from "@/controllers/totales"
+import { puedeTransicionar, TRANSICIONES_FACTURA } from "@/controllers/transiciones"
 import type { CreateFacturaData, CreateFacturaLinea, CreateImputacion, EstadoFactura } from "@/models"
 
 interface CreateFacturaInput extends CreateFacturaData {
