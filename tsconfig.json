@@ -23,9 +23,7 @@
       "@/models": ["./src/models"],
       "@/views": ["./src/views"], 
       "@/controllers": ["./src/controllers"],
-      "@/routes": ["./src/routes"],
-      "@/shared": ["./src/shared"],
-      "@/database": ["./src/database"]
+      "@/shared": ["./src/shared"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
