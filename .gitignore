@@ -22,6 +22,22 @@ scratch_*.log
 # env files
 .env*
 
+# material criptográfico — NUNCA commitear.
+# Antecedente real (auditoría 2026-07-23): dos scripts one-shot de migración con una
+# service_role key de Supabase hardcodeada quedaron en el historial de este repo, que es
+# público. Borrar el archivo no lo saca de la historia; esto evita que vuelva a entrar.
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+id_rsa*
+id_ed25519*
+credentials.json
+service-account*.json
+.npmrc
+.pypirc
+
 # vercel
 .vercel
 
