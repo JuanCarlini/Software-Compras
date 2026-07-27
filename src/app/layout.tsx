@@ -7,9 +7,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Gestión Uno - Sistema de Gestión",
-  description: "Sistema integral de gestión empresarial",
-  generator: "v0.dev"
+  title: "Gestión Uno",
+  description: "ERP de control de compras y pagos",
 }
 
 export default function RootLayout({
