@@ -8,7 +8,7 @@ control de acceso por roles y permisos, y auditoría de operaciones.
 
 Next.js 15 (App Router) · React 18 · TypeScript 5 · Tailwind CSS 3.4 + shadcn/ui ·
 PostgreSQL (Supabase) · autenticación JWT propia (jsonwebtoken + bcryptjs) ·
-validación con Zod · tests con Vitest.
+validación con Zod.
 
 ## Requisitos
 
@@ -38,7 +38,6 @@ El esquema de la base de datos está en `supabase/migrations/`, en orden cronol�
 npm run dev      # servidor de desarrollo
 npm run build    # compilación de producción
 npm start        # servidor de producción
-npm test         # tests
 npm run lint     # análisis estático
 ```
 

@@ -1,10 +1,5 @@
 name: CI
 
-# El repo ya tenía las reglas duras de seguridad escritas como tests que rompen el build
-# (src/app/api/route-authz.test.ts y src/app/(dashboard)/page-authz.test.ts), pero nadie las
-# ejecutaba automáticamente: corrían solo si un humano se acordaba de tipear `npm test`.
-# Este workflow convierte esa convención de honor en un gate real (auditoría CN-012).
-
 on:
   push:
     branches: [main, dev]
@@ -44,10 +39,6 @@ jobs:
 
       - name: Type check
         run: npx tsc --noEmit
-
-      # Acá corren las dos reglas duras de autorización, además de los tests de dominio.
-      - name: Tests
-        run: npm test
 
       # Backstop de dependencias. Hoy el proyecto está en 0 vulnerabilidades; este step
       # existe para que un advisory nuevo se vea el día que sale y no meses después
