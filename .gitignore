@@ -22,10 +22,7 @@ scratch_*.log
 # env files
 .env*
 
-# material criptográfico — NUNCA commitear.
-# Antecedente real (auditoría 2026-07-23): dos scripts one-shot de migración con una
-# service_role key de Supabase hardcodeada quedaron en el historial de este repo, que es
-# público. Borrar el archivo no lo saca de la historia; esto evita que vuelva a entrar.
+# material criptográfico y secretos — nunca commitear
 *.pem
 *.key
 *.p12
@@ -44,7 +41,3 @@ service-account*.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# graphify (salida generada + backup)
-graphify-out/
-CLAUDE.graphify.bak.md
