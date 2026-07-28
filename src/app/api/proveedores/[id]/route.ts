@@ -26,7 +26,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
     const id = parseId((await params).id)
     const body = await request.json()
-    const data = UpdateProveedorSchema.parse(body) // S4: whitelist de campos
+    const data = UpdateProveedorSchema.parse(body) // whitelist de campos
     const updatedProveedor = await ProveedorService.update(id, data)
 
     if (!updatedProveedor) {

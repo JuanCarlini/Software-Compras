@@ -18,7 +18,7 @@ export async function GET() {
 
 export const POST = createRoute({
   autorizar: () => requirePermission("proveedores", "crear"),
-  schema: CreateProveedorSchema, // S4: whitelist de campos
+  schema: CreateProveedorSchema, // whitelist de campos
   crear: (data) => ProveedorService.create(data),
   audit: { tabla: "gu_proveedores", detalle: (p) => `Proveedor ${p.nombre} creado` },
   contexto: "POST /api/proveedores",

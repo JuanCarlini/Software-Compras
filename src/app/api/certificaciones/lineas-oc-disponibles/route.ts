@@ -8,7 +8,7 @@ import { HttpError } from "@/lib/route/http-error"
 // GET /api/certificaciones/lineas-oc-disponibles?ordenCompraId=N
 // Líneas de esa OC con su saldo certificable (unidades certificadas / pendientes), leído
 // de v_loc_rollup. Antes se consultaba por proveedorId, cuando una certificación podía
-// cruzar varias OCs; en CCIP cuelga de UNA sola.
+// cruzar varias OCs; ahora cuelga de UNA sola.
 export async function GET(request: NextRequest) {
   try {
     const { error: authError } = await requirePermission("certificaciones", "ver")

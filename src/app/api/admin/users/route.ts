@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    PasswordSchema.parse(password) // política única (CN-010); handleRouteError → 400
+    PasswordSchema.parse(password) // política única; handleRouteError → 400
 
     const nuevo = await UsuarioService.create({ nombre, email, password, rol_id: Number(rol_id) })
 

@@ -20,8 +20,8 @@ export async function GET() {
   }
 }
 
-// POST /api/proyectos - Crear proyecto. Zod whitelistea el body (S4); el estado lo
-// pone la DB, no el cliente (S2). Antes este POST tomaba el body crudo (mass-assignment).
+// POST /api/proyectos - Crear proyecto. Zod whitelistea el body; el estado lo
+// pone la DB, no el cliente. Antes este POST tomaba el body crudo (mass-assignment).
 // El gate pasó de requireRole (grupo de rol) a requirePermission: era el único create del
 // sistema que ignoraba la matriz, o sea que un rol custom quedaba tratado como "usuario".
 export const POST = createRoute({

@@ -22,11 +22,11 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-    // Política única y compartida (CN-010): antes era un `length < 6` inline.
+    // Política única y compartida: antes era un `length < 6` inline.
     // handleRouteError traduce el ZodError a 400 con el detalle.
     PasswordSchema.parse(newPassword)
 
-    // Rate-limit del cambio de clave (CN-007). Sin esto, con una sesión robada se podía
+    // Rate-limit del cambio de clave. Sin esto, con una sesión robada se podía
     // forzar la contraseña ACTUAL a ritmo ilimitado — el 400 de "incorrecta" es un
     // oráculo perfecto —, que es el paso previo a tomar la cuenta por completo.
     const now = Date.now()
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
     limpiarIntentos(rlKey)
 
-    // El cambio de clave invalida TODAS las sesiones previas (CN-009), incluida la del que
+    // El cambio de clave invalida TODAS las sesiones previas, incluida la del que
     // acaba de cambiarla. Se le devuelve una cookie fresca para que siga trabajando: el
     // resultado neto es que solo sobrevive la sesión desde la que se hizo el cambio.
     const actualizado = await AuthService.getUserById(user!.id)

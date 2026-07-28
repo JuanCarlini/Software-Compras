@@ -21,7 +21,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     const userId = parseId((await params).id)
     const { password } = await request.json()
 
-    PasswordSchema.parse(password) // política única (CN-010); handleRouteError → 400
+    PasswordSchema.parse(password) // política única; handleRouteError → 400
 
     await UsuarioService.resetPassword(userId, password)
 

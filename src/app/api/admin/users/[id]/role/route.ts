@@ -21,7 +21,7 @@ export async function PATCH(
 
     const actualizado = await UsuarioService.updateRol(id, rol, { id: user!.id })
 
-    // El cambio de rol es una acción sensible: queda en la bitácora (T06).
+    // El cambio de rol es una acción sensible: queda en la bitácora.
     await AuditService.registrar({
       usuarioId: user!.id,
       tabla: "gu_usuario",

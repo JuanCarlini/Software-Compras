@@ -10,7 +10,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { email, password } = body
     
-    // Validar campos requeridos
     if (!email || !password) {
       return NextResponse.json(
         { error: "Email y contraseña son requeridos" },
@@ -18,7 +17,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validar formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
       return NextResponse.json(
@@ -27,7 +25,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // S3: rate-limiting contra fuerza bruta. DOS contadores (CN-006): el de ip+email es
+    // Rate-limiting contra fuerza bruta. DOS contadores: el de ip+email es
     // best-effort porque la IP se puede rotar; el de email solo no depende de ningún
     // header, así que es el que de verdad frena el ataque contra una cuenta.
     const now = Date.now()
@@ -44,13 +42,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Intentar login
     const result = await AuthService.login(email, password)
 
     if (!result) {
       registrarFallo(porEmail, now)
       registrarFallo(porIpEmail, now)
-      // Bitácora: el intento fallido queda registrado y es investigable (CN-008).
+      // Bitácora: el intento fallido queda registrado y es investigable.
       await AuditService.registrarLoginFallido(String(email), ip)
       return NextResponse.json(
         { error: "Credenciales inválidas" },
@@ -58,14 +55,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Login OK: limpiar ambos contadores
     limpiarIntentos(porEmail)
     limpiarIntentos(porIpEmail)
 
-    // Establecer cookie de autenticación
     await setAuthCookie(result.token)
 
-    // Bitácora: inicio de sesión (T06)
+    // Bitácora: inicio de sesión
     await AuditService.registrar({
       usuarioId: result.user.id,
       tabla: 'sesion',

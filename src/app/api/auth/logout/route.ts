@@ -4,7 +4,7 @@ import { AuditService } from '@/lib/audit/audit.service'
 
 export async function POST() {
   try {
-    // Bitácora: cierre de sesión (T06) — resolver el usuario ANTES de borrar la cookie
+    // Bitácora: cierre de sesión — resolver el usuario ANTES de borrar la cookie
     const user = await getCurrentUser()
     if (user) {
       await AuditService.registrar({
