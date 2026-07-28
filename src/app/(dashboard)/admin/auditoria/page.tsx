@@ -92,7 +92,7 @@ export default function AuditoriaPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Auditoría</h1>
-        <p className="text-muted-foreground">Bitácora de operaciones y control de cambios del sistema (T06)</p>
+        <p className="text-muted-foreground">Bitácora de operaciones y control de cambios del sistema</p>
       </div>
 
       <Card>

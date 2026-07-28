@@ -1,6 +1,5 @@
-// Services Exports - Barrel Pattern
-// (totales.ts y transiciones.ts quedan fuera a proposito: son reglas de dominio
-//  funcionales, no clases *Service; se importan por path)
+// Barrel de servicios. totales.ts y transiciones.ts quedan fuera a propósito: son reglas
+// de dominio funcionales, no clases *Service; se importan por path.
 export * from './orden-compra.service'
 export * from './orden-pago.service'
 export * from './proveedor.service'

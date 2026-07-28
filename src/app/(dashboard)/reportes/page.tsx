@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Loader2 } from "lucide-react"
 
 // /reportes = dashboard de indicadores reales (calculados desde OC + proveedores).
-// El CRUD de "reportes guardados" era un mock en memoria y se eliminó (D1, 2026-07-06 d).
 export default function ReportesPage() {
   const { estadisticas, loading, error } = useReportes()
 

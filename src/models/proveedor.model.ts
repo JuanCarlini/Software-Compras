@@ -1,7 +1,7 @@
 import type { Database } from "@/lib/supabase/database.types"
 
 // El enum de la DB (estado_activo_inactivo) solo tiene activo/inactivo: "suspender"
-// en la UI escribe 'inactivo'. Ver discrepancia #10 de CLAUDE.md.
+// en la UI escribe 'inactivo'.
 export enum EstadoProveedor {
   ACTIVO = "activo",
   INACTIVO = "inactivo",

@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { jwtVerify } from 'jose'
 import { getJwtSecret } from '@/lib/auth/jwt-secret'
 
-// Registro público deshabilitado: los usuarios los da de alta el admin (decisión 2026-07-04)
+// Registro público deshabilitado: los usuarios los da de alta el admin.
 const publicRoutes = ['/login', '/api/auth/login']
 const authRoutes = ['/login']
 
