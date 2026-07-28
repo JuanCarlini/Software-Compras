@@ -15,15 +15,12 @@ import {
 } from "@/models"
 import { ItemService } from "./item.service"
 
-// Una OC solo acepta cambios en sus líneas mientras es un borrador (o volvió a serlo
-// tras un rechazo). Después de mandarse a aprobar, cambiar una cantidad falsearía el
-// avance certificado: v_loc_rollup compara unidades certificadas contra LOC.cantidad,
-// así que bajar la cantidad de una línea ya certificada dejaría el rollup en negativo.
+// Una OC solo acepta cambios en sus líneas mientras es borrador (o rechazada): editar cantidades
+// tras aprobarla falsearía el avance certificado y dejaría v_loc_rollup en negativo.
 const ESTADOS_EDITABLES: EstadoAprobacion[] = ["borrador", "rechazado"]
 
-// Reglas de negocio de órdenes de compra. El I/O vive en OrdenCompraRepository.
-// Lo que NO vive acá: la numeración (fn_num_oc), el gate de >=1 línea (fn_oc_gate) y
-// los rollups (v_oc_rollup / v_loc_rollup) — todo eso es de la DB.
+// Reglas de negocio de órdenes de compra (I/O en OrdenCompraRepository). Numeración, gate de
+// ≥1 línea y rollups (v_oc_rollup / v_loc_rollup) viven en la DB.
 export class OrdenCompraService {
   // Lista con el chip de estado de certificación, leído de la vista.
   static async getAll() {
@@ -90,9 +87,8 @@ export class OrdenCompraService {
   }
 
   /**
-   * El precio no vive en el item: vive en gu_item_proveedor_precio, por proveedor.
-   * Si la UI no manda precio, se hereda el del par (item, proveedor de la OC).
-   * Si lo manda, se guarda ahí: así la lista de precios se arma sola.
+   * El precio vive en gu_item_proveedor_precio (por proveedor), no en el item: si la UI no lo
+   * manda se hereda del par (item, proveedor); si lo manda se guarda ahí y arma la lista.
    */
   private static async armarLinea(
     oc: Pick<OrdenCompra, "id" | "proveedor_id">,
@@ -173,10 +169,8 @@ export class OrdenCompraService {
     await OrdenCompraRepository.update(ocId, totalesDeCabecera(lineas))
   }
 
-  /**
-   * Pre-chequeo del grafo de estados (409 si la transición no existe). Los gates de
-   * negocio son triggers y devuelven 422: acá no se reimplementan ni se reinterpretan.
-   */
+  // Pre-chequeo del grafo de estados (409). Los gates de negocio son triggers y devuelven 422:
+  // acá no se reimplementan.
   static async cambiarEstado(id: number, destino: EstadoAprobacion): Promise<OrdenCompra> {
     const oc = await OrdenCompraRepository.findById(id)
     if (!oc) throw new HttpError(404, "Orden de compra no encontrada")
@@ -188,11 +182,8 @@ export class OrdenCompraService {
     return OrdenCompraRepository.updateEstado(id, destino)
   }
 
-  // La cabecera se protege igual que las líneas: sin esta guarda, cualquiera con
-  // `ordenes_compra:crear` podía reasignar una OC ya APROBADA a otro proveedor o cambiarle
-  // la moneda, arrastrando las certificaciones y facturas que cuelgan de ella. A diferencia
-  // de las líneas (que además tienen el trigger trg_loc_oc_editable), acá la app es el único
-  // punto de control: la DB no lo cubre.
+  // La cabecera se protege como las líneas: sin esta guarda se podría reasignar el proveedor o la
+  // moneda de una OC ya aprobada, y acá la app es el único control (la DB no lo cubre).
   static async update(id: number, payload: TablesUpdate<"gu_ordenesdecompra">): Promise<OrdenCompra | null> {
     await OrdenCompraService.getEditable(id)
     return OrdenCompraRepository.update(id, payload)
@@ -216,9 +207,8 @@ export class OrdenCompraService {
     return OrdenCompraRepository.findLocRollups(ordenId)
   }
 
-  // Devuelve la OC si admite cambios (cabecera, líneas o borrado); si no, 404 / 422.
-  // El mensaje es genérico a propósito: la usan tanto los caminos de líneas como los de
-  // cabecera, y "no admite cambios" es cierto para los tres.
+  // Devuelve la OC si admite cambios (cabecera, líneas o borrado); si no, 404 / 422. El mensaje
+  // es genérico a propósito: lo comparten los tres caminos.
   private static async getEditable(ocId: number): Promise<OrdenCompra> {
     const oc = await OrdenCompraRepository.findById(ocId)
     if (!oc) throw new HttpError(404, "Orden de compra no encontrada")

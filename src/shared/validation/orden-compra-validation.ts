@@ -25,8 +25,6 @@ export const CreateOrdenCompraSchema = z.object({
 
 // El update es solo de cabecera. 'estado' NO va acá: se cambia por
 // PATCH /api/ordenes-compra/[id]/estado, que valida el grafo y el rol del destino.
-// (Zod descarta las claves desconocidas en silencio, así que un cliente viejo que
-// mande {estado} no rompe: simplemente no cambia el estado.)
 export const UpdateOrdenCompraSchema = CreateOrdenCompraSchema.omit({ lineas: true }).partial()
 
 // Body de la transición de estado.

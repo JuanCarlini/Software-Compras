@@ -1,7 +1,5 @@
-// Catálogo de permisos RBAC. Estático y atado a las rutas → fuente de verdad en
-// código, no en la DB (evita drift). Importable desde cliente y server (sin deps, sin I/O).
-// La asignación rol→permisos vive en gu_roles.permisos (DB); esto solo enumera qué claves
-// `modulo:accion` son legítimas y sus etiquetas para la matriz de la UI.
+// Catálogo de permisos RBAC: fuente de verdad en código, no en la DB (evita drift). Solo
+// enumera qué claves `modulo:accion` son legítimas y sus etiquetas para la matriz de la UI.
 
 export type Accion = "ver" | "crear" | "aprobar" | "borrar"
 

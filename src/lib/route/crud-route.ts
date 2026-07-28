@@ -3,10 +3,8 @@ import { parseId } from "./parse-id"
 import { handleRouteError } from "./handle-route-error"
 import { AuditService } from "@/lib/audit/audit.service"
 
-// Factories de los dos esqueletos CRUD uniformes: el GET /[id] de detalle y el POST de
-// colección. NO cubren PUT/DELETE/[id] a propósito: esos divergen (audit condicional con
-// dos APIs, item DELETE con isInUse→409, mensajes de éxito propios) y forzarlos acá sería
-// una sopa de flags. Lo uniforme se declara; lo divergente sigue escrito a mano.
+// Factories de los dos CRUD uniformes (GET /[id] y POST de colección). NO cubren PUT/DELETE:
+// esos divergen (audit condicional, DELETE con isInUse→409) y forzarlos sería una sopa de flags.
 //
 // Mismo shape { error, user } que devuelven requireRole/requirePermission/requireAdmin.
 type Autorizacion = Promise<{ error: NextResponse | null; user: { id: number } | null }>

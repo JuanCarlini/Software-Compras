@@ -14,13 +14,8 @@ const ACCION: Record<EstadoAprobacion, AccionAuditoria> = {
   borrador: "actualizar",
 }
 
-/**
- * PATCH /api/ordenes-compra/[id]/estado — transición de estado.
- *   200 la OC actualizada · 403 rol/permiso insuficiente para el destino
- *   409 transición inexistente en el grafo · 422 un trigger la rechazó
- *
- * El permiso depende del DESTINO: mandar a aprobar es 'crear'; aprobar/rechazar/anular, 'aprobar'.
- */
+// PATCH transición de estado de la OC. El permiso depende del DESTINO: mandar a aprobar es
+// 'crear'; aprobar/rechazar/anular, 'aprobar'.
 export const PATCH = estadoRoute({
   schema: CambiarEstadoOCSchema,
   autorizar: (estado: EstadoAprobacion) =>

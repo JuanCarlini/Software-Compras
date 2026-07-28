@@ -14,10 +14,8 @@ const ACCION: Record<EstadoAprobacion, AccionAuditoria> = {
   borrador: "actualizar",
 }
 
-/**
- * PATCH /api/certificaciones/[id]/estado
- *   409 transición inexistente · 422 trigger (regla del 100%, OC no aprobada) · 403 rol insuficiente
- */
+// PATCH transición de estado de la certificación. El trigger (regla del 100%, OC no aprobada)
+// devuelve 422.
 export const PATCH = estadoRoute({
   schema: CambiarEstadoCertificacionSchema,
   autorizar: (estado: EstadoAprobacion) => requirePermission("certificaciones", accionRequerida(estado)),

@@ -11,8 +11,7 @@ interface Params {
 }
 
 // POST /api/ordenes-pago/[id]/cajas - Repartir el pago en una caja.
-// La moneda de la caja y que Σcajas = total se validan al mandar a aprobar (fn_op_gate),
-// no acá: la regla vive en el trigger.
+// La moneda y que Σcajas = total se validan al mandar a aprobar (fn_op_gate), no acá.
 export async function POST(request: NextRequest, { params }: Params) {
   try {
     const { error: authError } = await requirePermission("ordenes_pago", "crear")

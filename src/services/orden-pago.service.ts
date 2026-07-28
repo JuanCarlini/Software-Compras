@@ -9,14 +9,8 @@ import type {
   OrdenPago,
 } from "@/models"
 
-// Reglas de negocio de órdenes de pago. El I/O vive en OrdenPagoRepository.
-//
-// De la DB (no bypasseable): numero_op OP-N (fn_num_op); que cada factura sea finalizada,
-// del mismo proveedor y moneda (fn_lop_factura_pagable); y el gate de pago
-// (fn_op_gate: todas las cajas de la moneda de la OP, y Σcajas = Σfacturas = total_a_pagar,
-// evaluado en borrador -> en_aprobacion).
-// La app mantiene total_a_pagar = Σ de las líneas de factura. Las cajas se cargan aparte:
-// su suma NO se valida en JS — eso es fn_op_gate — para no duplicar (ni mentir sobre) la regla.
+// Reglas de negocio de órdenes de pago (I/O en OrdenPagoRepository). La app mantiene
+// total_a_pagar = Σ facturas; el gate de pago (moneda y Σcajas = Σfacturas) es fn_op_gate.
 export class OrdenPagoService {
   static async getAll() {
     const ordenes = await OrdenPagoRepository.findAllWithProveedor()

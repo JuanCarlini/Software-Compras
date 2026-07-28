@@ -6,9 +6,7 @@ import { handleRouteError } from "@/lib/route/handle-route-error"
 import { HttpError } from "@/lib/route/http-error"
 
 // GET /api/certificaciones/lineas-oc-disponibles?ordenCompraId=N
-// Líneas de esa OC con su saldo certificable (unidades certificadas / pendientes), leído
-// de v_loc_rollup. Antes se consultaba por proveedorId, cuando una certificación podía
-// cruzar varias OCs; ahora cuelga de UNA sola.
+// Líneas de esa OC con su saldo certificable (certificadas / pendientes), leído de v_loc_rollup.
 export async function GET(request: NextRequest) {
   try {
     const { error: authError } = await requirePermission("certificaciones", "ver")

@@ -1,9 +1,7 @@
 import { createClient } from "@/lib/supabase/service"
 
-// El cliente tipado exige un literal de tabla en .from() (unión de nombres) y el Insert
-// exacto de esa tabla. Este repo es GENÉRICO sobre la tabla, así que adentro se usa el
-// cliente sin tipar: la seguridad de tipos vive en el borde (generics Row/Insert/Update
-// + el export tipado por repo, p.ej. createBaseRepository<Proveedor,...>).
+// Repo GENÉRICO sobre la tabla: adentro se usa el cliente sin tipar y la seguridad de
+// tipos vive en el borde (generics Row/Insert/Update + el export tipado por repo).
 type UntypedClient = {
   from: (table: string) => any
 }
@@ -11,16 +9,8 @@ function db(): UntypedClient {
   return createClient() as unknown as UntypedClient
 }
 
-// CRUD genérico compartido por los repos cuya tabla tiene PK `id` y el patrón estándar.
-// Semántica FIJA — solo la adoptan los repos que la comparten exacto:
-//   findAll  → throw si error, [] si no hay filas
-//   findById → null si error/no encontrado
-//   insert   → throw si error (deja subir 23505/23503 a handleRouteError)
-//   update   → null si error/no encontrado
-//   delete   → bool (!error)
-// Los repos con selects custom (SELECT_SIN_HASH), maybeSingle, o update/delete que
-// tiran en vez de devolver null/bool NO usan esto: su semántica difiere y forzarla acá
-// sería una abstracción con demasiados flags. Componen sus métodos custom aparte.
+// CRUD genérico para tablas con PK `id`: findAll/insert tiran, findById/update devuelven
+// null, delete devuelve bool. Los repos con semántica distinta componen métodos custom aparte.
 export interface BaseRepositoryOptions {
   orderBy?: { column: string; ascending?: boolean }
 }

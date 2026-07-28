@@ -13,17 +13,8 @@ interface CreateCertificacionInput {
   lineas: CreateCertificacionLinea[]
 }
 
-// Reglas de negocio de certificaciones. El I/O vive en CertificacionRepository.
-//
-// Lo que NO vive acá porque es de la DB (y por eso no es bypasseable):
-//   - numero_cert CE-N.s ............... fn_num_cert
-//   - avance_monto / % / iva / numero_lce  fn_lce_derive (input único: avance_unidades)
-//   - tope del 100% por unidades ....... fn_check_avance_100
-//   - "la OC tiene que estar aprobada" . fn_cert_oc_aprobada (+ hereda el proveedor)
-//   - avance disponible por línea ...... vista v_loc_rollup
-//   - estado de facturación ............ vista v_cert_rollup
-// Los chequeos equivalentes de abajo son PRE-validación: dan un error más claro y evitan
-// un round-trip, pero la garantía está en los triggers.
+// Reglas de negocio de certificaciones (I/O en CertificacionRepository). Numeración, derivación
+// de líneas, tope del 100% y rollups viven en la DB; los chequeos de acá son pre-validación.
 export class CertificacionService {
   static async getAll() {
     const certs = await CertificacionRepository.findAllWithRelations()
@@ -64,9 +55,8 @@ export class CertificacionService {
   }
 
   /**
-   * Crea la certificación contra UNA orden de compra aprobada.
-   * El proveedor lo hereda de la OC (no lo elige el cliente) y el número lo genera la DB.
-   * Las líneas solo llevan `avance_unidades`: el resto lo deriva fn_lce_derive.
+   * Crea la certificación contra una OC aprobada: el proveedor lo hereda de la OC y el número lo
+   * genera la DB. Las líneas solo llevan `avance_unidades`; el resto lo deriva fn_lce_derive.
    */
   static async create(payload: CreateCertificacionInput) {
     const { orden_compra_id, lineas, ...certData } = payload
@@ -137,9 +127,8 @@ export class CertificacionService {
   }
 
   /**
-   * Líneas certificables de una OC, con su saldo. El avance NO se recalcula en JS:
-   * lo publica v_loc_rollup (solo certificaciones aprobadas). Alimenta el formulario
-   * para que el usuario vea el disponible antes de enviar; el tope lo aplica el trigger.
+   * Líneas certificables de una OC con su saldo. El avance no se recalcula en JS: lo publica
+   * v_loc_rollup (solo certs aprobadas); alimenta el formulario y el tope lo aplica el trigger.
    */
   static async getLineasDisponibles(ordenCompraId: number) {
     const lineas = await CertificacionRepository.findLineasDisponibles(ordenCompraId)

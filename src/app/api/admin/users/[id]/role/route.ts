@@ -6,8 +6,7 @@ import { UsuarioService } from "@/services/usuario.service"
 import { AuditService } from "@/lib/audit/audit.service"
 
 // PATCH /api/admin/users/[id]/role - Actualizar rol de un usuario (solo admin).
-// La lógica de datos vive en UsuarioService (delegando a los repos); la ruta solo
-// autoriza, parsea y audita.
+// El I/O vive en UsuarioService; la ruta solo autoriza, parsea y audita.
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

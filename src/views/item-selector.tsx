@@ -13,16 +13,8 @@ interface ItemSelectorProps {
 }
 
 /**
- * Componente integrado que combina el Combobox de selección
- * con el Dialog de creación rápida de items.
- *
- * El precio no vive en el item: es por proveedor (gu_item_proveedor_precio)
- * y se resuelve en la línea de OC.
- *
- * <ItemSelector
- *   value={selectedItemId}
- *   onChange={(itemId, item) => setSelectedItemId(itemId)}
- * />
+ * Combobox de selección + dialog de creación rápida de items. El precio no vive en el item:
+ * es por proveedor (gu_item_proveedor_precio) y se resuelve en la línea de OC.
  */
 export function ItemSelector({
   value,

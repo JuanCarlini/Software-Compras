@@ -1,16 +1,8 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { Database } from './database.types'
 
-// Cliente de datos SERVER-ONLY con service_role (bypasea RLS).
-// Es la única puerta legítima a la base desde que RLS niega todo al rol anon:
-// el browser nunca habla con Supabase directamente, siempre vía API routes.
-// SUPABASE_SERVICE_ROLE_KEY no tiene prefijo NEXT_PUBLIC_ → nunca llega al bundle;
-// si este módulo se importara desde un componente client, el fail-fast lo delata.
-//
-// Singleton: una sola instancia por proceso, memoizada. El cliente supabase-js es
-// stateless para queries (cada .from() es una request HTTP) y sin sesión persistente,
-// así que reusarlo es seguro y evita instanciar N clientes por operación. En serverless
-// el módulo se cachea por contenedor de función, que es exactamente el ciclo de vida deseado.
+// Cliente SERVER-ONLY con service_role (bypasea RLS): única puerta a la base, y la key sin
+// prefijo NEXT_PUBLIC_ nunca llega al bundle. Singleton memoizado: supabase-js es stateless.
 type ServiceClient = ReturnType<typeof createSupabaseClient<Database>>
 
 let cliente: ServiceClient | null = null

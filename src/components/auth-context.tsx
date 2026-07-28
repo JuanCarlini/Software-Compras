@@ -8,9 +8,8 @@ interface AuthContextType {
   user: AuthUser | null
   loading: boolean
   refreshUser: () => Promise<void>
-  // ¿El usuario actual tiene el permiso `modulo:accion`? (admin siempre; el resto por su
-  // matriz). Mismo criterio que requirePermission en el server — la fuente de verdad sigue
-  // siendo el backend; esto es solo para ocultar botones que igual darían 403.
+  // ¿El usuario tiene el permiso `modulo:accion`? (admin siempre; el resto por su matriz). La
+  // fuente de verdad es el backend (requirePermission); esto solo oculta botones que darían 403.
   puede: (modulo: string, accion: string) => boolean
 }
 

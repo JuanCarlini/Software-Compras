@@ -6,10 +6,8 @@ const TABLE = "gu_ordenesdepago"
 const TABLE_LINEAS = "gu_lineasdeordenesdepago"
 const TABLE_CAJAS = "gu_lineasdeordenesdepagocaja"
 
-// Repositorio de gu_ordenesdepago (+ líneas de factura + líneas de caja): ÚNICA capa con
-// queries Supabase para OP. Solo I/O. De la DB: el número (fn_num_op, OP-N), el gate
-// de pago (fn_op_gate: cajas misma moneda + Σcajas=Σfacturas=total, en borrador->en_aprobacion),
-// y la validación de factura pagable (fn_lop_factura_pagable: finalizada + mismo proveedor/moneda).
+// Repositorio de gu_ordenesdepago (+ líneas de factura y caja): solo I/O. En la DB viven
+// el número (fn_num_op), el gate de pago (fn_op_gate) y la validación de factura pagable.
 export class OrdenPagoRepository {
   static async findAllWithProveedor(): Promise<any[]> {
     const supabase = createClient()

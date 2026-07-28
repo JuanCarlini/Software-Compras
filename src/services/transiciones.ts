@@ -1,7 +1,6 @@
 import type { EstadoAprobacion, EstadoFactura, EstadoOp } from "@/models/enums"
 
-// Qué transiciones existen. Es el grafo, NO el gate: las reglas de negocio
-// (≥1 línea, ≤100%, Σcajas=total) son triggers en Postgres y devuelven 422.
+// El grafo de transiciones, NO el gate: las reglas de negocio son triggers en Postgres (422).
 // Acá solo se rechaza lo estructuralmente imposible (409): saltear etapas, revivir un anulado.
 type Grafo<E extends string> = Record<E, readonly E[]>
 

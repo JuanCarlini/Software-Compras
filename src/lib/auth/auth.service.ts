@@ -99,12 +99,8 @@ export class AuthService {
   }
 
   /**
-   * Emite un token nuevo para un usuario ya autenticado.
-   *
-   * Lo usa el cambio de clave propio: como la invalidación por `updated_at` mata
-   * TODAS las sesiones anteriores —incluida la del que está cambiando su propia clave—,
-   * hay que devolverle una cookie fresca. El efecto neto es el deseado: el usuario sigue
-   * trabajando y cualquier otra sesión (la del atacante) queda muerta.
+   * Emite un token nuevo tras el cambio de clave propio: como la invalidación por `updated_at`
+   * mata TODAS las sesiones anteriores —incluida la del que cambia la clave—, se le da una fresca.
    */
   static emitirToken(user: AuthUser): string {
     const payload: JWTPayload = {

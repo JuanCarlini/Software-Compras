@@ -9,9 +9,8 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { Proveedor } from "@/models"
 
-// Lógica client de la edición de proveedor (fetch + cabecera + form). Extraída de la page
-// para que la page pueda ser Server Component y aplicar requirePagePermission("proveedores","crear").
-// Mismo patrón que ProveedorDetailClient.
+// Lógica client de la edición de proveedor (fetch + cabecera + form). Extraída de la page para
+// que sea Server Component y aplique requirePagePermission("proveedores","crear").
 export function ProveedorEditarClient() {
   const params = useParams()
   const [proveedor, setProveedor] = useState<Proveedor | null>(null)

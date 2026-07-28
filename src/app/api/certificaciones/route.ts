@@ -17,7 +17,6 @@ export async function GET() {
 }
 
 // POST /api/certificaciones - Certificar contra UNA orden de compra aprobada.
-// Las líneas solo llevan { linea_oc_id, avance_unidades }.
 // 422 si la OC no está aprobada o si el trigger del 100% rechaza el avance.
 export const POST = createRoute({
   autorizar: () => requirePermission("certificaciones", "crear"),

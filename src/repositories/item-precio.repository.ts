@@ -2,10 +2,8 @@ import { createClient } from "@/lib/supabase/service"
 
 const TABLE = "gu_item_proveedor_precio"
 
-// Puente N:M item↔proveedor: el item es agnóstico al proveedor y el precio vive acá.
-// La lista de precios se arma sola: al cargar una línea de OC con un precio, si el par
-// (item, proveedor) no existe se inserta y queda como precio de referencia; si existe,
-// la próxima línea lo hereda.
+// Puente N:M item↔proveedor: el precio vive acá y la lista se arma sola. Al cargar una línea
+// de OC, si el par (item, proveedor) no existe se inserta como referencia; si existe, se hereda.
 export class ItemPrecioRepository {
   static async findPrecio(itemId: number, proveedorId: number): Promise<number | null> {
     const supabase = createClient()

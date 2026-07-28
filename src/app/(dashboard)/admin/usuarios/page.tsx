@@ -10,12 +10,8 @@ import { UsuariosTab } from "@/views/admin-usuarios-tab"
 import { RolesTab } from "@/views/admin-roles-tab"
 import type { UserData, RolData } from "@/views/admin-users-shared"
 
-// Shell de la administración de usuarios: datos compartidos (usuarios + roles, para los
-// contadores) y las dos tabs. Cada tab (UsuariosTab / RolesTab) es autocontenida — antes
-// esto era un god-component de ~590 líneas.
-// El acceso lo gatea (dashboard)/admin/layout.tsx server-side con requirePageAdmin(): el
-// guard en useEffect que había acá era inalcanzable (el layout ya redirigió) y encima
-// dependía del `loading` de los DATOS, no del auth.
+// Shell de la administración de usuarios: datos compartidos (usuarios + roles) y las dos tabs.
+// El acceso lo gatea (dashboard)/admin/layout.tsx server-side con requirePageAdmin().
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserData[]>([])
   const [roles, setRoles] = useState<RolData[]>([])

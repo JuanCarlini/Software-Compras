@@ -2,9 +2,8 @@ import { RolRepository } from "@/repositories/rol.repository"
 import { esPermisoValido } from "@/shared/permissions-catalog"
 import { HttpError } from "@/lib/route/http-error"
 
-// Los 4 roles del sistema están protegidos contra rename/delete. Sus permisos se siembran
-// replicando la autorización histórica; un rol nuevo arranca con los permisos que le asigne
-// el admin desde la matriz.
+// Los 4 roles del sistema están protegidos contra rename/delete. Un rol nuevo arranca con los
+// permisos que le asigne el admin desde la matriz.
 const ROLES_SISTEMA = ["admin", "usuario", "supervisor", "readonly"]
 
 // Cada clave de permisos[] debe existir en el catálogo — nunca confiar en el body.

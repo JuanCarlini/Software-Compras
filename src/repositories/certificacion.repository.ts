@@ -6,11 +6,8 @@ const TABLE = "gu_certificaciones"
 const TABLE_LINEAS = "gu_lineasdecertificacion"
 const TABLE_LINEAS_OC = "gu_lineasdeordenesdecompra"
 
-// Repositorio de gu_certificaciones (+ líneas): única capa con queries Supabase.
-// Solo I/O. Lo que NO está acá porque es de la DB: el número (fn_num_cert, CE-N.s), el
-// derivado de las líneas (fn_lce_derive: avance_monto/%/iva/numero_lce), la regla del 100%
-// (fn_check_avance_100), la exigencia de OC aprobada (fn_cert_oc_aprobada) y el avance
-// disponible (vista v_loc_rollup).
+// Repositorio de gu_certificaciones (+ líneas): solo I/O. En la DB viven el número
+// (fn_num_cert), el derivado de líneas, la regla del 100%, la OC aprobada y el rollup de avance.
 export class CertificacionRepository {
   // La CE cuelga de UNA OC y hereda su proveedor. Ya no hay proyecto_id.
   static async findAllWithRelations(): Promise<any[]> {

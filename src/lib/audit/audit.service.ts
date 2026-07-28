@@ -16,9 +16,8 @@ export interface ConsultaAuditoria {
   hasta?: string | null // YYYY-MM-DD
 }
 
-// Bitácora de operaciones con usuario. Se escribe SERVER-SIDE, donde el JWT
-// identifica al usuario, a gu_auditoria. Complementa el control de cambios que los
-// triggers escriben en gu_audit_log.
+// Bitácora de operaciones con usuario, escrita server-side (el JWT identifica al usuario) en
+// gu_auditoria. Complementa el control de cambios que los triggers escriben en gu_audit_log.
 
 // gu_auditoria.accion es TEXTO LIBRE (el enum audit_accion es de gu_audit_log), así que
 // sumar un valor acá no necesita migración.
@@ -67,13 +66,8 @@ export class AuditService {
   }
 
   /**
-   * Intento de login fallido. Antes el único rastro era un console.error sin
-   * email ni IP: un ataque de fuerza bruta o credential stuffing no dejaba ninguna
-   * evidencia investigable, y el admin no podía verlo en /admin/auditoria.
-   *
-   * gu_auditoria.usuario_id es NOT NULL, así que solo se puede persistir cuando el email
-   * corresponde a un usuario real. Para un email inexistente queda un warn en el log del
-   * servidor — que además es la señal de enumeración de usuarios.
+   * Registra un login fallido en la auditoría. Como gu_auditoria.usuario_id es NOT NULL, solo
+   * persiste si el email existe; para uno inexistente queda un warn (señal de enumeración).
    */
   static async registrarLoginFallido(email: string, ip: string): Promise<void> {
     try {
@@ -95,10 +89,8 @@ export class AuditService {
   }
 
   /**
-   * Consulta de auditoría (pantalla /admin/auditoria). Dos fuentes:
-   * - 'bitacora' (gu_auditoria): operaciones con usuario.
-   * - 'cambios' (gu_audit_log): historial de valores anteriores/nuevos.
-   * Es la única lectura de auditoría; antes vivía como .from() crudo en la ruta.
+   * Consulta de auditoría (/admin/auditoria) desde dos fuentes: 'bitacora' (gu_auditoria,
+   * operaciones con usuario) y 'cambios' (gu_audit_log, valores anteriores/nuevos).
    */
   static async consultar(f: ConsultaAuditoria) {
     const supabase = createClient()

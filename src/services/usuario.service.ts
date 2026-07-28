@@ -21,9 +21,8 @@ export interface UpdateUsuarioData {
 // En la DB: 1=admin. El anti auto-lockout se apoya en este id.
 const ROL_ADMIN_ID = 1
 
-// Gestión de usuarios por administrador. El I/O vive en UsuarioRepository; acá quedan las
-// reglas: unicidad de email, hasheo de clave y la "baja" lógica (estado = inactivo; el
-// login filtra por estado activo).
+// Gestión de usuarios por administrador (I/O en UsuarioRepository). Reglas: unicidad de email,
+// hasheo de clave y baja lógica (estado = inactivo, que el login filtra).
 export class UsuarioService {
   // Listado para la administración de usuarios: mapea la fila + join de rol al shape de la UI.
   static async getAll() {
@@ -57,9 +56,8 @@ export class UsuarioService {
     })
   }
 
-  // `actor` es el usuario que ejecuta la acción (el admin logueado). Guarda anti auto-lockout:
-  // un admin no puede desactivarse ni quitarse el rol admin a sí mismo. Antes vivía inline en
-  // la ruta (no testeable); ahora es regla de negocio del service.
+  // `actor` es el admin logueado. Guarda anti auto-lockout: no puede desactivarse ni quitarse
+  // el rol admin a sí mismo.
   static async update(id: number, data: UpdateUsuarioData, actor?: { id: number }) {
     if (
       actor &&
@@ -80,13 +78,11 @@ export class UsuarioService {
     return UsuarioRepository.update(id, { estado: "inactivo" })
   }
 
-  // Cambio de rol por admin. Antes esta lógica vivía en la ruta con .from() crudo
-  // (violaba SRP/DIP); acá delega a los repos. Guarda anti auto-lockout: un admin
-  // no puede quitarse a sí mismo el rol admin.
+  // Cambio de rol por admin. Guarda anti auto-lockout: un admin no puede quitarse a sí mismo
+  // el rol admin.
   static async updateRol(id: number, nuevoRol: string, actor: { id: number }) {
-    // No se whitelistea contra los 4 roles de sistema: cualquier rol que exista en gu_roles
-    // (incluidos los custom, p.ej. "compras") es asignable. La existencia la valida
-    // RolRepository.findByNombre abajo (404 si no existe).
+    // No se whitelistea: cualquier rol que exista en gu_roles (incluidos los custom) es asignable.
+    // La existencia la valida RolRepository.findByNombre abajo (404 si no existe).
     const actual = await UsuarioRepository.findById(id)
     if (!actual) {
       throw new HttpError(404, "Usuario no encontrado")

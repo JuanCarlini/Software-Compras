@@ -26,9 +26,8 @@ export async function POST(request: NextRequest) {
     // handleRouteError traduce el ZodError a 400 con el detalle.
     PasswordSchema.parse(newPassword)
 
-    // Rate-limit del cambio de clave. Sin esto, con una sesión robada se podía
-    // forzar la contraseña ACTUAL a ritmo ilimitado — el 400 de "incorrecta" es un
-    // oráculo perfecto —, que es el paso previo a tomar la cuenta por completo.
+    // Rate-limit del cambio de clave: sin esto, con una sesión robada se podía forzar la
+    // contraseña ACTUAL a ritmo ilimitado (el 400 de "incorrecta" es un oráculo perfecto).
     const now = Date.now()
     const rlKey = `chpw:${user!.id}`
     const rl = estaBloqueado(rlKey, now)
@@ -50,9 +49,8 @@ export async function POST(request: NextRequest) {
     }
     limpiarIntentos(rlKey)
 
-    // El cambio de clave invalida TODAS las sesiones previas, incluida la del que
-    // acaba de cambiarla. Se le devuelve una cookie fresca para que siga trabajando: el
-    // resultado neto es que solo sobrevive la sesión desde la que se hizo el cambio.
+    // El cambio de clave invalida TODAS las sesiones previas; se emite una cookie fresca
+    // para que sobreviva solo la sesión desde la que se hizo el cambio.
     const actualizado = await AuthService.getUserById(user!.id)
     if (actualizado) await setAuthCookie(AuthService.emitirToken(actualizado))
 

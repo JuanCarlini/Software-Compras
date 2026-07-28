@@ -5,10 +5,8 @@ import { createBaseRepository } from "./base.repository"
 
 const TABLE = "gu_cajas"
 
-// findAll (orden por nombre), insert y update = CRUD estándar (base.repository).
-// findAllActive, findById (maybeSingle) y setActive difieren → quedan custom.
-// Solo I/O; el default is_active, la baja lógica y la inmutabilidad de la moneda viven
-// en CajaService.
+// findAll/insert/update usan el CRUD estándar; findAllActive, findById y setActive quedan custom.
+// Solo I/O — el default is_active, la baja lógica y la inmutabilidad de la moneda viven en CajaService.
 const base = createBaseRepository<Caja, TablesInsert<"gu_cajas">, TablesUpdate<"gu_cajas">>(
   TABLE,
   { orderBy: { column: "nombre", ascending: true } }

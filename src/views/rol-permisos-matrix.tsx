@@ -14,9 +14,8 @@ const ACCIONES = Object.keys(ACCION_LABEL) as Accion[]
 const MODULOS = Object.entries(PERMISOS_CATALOGO)
 
 /**
- * Matriz de permisos módulos × acciones. Solo pinta checkbox en las celdas cuya
- * acción es válida para el módulo (proveedores/items no tienen aprobar/borrar).
- * `readOnly` → deshabilitada y todo-tildada (para el rol admin, que va por short-circuit).
+ * Matriz de permisos módulos × acciones. Solo pinta checkbox en celdas cuya acción es válida
+ * (proveedores/items no tienen aprobar/borrar). `readOnly` → deshabilitada y todo-tildada (admin).
  */
 export function RolPermisosMatrix({ value, onChange, readOnly = false }: Props) {
   const toggle = (clave: string, checked: boolean) => {

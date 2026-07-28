@@ -25,9 +25,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Rate-limiting contra fuerza bruta. DOS contadores: el de ip+email es
-    // best-effort porque la IP se puede rotar; el de email solo no depende de ningún
-    // header, así que es el que de verdad frena el ataque contra una cuenta.
+    // Rate-limiting contra fuerza bruta. El contador por email (no depende de headers)
+    // es el que de verdad frena el ataque; el de ip+email es best-effort (la IP se rota).
     const now = Date.now()
     const ip = resolverIp(request.headers)
     const { porEmail, porIpEmail } = clavesDeLogin(ip, email)

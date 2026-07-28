@@ -1,6 +1,5 @@
-// Los tipos de fila/insert se derivan de src/lib/supabase/database.types.ts (generado):
-// la DB es la única fuente de verdad del shape. Acá solo viven los enums de app,
-// los DTO de entrada y los tipos de las vistas de rollup.
+// Los tipos de fila/insert se derivan de database.types.ts (generado): la DB es la única
+// fuente de verdad del shape. Acá solo viven los enums de app, los DTO y los tipos de rollup.
 export * from './enums'
 export * from './rollup.model'
 export * from './orden-compra.model'

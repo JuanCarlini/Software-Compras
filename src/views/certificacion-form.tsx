@@ -17,15 +17,8 @@ import { Loader2 } from "lucide-react"
 import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
 import { formatCurrency } from "@/shared/format-utils"
 
-// La certificación cuelga de UNA orden de compra aprobada: el proveedor y la moneda los
-// hereda, no se eligen. La única entrada por línea es el AVANCE EN UNIDADES — avance $, %
-// e IVA los deriva el trigger fn_lce_derive, y el tope del 100% lo aplica fn_check_avance_100
-// (acá solo se muestra el saldo).
-//
-// La CABECERA (OC, fecha, observaciones) va por react-hook-form con zodResolver (validación
-// de campo + a11y de los FormLabel). La grilla de avance por línea se trae de la OC y es
-// interactiva → queda como estado controlado (no es un field-array; el tope real lo aplica
-// el trigger y devuelve 422). Los errores de línea van a form root.
+// La certificación cuelga de UNA orden de compra aprobada (hereda proveedor y moneda, no se eligen).
+// La única entrada por línea es el AVANCE EN UNIDADES; el tope del 100% lo aplica fn_check_avance_100.
 
 interface OrdenCompraAprobada {
   id: number

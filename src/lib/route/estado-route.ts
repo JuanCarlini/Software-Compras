@@ -3,13 +3,8 @@ import { parseId } from "./parse-id"
 import { handleRouteError } from "./handle-route-error"
 import { AuditService, type AccionAuditoria } from "@/lib/audit/audit.service"
 
-// Template Method (funcional) de las rutas PATCH /[id]/estado del circuito OC/CE/FACT/OP.
-// El algoritmo es fijo — parseId → autorizar-por-destino → cambiar estado → auditar →
-// responder, con handleRouteError traduciendo 400/403/409/422 — y cada ruta rellena los
-// huecos que divergen. Antes las 4 rutas eran copia-pega (incluido el mismo Record ACCION).
-//
-// El hueco de autorización es una función (no un rol) a propósito: así OC puede usar RBAC
-// (requirePermission) y CE/FACT/OP el grupo de rol (requireRole) sin ramificar acá.
+// Template Method de las rutas PATCH /[id]/estado (OC/CE/FACT/OP): algoritmo fijo, cada ruta
+// rellena los huecos. `autorizar` es función (no rol) para mezclar RBAC y grupo de rol sin ramificar.
 
 // Shape mínimo que devuelven requireRole/requirePermission: alcanza con user.id para auditar.
 type Autorizacion = Promise<{ error: NextResponse | null; user: { id: number } | null }>

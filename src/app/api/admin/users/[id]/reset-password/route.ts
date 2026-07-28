@@ -11,8 +11,7 @@ interface Params {
 }
 
 // POST /api/admin/users/[id]/reset-password - Reset administrativo de clave.
-// También es el mecanismo de "recuperar clave": sin servicio de email, el usuario
-// que no puede entrar contacta al admin y este le asigna una clave nueva.
+// Es también el "recuperar clave": sin servicio de email, el admin asigna una clave nueva.
 export async function POST(request: NextRequest, { params }: Params) {
   try {
     const { error: authError, user } = await requireAdmin()

@@ -22,9 +22,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-// View-model que devuelve GET /api/certificaciones/[id] (cabecera + joins derivados +
-// líneas). Los numéricos llegan como string desde Postgres (supabase-js) → se coercionan
-// con Number() en el render; el tipo captura los nombres de campo (la seguridad que importa).
+// View-model de GET /api/certificaciones/[id]. Los numéricos llegan como string desde Postgres
+// → se coercionan con Number() en el render; el tipo captura los nombres de campo.
 type Num = number | string | null
 interface CertLineaDetalle {
   id: number
@@ -85,9 +84,8 @@ export function CertificacionDetail({ params }: Props) {
     fetchCertificacion()
   }, [fetchCertificacion])
 
-  // Las transiciones tienen ruta propia: el PUT solo edita la cabecera. Un 422 trae el
-  // mensaje del trigger en español (regla del 100%, OC no aprobada); un 409, una
-  // transición imposible (el circuito no saltea etapas).
+  // Las transiciones tienen ruta propia: el PUT solo edita la cabecera. Un 422 trae el mensaje
+  // del trigger (regla del 100%, OC no aprobada); un 409, una transición imposible.
   const cambiarEstado = async (nuevoEstado: string) => {
     setUpdating(true)
     try {

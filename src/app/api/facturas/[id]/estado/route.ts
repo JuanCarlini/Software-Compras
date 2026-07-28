@@ -12,14 +12,8 @@ const ACCION: Record<EstadoFactura, AccionAuditoria> = {
   borrador: "actualizar",
 }
 
-/**
- * PATCH /api/facturas/[id]/estado
- *   borrador -> finalizado (habilita pagar; exige >=1 imputación) | anulado
- *   409 transición inexistente · 422 sin imputaciones · 403 permiso insuficiente
- *
- * FACT no tiene aprobación intermedia. accionRequerida mapea el destino al permiso:
- * finalizar -> 'facturas:crear'; anular -> 'facturas:aprobar' ('anulado' ∈ REQUIERE_APROBACION).
- */
+// PATCH transición de estado de la factura (sin aprobación intermedia). El permiso depende del
+// destino: finalizar -> 'facturas:crear', anular -> 'facturas:aprobar'.
 export const PATCH = estadoRoute({
   schema: CambiarEstadoFacturaSchema,
   autorizar: (estado: EstadoFactura) => requirePermission("facturas", accionRequerida(estado)),

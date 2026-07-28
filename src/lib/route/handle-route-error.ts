@@ -2,13 +2,8 @@ import { NextResponse } from "next/server"
 import { ZodError } from "zod"
 import { HttpError } from "./http-error"
 
-// Único traductor excepción → respuesta HTTP.
-//
-// Las reglas duras del circuito viven en triggers de Postgres (fn_oc_gate,
-// fn_check_avance_100, fn_check_imputacion, fn_op_gate): son el único punto no
-// bypasseable. Un RAISE EXCEPTION llega acá como code 'P0001' con el mensaje YA en
-// español → se devuelve tal cual con 422.
-// No se reimplementa la regla en JS.
+// Único traductor excepción → respuesta HTTP. Las reglas duras viven en triggers de Postgres:
+// un RAISE EXCEPTION llega como code 'P0001' y se devuelve tal cual con 422 (no se reimplementa en JS).
 export function handleRouteError(e: unknown, contexto: string): NextResponse {
   if (e instanceof HttpError) {
     return NextResponse.json({ error: e.message }, { status: e.status })

@@ -2,8 +2,7 @@ import { z } from "zod"
 import { EstadoProveedor } from "@/models"
 
 // Alineado con el modelo real (gu_proveedores + proveedor-form.tsx): nombre, cuit,
-// email, telefono, direccion. El schema viejo (rut/ciudad/pais/contacto_principal/…)
-// describía columnas inexistentes y nunca se usaba — se reemplaza por la forma real.
+// email, telefono, direccion.
 export const CreateProveedorSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
   cuit: z.string().min(1, "El CUIT es requerido"),

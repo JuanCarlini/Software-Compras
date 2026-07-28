@@ -1,10 +1,5 @@
-// Rate-limiting de intentos de login (mitigación de fuerza bruta).
-//
-// Contador en memoria por instancia. En Vercel serverless cada lambda tiene
-// su propio Map, así que NO es un límite global entre instancias — es best-effort contra
-// fuerza bruta rápida desde una conexión caliente. Alcanza como baseline y no agrega
-// dependencias ni infra. Upgrade cuando haga falta un límite compartido y persistente:
-// @upstash/ratelimit + Vercel KV (Redis), misma interfaz.
+// Rate-limiting de login (anti fuerza bruta). Contador en memoria por instancia: en serverless
+// NO es global entre lambdas, es best-effort. Upgrade: @upstash/ratelimit + Vercel KV.
 
 type Intentos = { count: number; resetAt: number }
 
@@ -39,16 +34,8 @@ export function limpiarIntentos(key: string): void {
 }
 
 /**
- * IP del cliente, resistente al spoofing de `X-Forwarded-For`.
- *
- * El error clásico es tomar el PRIMER elemento del XFF: esa es la parte que pone el
- * cliente — cada proxy AGREGA su valor observado al final, no reemplaza el principio.
- * Rotando el header, un atacante obtenía una clave de rate-limit nueva por intento y el
- * bloqueo no se disparaba nunca.
- *
- * `x-real-ip` lo setea la plataforma (Vercel) y el cliente no puede falsificarlo, así que
- * va primero. Como fallback, el último salto del XFF, que es el que agregó el proxy de
- * confianza más cercano.
+ * IP resistente al spoofing de XFF: el PRIMER elemento lo pone el cliente (rotándolo obtenía
+ * una clave nueva por intento), así que se usa `x-real-ip` (lo setea la plataforma) o el último salto.
  */
 export function resolverIp(headers: Headers): string {
   const real = headers.get("x-real-ip")?.trim()
@@ -59,14 +46,8 @@ export function resolverIp(headers: Headers): string {
 }
 
 /**
- * Las dos claves de rate-limit de un intento de login.
- *
- * `porIpEmail` es best-effort (la IP se puede rotar). `porEmail` es la que de verdad frena
- * la fuerza bruta contra una cuenta concreta, porque no depende de ningún header.
- * El costo es que un atacante puede bloquear la cuenta de un tercero a propósito
- * (DoS de login). Aceptable acá — la ventana son 15 minutos y el alta de usuarios es por
- * admin. Si molestara, el upgrade es el mismo de siempre: contador compartido en KV con
- * desbloqueo por email al dueño de la cuenta.
+ * Dos claves: `porEmail` frena de verdad la fuerza bruta contra una cuenta (no depende de
+ * headers); `porIpEmail` es best-effort. Costo: un tercero puede bloquear una cuenta (DoS), aceptable.
  */
 export function clavesDeLogin(ip: string, email: string): { porEmail: string; porIpEmail: string } {
   const normalizado = String(email).toLowerCase()

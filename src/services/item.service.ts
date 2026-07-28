@@ -12,9 +12,8 @@ export class ItemService {
     return ItemRepository.findAll()
   }
 
-  // El repo arma un filtro `.or(...)` de PostgREST concatenando este texto. Ahí la coma
-  // termina el valor y el paréntesis cierra el grupo: sin sanear, `?query=x,id.gt.0`
-  // inyecta una condición OR extra. Los comodines de LIKE (% _) no son un vector.
+  // El repo concatena este texto en un `.or(...)` de PostgREST: sin sanear la coma y el paréntesis,
+  // `?query=x,id.gt.0` inyecta una condición OR extra (los comodines LIKE % _ no son vector).
   static async search(query: string): Promise<Item[]> {
     const limpio = query.replace(/[,()"\\]/g, " ").replace(/\s+/g, " ").trim()
     if (!limpio) return []

@@ -39,7 +39,6 @@ export async function GET(request: NextRequest, { params }: Params) {
 
 // POST /api/ordenes-compra/[id]/lineas - Agregar línea eligiendo un item del catálogo.
 // Sin precio_unitario_neto se hereda el del proveedor; con precio, se guarda para él.
-// 422 si la OC ya no es editable o el item no tiene precio para ese proveedor.
 export async function POST(request: NextRequest, { params }: Params) {
   try {
     const { error: authError } = await requirePermission("ordenes_compra", "crear")

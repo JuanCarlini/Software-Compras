@@ -4,9 +4,7 @@ import { AuditService } from "@/lib/audit/audit.service"
 import { handleRouteError } from "@/lib/route/handle-route-error"
 
 // GET /api/admin/auditoria — consulta de auditoría (solo admin), con búsqueda combinada.
-// ?fuente=bitacora (gu_auditoria, operaciones con usuario) | cambios (gu_audit_log, historial de valores)
-// Filtros comunes: usuarioId, tabla, accion, desde, hasta (YYYY-MM-DD).
-// El I/O vive en AuditService.consultar (la ruta solo autoriza y parsea la query).
+// ?fuente=bitacora (operaciones con usuario) | cambios (historial de valores).
 export async function GET(request: NextRequest) {
   try {
     const { error: authError } = await requireAdmin()

@@ -5,9 +5,8 @@ import { createBaseRepository } from "./base.repository"
 const TABLE = "gu_items"
 const TABLE_LINEAS_OC = "gu_lineasdeordenesdecompra"
 
-// findAll (orden por nombre), findById, insert y update = CRUD estándar (base.repository).
-// Lo demás (búsqueda, baja lógica, categorías, "en uso") es custom. Solo I/O — el default
-// is_active al crear, el dedup de categorías y la interpretación de "en uso" viven en ItemService.
+// findAll/findById/insert/update usan el CRUD estándar; búsqueda, baja lógica, categorías y "en uso"
+// son custom. Solo I/O — el default is_active, el dedup de categorías y "en uso" viven en ItemService.
 const base = createBaseRepository<Item, CreateItemDTO & { is_active: boolean }, UpdateItemDTO>(
   TABLE,
   { orderBy: { column: "nombre", ascending: true } }

@@ -1,8 +1,6 @@
 import { UserRole } from "@/models"
 
-// Los grupos de rol (ROLES_ESCRITURA/DESTRUCTIVO/APROBACION) y requireRole se
-// retiraron cuando el RBAC por permisos (modulo:accion) los dejó sin consumidores: hoy las
-// rutas autorizan con requirePermission contra gu_roles.permisos. Lo que queda acá son los
+// El RBAC por permisos (modulo:accion) reemplazó a los grupos de rol; acá solo quedan los
 // helpers por ROL que siguen vivos (secciones /admin/* y gating de botones en la UI).
 
 // Solo supervisores y administradores pueden anular documentos.
@@ -34,11 +32,8 @@ export function stringToUserRole(rol: string): UserRole {
   }
 }
 
-// Chequeo PURO de permisos, sin DB: 'admin' pasa siempre
-// (short-circuit anti auto-lockout — no se puede lockear al sistema editando permisos);
-// el resto por membership en su array `modulo:accion`. La resolución del array (I/O contra
-// gu_roles.permisos) vive en requirePermission/rol.repository; acá solo la decisión, para
-// poder testearla sin Supabase. Es la única fuente de verdad del "puede o no".
+// Chequeo PURO de permisos, sin DB: 'admin' pasa siempre (anti auto-lockout), el resto por
+// membership en su array `modulo:accion`. Aislado del I/O para poder testearlo sin Supabase.
 export function tienePermiso(
   rolNombre: string,
   permisos: string[],

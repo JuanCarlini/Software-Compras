@@ -16,15 +16,8 @@ import { Loader2, Plus, Trash2 } from "lucide-react"
 import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
 import { formatCurrency } from "@/shared/format-utils"
 
-// La factura tiene líneas de detalle (LFACT) e imputa un MONTO a certificaciones aprobadas
-// del proveedor (N:M con monto_asignado). Regla dura (fn_check_imputacion, en la DB): solo
-// certs aprobadas y Σ monto_asignado ≤ el total de las líneas. Los totales los calcula el
-// server. numero_factura lo pone la DB.
-//
-// La CABECERA (proveedor, fecha, punto de venta, comprobante) va por react-hook-form +
-// zodResolver (validación de campo + a11y). Las líneas (que el usuario agrega/quita) y las
-// imputaciones (traídas del proveedor) quedan como estado controlado — sus validaciones
-// van a form root.
+// La factura tiene líneas de detalle (LFACT) e imputa un MONTO a certificaciones aprobadas del
+// proveedor (N:M). Regla dura (fn_check_imputacion): solo certs aprobadas y Σ monto_asignado ≤ total.
 
 interface CertAprobada {
   id: number

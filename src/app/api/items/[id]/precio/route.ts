@@ -5,8 +5,7 @@ import { handleRouteError } from "@/lib/route/handle-route-error"
 import { HttpError } from "@/lib/route/http-error"
 
 // GET /api/items/[id]/precio?proveedorId=N — precio de este item PARA ese proveedor.
-// 404 si el par no tiene precio cargado todavía: la UI pide entonces uno y la primera
-// línea de OC que lo use lo deja guardado (alta al vuelo). Autentica el middleware.
+// 404 si el par no tiene precio todavía: la UI pide uno y se da de alta al vuelo.
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const itemId = parseId((await params).id)

@@ -6,10 +6,8 @@ const TABLE = "gu_facturas"
 const TABLE_LINEAS = "gu_lineasdefactura"
 const TABLE_CERTS = "gu_facturas_certificaciones"
 
-// Repositorio de gu_facturas (+ líneas + puente N:M con certificaciones): única capa
-// con queries Supabase para facturas. Solo I/O. Lo que es de la DB: el número
-// (fn_num_fact, FACT-N), la regla de imputación (fn_check_imputacion: cert aprobada +
-// Σmonto_asignado ≤ Σtotal_con_iva de las LFACT) y el estado de pago (vista v_factura_rollup).
+// Repositorio de gu_facturas (+ líneas + puente N:M con certificaciones): solo I/O. En la DB
+// viven el número (fn_num_fact), la regla de imputación (fn_check_imputacion) y el rollup de pago.
 export class FacturaRepository {
   static async findAllWithProveedor(): Promise<any[]> {
     const supabase = createClient()
@@ -88,9 +86,8 @@ export class FacturaRepository {
     if (error) throw error
   }
 
-  // El puente lleva monto_asignado. fn_check_imputacion valida cert aprobada + tope, y si
-  // rebota sube como P0001 -> 422. Debe insertarse DESPUÉS de las LFACT (el trigger compara
-  // contra Σtotal_con_iva de las líneas).
+  // Insertar DESPUÉS de las LFACT: fn_check_imputacion compara contra Σtotal_con_iva de las
+  // líneas (valida cert aprobada + tope, rebota como P0001 -> 422).
   static async insertImputaciones(
     imputaciones: TablesInsert<"gu_facturas_certificaciones">[]
   ): Promise<void> {

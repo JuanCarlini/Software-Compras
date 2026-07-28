@@ -9,12 +9,8 @@ interface CreateFacturaInput extends CreateFacturaData {
   imputaciones?: CreateImputacion[]
 }
 
-// Reglas de negocio de facturas. El I/O vive en FacturaRepository.
-//
-// De la DB (no bypasseable): numero_factura FACT-N (fn_num_fact); la regla de imputación
-// (fn_check_imputacion: solo certs aprobadas, y Σmonto_asignado ≤ Σtotal_con_iva de las
-// LFACT); el estado de pago (vista v_factura_rollup).
-// La app calcula: totales de línea, totales de cabecera y total_facturado.
+// Reglas de negocio de facturas (I/O en FacturaRepository). Numeración, regla de imputación y
+// estado de pago viven en la DB; la app calcula los totales de línea, cabecera y facturado.
 export class FacturaService {
   static async getAll() {
     const facturas = await FacturaRepository.findAllWithProveedor()
@@ -60,9 +56,8 @@ export class FacturaService {
   }
 
   /**
-   * Crea la factura: cabecera (borrador, sin número) → líneas con totales calculados →
-   * cabecera recalculada → imputaciones. El orden importa: fn_check_imputacion compara la
-   * suma imputada contra Σtotal_con_iva de las LFACT, así que las líneas van primero.
+   * Crea la factura: las líneas van antes que las imputaciones porque fn_check_imputacion compara
+   * la suma imputada contra Σtotal_con_iva de las LFACT.
    */
   static async create(payload: CreateFacturaInput) {
     const { lineas, imputaciones, ...facturaData } = payload
@@ -135,9 +130,8 @@ export class FacturaService {
   }
 
   /**
-   * FACT no tiene aprobación intermedia: borrador → finalizado (habilita pagar) → anulado.
-   * Pre-chequeo del grafo (409). Para finalizar exige ≥1 imputación: no hay trigger que lo
-   * garantice, así que esta es la única barrera (bypasseable con acceso directo a la DB).
+   * Pre-chequeo del grafo (409). Finalizar exige ≥1 imputación y esta es la única barrera:
+   * no hay trigger que lo garantice.
    */
   static async cambiarEstado(id: number, destino: EstadoFactura) {
     const factura = await FacturaRepository.findById(id)

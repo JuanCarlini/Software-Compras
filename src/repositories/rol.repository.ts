@@ -3,9 +3,8 @@ import type { Tables, TablesUpdate } from "@/lib/supabase/database.types"
 
 const TABLE = "gu_roles"
 
-// Repositorio de gu_roles: única capa con queries Supabase para roles.
-// Solo I/O — la protección de roles de sistema, la unicidad y las guardas de
-// borrado (rol en uso) viven en RolService.
+// Repositorio de gu_roles: solo I/O — la protección de roles de sistema, la unicidad y las
+// guardas de borrado (rol en uso) viven en RolService.
 export class RolRepository {
   static async findAllOrdered(): Promise<any[]> {
     const supabase = createClient()

@@ -25,9 +25,8 @@ export class CajaService {
     const actual = await CajaRepository.findById(id)
     if (!actual) throw new HttpError(404, "Caja no encontrada")
 
-    // fn_op_gate exige que todas las cajas de una OP compartan la moneda de la OP.
-    // Cambiar la moneda a posteriori invalidaría en silencio las OP que ya la usan:
-    // se crea una caja nueva y se da de baja la vieja.
+    // fn_op_gate exige que todas las cajas de una OP compartan su moneda: cambiarla a posteriori
+    // invalidaría en silencio las OP que ya la usan (por eso se crea una nueva y se baja la vieja).
     if (caja.moneda !== undefined && caja.moneda !== actual.moneda) {
       throw new HttpError(
         422,

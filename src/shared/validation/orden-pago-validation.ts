@@ -2,8 +2,7 @@ import { z } from "zod"
 import { ESTADOS_OP, MONEDAS } from "@/models/enums"
 
 // La OP nace vacía (solo cabecera): numero_op lo genera la DB, estado lo fija el server,
-// total_a_pagar arranca en 0 y lo suben las líneas de factura. Las facturas y las cajas
-// se cargan con sus propias rutas.
+// total_a_pagar arranca en 0 y lo suben las líneas de factura.
 export const CreateOrdenPagoSchema = z.object({
   proveedor_id: z.number().int().positive("El proveedor es requerido"),
   fecha_op: z.string().min(1, "La fecha es requerida"),

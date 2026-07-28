@@ -15,14 +15,8 @@ const ACCION: Record<EstadoOp, AccionAuditoria> = {
   borrador: "actualizar",
 }
 
-/**
- * PATCH /api/ordenes-pago/[id]/estado
- *   borrador -> en_aprobacion (gate fn_op_gate: cajas misma moneda + Σcajas=Σfacturas=total)
- *   -> aprobado -> pagado. rechazado/anulado.
- *   409 transición inexistente · 422 gate del trigger · 403 rol insuficiente
- *
- * pagar/aprobar/rechazar/anular exigen supervisor+; mandar a aprobar, escritura.
- */
+// PATCH transición de estado de la OP. El permiso depende del destino: pagar/aprobar/rechazar/anular
+// exigen supervisor+, mandar a aprobar solo escritura. El gate del trigger (fn_op_gate) devuelve 422.
 export const PATCH = estadoRoute({
   schema: CambiarEstadoOPSchema,
   autorizar: (estado: EstadoOp) => requirePermission("ordenes_pago", accionRequerida(estado)),
