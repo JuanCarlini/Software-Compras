@@ -355,8 +355,6 @@ export function OrdenCompraForm() {
                       disabled={isLoading}
                       placeholder="0.00"
                     />
-                    {/* TODO(F3): mostrar el precio del item PARA ESTE PROVEEDOR
-                        (GET /api/items/[id]/precio?proveedorId=). El item ya no tiene precio propio. */}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="nuevo-item-iva">IVA *</Label>
