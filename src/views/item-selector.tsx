@@ -16,8 +16,8 @@ interface ItemSelectorProps {
  * Componente integrado que combina el Combobox de selección
  * con el Dialog de creación rápida de items.
  *
- * El precio no vive en el item: en el modelo CCIP es por proveedor
- * (gu_item_proveedor_precio) y se resuelve en la línea de OC.
+ * El precio no vive en el item: es por proveedor (gu_item_proveedor_precio)
+ * y se resuelve en la línea de OC.
  *
  * <ItemSelector
  *   value={selectedItemId}

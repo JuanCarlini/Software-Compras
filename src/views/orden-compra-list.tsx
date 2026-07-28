@@ -22,11 +22,9 @@ export function OrdenCompraList() {
   const [searchTerm, setSearchTerm] = useState("")
   const [updatingId, setUpdatingId] = useState<number | null>(null)
 
-  // Verificar si el usuario puede anular documentos
   const userRole = user ? stringToUserRole(user.rol) : null
   const canAnular = userRole ? canAnularDocumento(userRole) : false
 
-  // ⚠️ ahora buscamos por los campos que realmente tenemos
   const filteredOrders = searchWithScore(
     orders,
     searchTerm,

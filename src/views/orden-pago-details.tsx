@@ -21,7 +21,7 @@ import {
   Wallet,
 } from "lucide-react"
 
-// La OP paga N facturas y reparte el total en N cajas de la misma moneda (modelo CCIP).
+// La OP paga N facturas y reparte el total en N cajas de la misma moneda.
 // Flujo: borrador -> en_aprobacion (aplica fn_op_gate: Σcajas=Σfacturas=total) -> aprobado -> pagado.
 
 // View-model de GET /api/ordenes-pago/[id] (cabecera + líneas de factura + cajas). Los montos

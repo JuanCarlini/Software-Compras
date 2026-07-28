@@ -48,7 +48,6 @@ export function UserMenu({ userName = "Admin" }: UserMenuProps) {
 
       showSuccessToast("Sesión cerrada exitosamente")
 
-      // Redirigir al login
       router.push("/login")
       router.refresh()
     } catch (error) {

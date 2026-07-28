@@ -43,7 +43,6 @@ export function ProveedorDetails({ proveedor, onActivar, onSuspender }: Props) {
   const { user } = useAuth()
   const [isProcessing, setIsProcessing] = useState(false)
 
-  // Verificar si el usuario puede modificar proveedores
   const canModificar = user ? canModificarProveedor(stringToUserRole(user.rol)) : false
 
   const handleActivar = async () => {

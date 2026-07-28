@@ -22,11 +22,9 @@ export function OrdenPagoList() {
   const [processingId, setProcessingId] = useState<number | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
 
-  // Verificar permisos
   const userRole = user ? stringToUserRole(user.rol) : null
   const canModify = userRole ? canAnularDocumento(userRole) : false
 
-  // Filtrar órdenes basado en la búsqueda
   const filteredOrders = searchWithScore(
     orders,
     searchTerm,

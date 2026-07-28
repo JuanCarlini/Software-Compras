@@ -36,7 +36,6 @@ export function AppSidebar() {
   const router = useRouter()
   const { user, puede } = useAuth()
 
-  // Verificar si el usuario es admin
   const userRole = user ? stringToUserRole(user.rol) : null
   const userIsAdmin = userRole ? isAdmin(userRole) : false
 

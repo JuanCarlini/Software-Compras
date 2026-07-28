@@ -1,5 +1,4 @@
-// Sistema unificado de semaforización para estados
-// Todos los estados de la aplicación usan este sistema de colores
+// Semaforización unificada de estados: todos los estados de la app usan estos colores.
 
 import {
   CheckCircle,
@@ -9,9 +8,6 @@ import {
   Activity
 } from "lucide-react"
 
-/**
- * Categorías de estado según semáforo
- */
 enum StatusCategory {
   SUCCESS = "success",    // Verde - Aprobado/Completado
   PENDING = "pending",    // Amarillo - Pendiente/En proceso
@@ -19,9 +15,6 @@ enum StatusCategory {
   INFO = "info"          // Azul - Informativo
 }
 
-/**
- * Mapeo de todos los estados posibles a su categoría
- */
 const statusMap: Record<string, StatusCategory> = {
   // Estados aprobados/exitosos - VERDE
   "aprobado": StatusCategory.SUCCESS,
@@ -41,21 +34,15 @@ const statusMap: Record<string, StatusCategory> = {
   "inactivo": StatusCategory.ERROR,
 }
 
-/**
- * Obtiene la categoría de un estado
- */
 function getStatusCategory(estado: string | null | undefined): StatusCategory {
   if (!estado) return StatusCategory.INFO
   const estadoLower = estado.toLowerCase()
   return statusMap[estadoLower] || StatusCategory.INFO
 }
 
-/**
- * Obtiene las clases de Tailwind para el color de fondo y texto del badge
- */
 function getStatusColor(estado: string | null | undefined): string {
   const category = getStatusCategory(estado)
-  
+
   switch (category) {
     case StatusCategory.SUCCESS:
       return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
@@ -70,12 +57,9 @@ function getStatusColor(estado: string | null | undefined): string {
   }
 }
 
-/**
- * Obtiene el icono correspondiente según la categoría de estado
- */
 function getStatusIcon(estado: string | null | undefined) {
   const category = getStatusCategory(estado)
-  
+
   switch (category) {
     case StatusCategory.SUCCESS:
       return CheckCircle
@@ -90,12 +74,9 @@ function getStatusIcon(estado: string | null | undefined) {
   }
 }
 
-/**
- * Obtiene las clases de color para el icono
- */
 function getStatusIconColor(estado: string | null | undefined): string {
   const category = getStatusCategory(estado)
-  
+
   switch (category) {
     case StatusCategory.SUCCESS:
       return "text-emerald-600 dark:text-emerald-400"
@@ -110,9 +91,6 @@ function getStatusIconColor(estado: string | null | undefined): string {
   }
 }
 
-/**
- * Obtiene un objeto con toda la información de estilo para un estado
- */
 export function getStatusStyle(estado: string | null | undefined) {
   return {
     category: getStatusCategory(estado),

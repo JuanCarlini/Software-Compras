@@ -22,7 +22,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      // Llamar al endpoint del servidor para obtener el usuario actual
       const response = await fetch('/api/auth/me')
       if (response.ok) {
         const data = await response.json()

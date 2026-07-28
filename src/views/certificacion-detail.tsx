@@ -256,7 +256,7 @@ export function CertificacionDetail({ params }: Props) {
         <CardContent>
           <div className="space-y-2">
             {cert.lineas?.map((linea) => {
-              // Modelo CCIP: la LCE deriva del avance por unidades; el precio/desc vienen
+              // La LCE deriva del avance por unidades; el precio/desc vienen
               // de la línea de OC. avance_monto es NETO → total con IVA = neto * (1 + iva%).
               const ocLinea = linea.gu_lineasdeordenesdecompra
               const iva = Number(linea.iva_porcentaje ?? 0)

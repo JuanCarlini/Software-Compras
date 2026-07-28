@@ -21,7 +21,6 @@ export function ProveedorList() {
   const [processingId, setProcessingId] = useState<number | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
 
-  // Verificar permisos
   const userRole = user ? stringToUserRole(user.rol) : null
   const canModify = userRole ? canModificarProveedor(userRole) : false
 

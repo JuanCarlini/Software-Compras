@@ -16,16 +16,15 @@ import { Loader2 } from "lucide-react"
 import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
 import { formatCurrency } from "@/shared/format-utils"
 
-// Reescrito para el circuito CCIP (2026-07-08). La OP paga N facturas FINALIZADAS del mismo
-// proveedor y reparte el total en N cajas de la misma moneda. Regla dura (fn_op_gate, en la
-// DB): Σcajas = Σfacturas = total_a_pagar, y todas las cajas de la moneda de la OP; se valida
-// al mandar a aprobar. Este form crea la OP y carga facturas + cajas en un POST secuencial;
-// después redirige al detalle.
+// La OP paga N facturas FINALIZADAS del mismo proveedor y reparte el total en N cajas de la
+// misma moneda. Regla dura (fn_op_gate, en la DB): Σcajas = Σfacturas = total_a_pagar, y
+// todas las cajas de la moneda de la OP; se valida al mandar a aprobar. Este form crea la OP
+// y carga facturas + cajas en un POST secuencial; después redirige al detalle.
 //
-// Migrado a RHF+Zod (2026-07-22, patrón híbrido = certificacion-form): la CABECERA (proveedor,
-// moneda, fecha) va por react-hook-form + zodResolver (validación de campo + a11y). Las
-// facturas pagables y las cajas se traen del backend → estado controlado; sus validaciones
-// (>=1 factura, Σcajas = Σfacturas) van a form root; el gate real es fn_op_gate (422).
+// La CABECERA (proveedor, moneda, fecha) va por react-hook-form + zodResolver (validación de
+// campo + a11y). Las facturas pagables y las cajas se traen del backend → estado controlado;
+// sus validaciones (>=1 factura, Σcajas = Σfacturas) van a form root; el gate real es
+// fn_op_gate (422).
 
 const opFormSchema = z.object({
   proveedor_id: z.string().min(1, "Elegí un proveedor"),

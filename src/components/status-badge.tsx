@@ -8,9 +8,6 @@ interface StatusBadgeProps {
   className?: string
 }
 
-/**
- * Badge estandarizado con semaforización automática
- */
 export function StatusBadge({ estado, showIcon = false, className = "" }: StatusBadgeProps) {
   const style = getStatusStyle(estado)
   const Icon = style.icon

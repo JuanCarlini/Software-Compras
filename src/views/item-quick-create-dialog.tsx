@@ -64,7 +64,7 @@ export function ItemQuickCreateDialog({
     setIsLoading(true)
 
     try {
-      // created_by lo fija el server desde el JWT (S2); el cliente no lo manda.
+      // created_by lo fija el server desde el JWT; el cliente no lo manda.
       const response = await fetch("/api/items", {
         method: "POST",
         headers: {

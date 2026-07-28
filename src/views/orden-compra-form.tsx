@@ -19,12 +19,11 @@ import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
 import { formatCurrency } from "@/shared/format-utils"
 import { ItemSelector } from "@/views/item-selector"
 
-// Migrado a RHF+Zod (2026-07-22, patrón híbrido = certificacion-form): la CABECERA
-// (proveedor, fecha, moneda, observaciones) va por react-hook-form + zodResolver con
-// <FormField>/<FormLabel> (validación de campo + a11y). Los items se agregan por un
-// mini-form de staging (nuevoItem) y viven en una lista de solo lectura → estado
-// controlado; useFieldArray no aporta acá (las filas no se editan inline). Las
-// validaciones del staging y del submit van a form root.
+// La CABECERA (proveedor, fecha, moneda, observaciones) va por react-hook-form + zodResolver
+// con <FormField>/<FormLabel> (validación de campo + a11y). Los items se agregan por un
+// mini-form de staging (nuevoItem) y viven en una lista de solo lectura → estado controlado;
+// useFieldArray no aporta acá (las filas no se editan inline). Las validaciones del staging
+// y del submit van a form root.
 
 interface ItemOrden {
   id: string
