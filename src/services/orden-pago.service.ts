@@ -9,10 +9,10 @@ import type {
   OrdenPago,
 } from "@/models"
 
-// Reglas de negocio de órdenes de pago. El I/O vive en OrdenPagoRepository (A1).
+// Reglas de negocio de órdenes de pago. El I/O vive en OrdenPagoRepository.
 //
 // De la DB (no bypasseable): numero_op OP-N (fn_num_op); que cada factura sea finalizada,
-// del mismo proveedor y moneda (fn_lop_factura_pagable, ccip_06); y el gate de pago
+// del mismo proveedor y moneda (fn_lop_factura_pagable); y el gate de pago
 // (fn_op_gate: todas las cajas de la moneda de la OP, y Σcajas = Σfacturas = total_a_pagar,
 // evaluado en borrador -> en_aprobacion).
 // La app mantiene total_a_pagar = Σ de las líneas de factura. Las cajas se cargan aparte:
@@ -41,7 +41,7 @@ export class OrdenPagoService {
     }
   }
 
-  // numero_op lo genera la DB; estado nace en 'borrador' (S2); total arranca en 0 y lo
+  // numero_op lo genera la DB; estado nace en 'borrador'; total arranca en 0 y lo
   // sube agregarFactura.
   static async create(payload: CreateOrdenPagoData): Promise<OrdenPago> {
     return OrdenPagoRepository.insert({ ...payload, estado: "borrador", total_a_pagar: 0 })

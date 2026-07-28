@@ -1,8 +1,8 @@
 import { ItemRepository } from "@/repositories/item.repository"
 import { Item, CreateItemDTO, UpdateItemDTO } from "@/models"
 
-// Reglas de negocio de items. El I/O vive en ItemRepository (A1); acá quedan el
-// default is_active al crear, el dedup/orden de categorías y la lectura de "en uso".
+// Reglas de negocio de items. El I/O vive en ItemRepository; acá quedan el default
+// is_active al crear, el dedup/orden de categorías y la lectura de "en uso".
 export class ItemService {
   static async getAll(): Promise<Item[]> {
     return ItemRepository.findAllActive()
@@ -25,7 +25,7 @@ export class ItemService {
     return ItemRepository.findById(id)
   }
 
-  // S2: is_active y created_by los fija el server (created_by sale del JWT), nunca el cliente.
+  // is_active y created_by los fija el server (created_by sale del JWT), nunca el cliente.
   static async create(item: Omit<CreateItemDTO, "created_by">, createdBy: number): Promise<Item> {
     return ItemRepository.insert({ ...item, is_active: true, created_by: createdBy })
   }

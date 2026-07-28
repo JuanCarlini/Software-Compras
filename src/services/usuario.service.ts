@@ -18,12 +18,12 @@ export interface UpdateUsuarioData {
   estado?: "activo" | "inactivo"
 }
 
-// En la DB: 1=admin (seed CCIP). El anti auto-lockout se apoya en este id.
+// En la DB: 1=admin. El anti auto-lockout se apoya en este id.
 const ROL_ADMIN_ID = 1
 
-// Gestión de usuarios por administrador (T02/T04). El I/O vive en UsuarioRepository (A1);
-// acá quedan las reglas: unicidad de email, hasheo de clave y la "baja" lógica
-// (estado = inactivo; el login filtra por estado activo).
+// Gestión de usuarios por administrador. El I/O vive en UsuarioRepository; acá quedan las
+// reglas: unicidad de email, hasheo de clave y la "baja" lógica (estado = inactivo; el
+// login filtra por estado activo).
 export class UsuarioService {
   // Listado para la administración de usuarios: mapea la fila + join de rol al shape de la UI.
   static async getAll() {

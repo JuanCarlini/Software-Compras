@@ -39,7 +39,6 @@ const REQUIERE_APROBACION = new Set(["aprobado", "rechazado", "anulado", "pagado
 
 // El permiso depende del DESTINO, no del documento (vocabulario RBAC modulo:accion):
 // aprobar/rechazar/anular/pagar → 'aprobar'; mandar-a-aprobar/volver-a-borrador → 'crear'.
-// (Reemplazó a rolRequerido, retirado en PERM-R2 junto con los grupos de rol.)
 export function accionRequerida(destino: string): "aprobar" | "crear" {
   return REQUIERE_APROBACION.has(destino) ? "aprobar" : "crear"
 }

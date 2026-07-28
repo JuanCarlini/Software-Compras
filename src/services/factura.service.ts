@@ -9,7 +9,7 @@ interface CreateFacturaInput extends CreateFacturaData {
   imputaciones?: CreateImputacion[]
 }
 
-// Reglas de negocio de facturas. El I/O vive en FacturaRepository (A1).
+// Reglas de negocio de facturas. El I/O vive en FacturaRepository.
 //
 // De la DB (no bypasseable): numero_factura FACT-N (fn_num_fact); la regla de imputación
 // (fn_check_imputacion: solo certs aprobadas, y Σmonto_asignado ≤ Σtotal_con_iva de las
@@ -136,8 +136,8 @@ export class FacturaService {
 
   /**
    * FACT no tiene aprobación intermedia: borrador → finalizado (habilita pagar) → anulado.
-   * Pre-chequeo del grafo (409). Para finalizar exige ≥1 imputación (gap #5: NO hay trigger
-   * que lo garantice, así que esto es la única barrera — bypasseable con acceso directo).
+   * Pre-chequeo del grafo (409). Para finalizar exige ≥1 imputación: no hay trigger que lo
+   * garantice, así que esta es la única barrera (bypasseable con acceso directo a la DB).
    */
   static async cambiarEstado(id: number, destino: EstadoFactura) {
     const factura = await FacturaRepository.findById(id)

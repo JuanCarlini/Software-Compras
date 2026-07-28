@@ -2,7 +2,7 @@ import type { TablesInsert, TablesUpdate } from "@/lib/supabase/database.types"
 import { ProveedorRepository } from "@/repositories/proveedor.repository"
 import { Proveedor, EstadoProveedor } from "@/models"
 
-// Reglas de negocio de proveedores. El acceso a datos vive en ProveedorRepository (A1):
+// Reglas de negocio de proveedores. El acceso a datos vive en ProveedorRepository:
 // acá solo quedan las decisiones de dominio (normalizar estado, default al crear).
 export class ProveedorService {
   static async getAll(): Promise<Proveedor[]> {
@@ -24,7 +24,7 @@ export class ProveedorService {
   }
 
   static async create(proveedor: Omit<TablesInsert<"gu_proveedores">, "estado">): Promise<Proveedor> {
-    // S2: un proveedor nuevo siempre nace activo; el estado no lo fija el cliente
+    // un proveedor nuevo siempre nace activo; el estado no lo fija el cliente
     return ProveedorRepository.insert({ ...proveedor, estado: EstadoProveedor.ACTIVO })
   }
 

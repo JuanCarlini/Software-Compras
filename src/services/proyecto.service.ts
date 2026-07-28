@@ -1,7 +1,7 @@
 import { ProyectoRepository } from "@/repositories/proyecto.repository"
 import type { TablesInsert, TablesUpdate } from "@/lib/supabase/database.types"
 
-// CRUD de proyectos. Sin reglas de negocio propias hoy: delega el I/O al repo (A1).
+// CRUD de proyectos. Sin reglas de negocio propias hoy: delega el I/O al repo.
 // La capa existe como costura donde irían futuras reglas y para mantener la
 // convención ruta -> service -> repo uniforme en todos los dominios.
 export class ProyectoService {

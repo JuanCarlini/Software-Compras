@@ -1,8 +1,8 @@
-// La DB NO mantiene los totales de línea ni de cabecera (contrato 2026-07-07,
-// "la app SÍ calcula y escribe"): los calcula la app. Puras a propósito → testeables sin DB.
-// La excepción son las líneas de certificación, cuyos totales deriva fn_lce_derive.
+// La DB NO mantiene los totales de línea ni de cabecera: los calcula la app. Son funciones
+// puras a propósito, así que se pueden verificar sin tocar la base. La excepción son las
+// líneas de certificación, cuyos totales deriva fn_lce_derive.
 //
-// ponytail: number/float, no decimal.js. Con 2 decimales y montos de obra alcanza; si algún
+// Se usa number/float, no decimal.js. Con 2 decimales y montos de obra alcanza; si algún
 // día hay que cerrar contra contabilidad al centavo, pasar a bigint de centavos.
 
 // IVA por defecto (Argentina, alícuota general 21%). Se usa cuando una línea no trae iva_porcentaje.

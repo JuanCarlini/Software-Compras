@@ -2,7 +2,7 @@ import { CajaRepository } from "@/repositories/caja.repository"
 import { HttpError } from "@/lib/route/http-error"
 import type { Caja, CreateCajaData, UpdateCajaData } from "@/models"
 
-// Reglas de negocio de cajas (fondos/medios de pago). El I/O vive en CajaRepository (A1).
+// Reglas de negocio de cajas (fondos/medios de pago). El I/O vive en CajaRepository.
 export class CajaService {
   static async getAll(): Promise<Caja[]> {
     return CajaRepository.findAllActive()
@@ -16,7 +16,7 @@ export class CajaService {
     return CajaRepository.findById(id)
   }
 
-  // S2: una caja nueva siempre nace activa; el cliente no fija el estado.
+  // Una caja nueva siempre nace activa; el cliente no fija el estado.
   static async create(caja: CreateCajaData): Promise<Caja> {
     return CajaRepository.insert({ ...caja, is_active: true })
   }

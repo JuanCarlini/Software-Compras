@@ -13,7 +13,7 @@ function validarPermisos(permisos: string[]) {
   if (invalida) throw new HttpError(400, `Permiso inválido: ${invalida}`)
 }
 
-// Reglas de negocio de roles. El I/O vive en RolRepository (A1).
+// Reglas de negocio de roles. El I/O vive en RolRepository.
 export class RolService {
   static async getAll() {
     const roles = await RolRepository.findAllOrdered()

@@ -21,7 +21,7 @@ import { ItemService } from "./item.service"
 // así que bajar la cantidad de una línea ya certificada dejaría el rollup en negativo.
 const ESTADOS_EDITABLES: EstadoAprobacion[] = ["borrador", "rechazado"]
 
-// Reglas de negocio de órdenes de compra. El I/O vive en OrdenCompraRepository (A1).
+// Reglas de negocio de órdenes de compra. El I/O vive en OrdenCompraRepository.
 // Lo que NO vive acá: la numeración (fn_num_oc), el gate de >=1 línea (fn_oc_gate) y
 // los rollups (v_oc_rollup / v_loc_rollup) — todo eso es de la DB.
 export class OrdenCompraService {
@@ -45,7 +45,7 @@ export class OrdenCompraService {
   }
 
   // Crea la OC (cabecera + líneas opcionales). numero_oc lo genera la DB; el estado lo
-  // fija el server (S2); los totales los calcula la app (la DB no los mantiene).
+  // fija el server; los totales los calcula la app (la DB no los mantiene).
   static async create(
     payload: CreateOrdenCompraData & { lineas?: CreateLineaFromItem[] }
   ): Promise<OrdenCompra> {

@@ -13,7 +13,7 @@ interface CreateCertificacionInput {
   lineas: CreateCertificacionLinea[]
 }
 
-// Reglas de negocio de certificaciones. El I/O vive en CertificacionRepository (A1).
+// Reglas de negocio de certificaciones. El I/O vive en CertificacionRepository.
 //
 // Lo que NO vive acá porque es de la DB (y por eso no es bypasseable):
 //   - numero_cert CE-N.s ............... fn_num_cert
