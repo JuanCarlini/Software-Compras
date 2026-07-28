@@ -5,9 +5,6 @@ import { tokenQuedoObsoleto } from './session-freshness'
 const COOKIE_NAME = 'auth_token'
 const COOKIE_MAX_AGE = 7 * 24 * 60 * 60 // 7 días en segundos
 
-/**
- * Establecer cookie de autenticación
- */
 export async function setAuthCookie(token: string) {
   const cookieStore = await cookies()
   cookieStore.set(COOKIE_NAME, token, {
@@ -19,25 +16,16 @@ export async function setAuthCookie(token: string) {
   })
 }
 
-/**
- * Obtener cookie de autenticación
- */
 export async function getAuthCookie(): Promise<string | undefined> {
   const cookieStore = await cookies()
   return cookieStore.get(COOKIE_NAME)?.value
 }
 
-/**
- * Eliminar cookie de autenticación
- */
 export async function removeAuthCookie() {
   const cookieStore = await cookies()
   cookieStore.delete(COOKIE_NAME)
 }
 
-/**
- * Obtener usuario actual desde la cookie
- */
 export async function getCurrentUser() {
   try {
     const token = await getAuthCookie()
@@ -60,7 +48,7 @@ export async function getCurrentUser() {
       return null
     }
 
-    // CN-009: si la credencial cambió después de emitirse este token, la sesión murió.
+    // Si la credencial cambió después de emitirse este token, la sesión murió.
     // Es lo que hace que "cambiale la contraseña" expulse de verdad a un atacante.
     if (tokenQuedoObsoleto(payload.iat, user.updated_at)) {
       await removeAuthCookie()
@@ -74,9 +62,6 @@ export async function getCurrentUser() {
   }
 }
 
-/**
- * Verificar si el usuario está autenticado
- */
 export async function isAuthenticated(): Promise<boolean> {
   const user = await getCurrentUser()
   return user !== null

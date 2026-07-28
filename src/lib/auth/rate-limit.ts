@@ -1,6 +1,6 @@
-// Rate-limiting de intentos de login (S3: mitigación de fuerza bruta).
+// Rate-limiting de intentos de login (mitigación de fuerza bruta).
 //
-// ponytail: contador en memoria por instancia. En Vercel serverless cada lambda tiene
+// Contador en memoria por instancia. En Vercel serverless cada lambda tiene
 // su propio Map, así que NO es un límite global entre instancias — es best-effort contra
 // fuerza bruta rápida desde una conexión caliente. Alcanza como baseline y no agrega
 // dependencias ni infra. Upgrade cuando haga falta un límite compartido y persistente:
@@ -39,7 +39,7 @@ export function limpiarIntentos(key: string): void {
 }
 
 /**
- * IP del cliente, resistente al spoofing de `X-Forwarded-For` (CN-006).
+ * IP del cliente, resistente al spoofing de `X-Forwarded-For`.
  *
  * El error clásico es tomar el PRIMER elemento del XFF: esa es la parte que pone el
  * cliente — cada proxy AGREGA su valor observado al final, no reemplaza el principio.
@@ -63,7 +63,7 @@ export function resolverIp(headers: Headers): string {
  *
  * `porIpEmail` es best-effort (la IP se puede rotar). `porEmail` es la que de verdad frena
  * la fuerza bruta contra una cuenta concreta, porque no depende de ningún header.
- * ponytail: el costo es que un atacante puede bloquear la cuenta de un tercero a propósito
+ * El costo es que un atacante puede bloquear la cuenta de un tercero a propósito
  * (DoS de login). Aceptable acá — la ventana son 15 minutos y el alta de usuarios es por
  * admin. Si molestara, el upgrade es el mismo de siempre: contador compartido en KV con
  * desbloqueo por email al dueño de la cuenta.

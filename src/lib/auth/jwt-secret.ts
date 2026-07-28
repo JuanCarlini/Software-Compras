@@ -2,16 +2,15 @@
 //
 // Por qué existe: un JWT_SECRET adivinable anula TODA la cadena de autorización —
 // middleware, requireAuth, requirePermission y las guardas de página confían en la firma.
-// El secreto anterior (rotado el 2026-07-23) eran 36 caracteres de palabras de diccionario
-// unidas por guiones, con el nombre público del proyecto adentro: crackeable offline con un
-// wordlist dirigido de pocos miles de combinaciones.
+// Un secreto débil —palabras de diccionario unidas por guiones, o derivado del nombre del
+// proyecto— es crackeable offline con un wordlist dirigido de pocas combinaciones.
 //
 // Se lee en tiempo de request, NO al importar el módulo: un throw a nivel de módulo rompe
 // el "Collecting page data" de `next build` (Next importa cada ruta).
 
 const LONGITUD_MINIMA = 32
 
-// ponytail: heurístico deliberado, no un medidor de entropía. Atrapa los dos casos reales
+// Heurístico deliberado, no un medidor de entropía. Atrapa los dos casos reales
 // (placeholders y secretos derivados del nombre del proyecto) sin falsos positivos sobre
 // hex o base64 aleatorios. NO detecta una frase larga de diccionario arbitraria: para eso
 // haría falta un diccionario embebido, que no justifica su costo acá. La defensa de fondo

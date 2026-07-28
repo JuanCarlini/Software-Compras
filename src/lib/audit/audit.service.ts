@@ -16,9 +16,9 @@ export interface ConsultaAuditoria {
   hasta?: string | null // YYYY-MM-DD
 }
 
-// Bitácora de operaciones con usuario (T06). Se escribe SERVER-SIDE, donde el JWT
+// Bitácora de operaciones con usuario. Se escribe SERVER-SIDE, donde el JWT
 // identifica al usuario, a gu_auditoria. Complementa el control de cambios que los
-// triggers escriben en gu_audit_log (ver supabase/migration_auditoria_t06.sql).
+// triggers escriben en gu_audit_log.
 
 // gu_auditoria.accion es TEXTO LIBRE (el enum audit_accion es de gu_audit_log), así que
 // sumar un valor acá no necesita migración.
@@ -67,7 +67,7 @@ export class AuditService {
   }
 
   /**
-   * Intento de login fallido (CN-008). Antes el único rastro era un console.error sin
+   * Intento de login fallido. Antes el único rastro era un console.error sin
    * email ni IP: un ataque de fuerza bruta o credential stuffing no dejaba ninguna
    * evidencia investigable, y el admin no podía verlo en /admin/auditoria.
    *

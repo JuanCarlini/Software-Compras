@@ -1,5 +1,5 @@
 /**
- * Invalidación de sesiones al cambiar la credencial (CN-009).
+ * Invalidación de sesiones al cambiar la credencial.
  *
  * El JWT es stateless y no lleva versión de credencial, así que un token emitido antes de
  * un cambio de clave seguía siendo válido los 7 días completos: cambiarle la contraseña a
@@ -9,7 +9,7 @@
  * datos que YA existen: el `iat` que jsonwebtoken pone en todo token, y el `updated_at` de
  * gu_usuario, que `changePassword` y `resetPassword` ya actualizan.
  *
- * ponytail: el precio es que CUALQUIER update de la fila invalida las sesiones, no solo el
+ * El precio es que CUALQUIER update de la fila invalida las sesiones, no solo el
  * de la clave. Para el cambio de rol eso es deseable (hoy el rol viaja dentro del JWT y
  * queda stale hasta que expira); para un cambio de nombre es una molestia menor y rara.
  * Si algún día ese ruido importa, el upgrade es la columna `token_version` dedicada.

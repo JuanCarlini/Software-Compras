@@ -40,7 +40,7 @@ export function getByIdRoute<T>(cfg: GetByIdConfig<T>) {
 }
 
 // ---------- POST (create) de colección ----------
-// El estado inicial lo fija el server dentro del service (S2); acá solo se orquesta.
+// El estado inicial lo fija el server dentro del service; acá solo se orquesta.
 interface CreateConfig<In, Out extends { id: number }> {
   autorizar: () => Autorizacion
   schema: { parse: (data: unknown) => In }

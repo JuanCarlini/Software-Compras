@@ -20,7 +20,7 @@ export interface AuthUser {
   rol_nombre?: string
   estado: 'activo' | 'inactivo'
   // Marca de última modificación de la fila. La usa getCurrentUser para invalidar tokens
-  // emitidos antes de un cambio de credencial (CN-009, ver session-freshness.ts).
+  // emitidos antes de un cambio de credencial (ver session-freshness.ts).
   updated_at?: string | null
 }
 
@@ -31,19 +31,15 @@ export interface JWTPayload {
   rolId: number
   rolNombre?: string
   // Claim estándar que jsonwebtoken agrega al firmar y devuelve al verificar. Se declara
-  // para poder compararlo con gu_usuario.updated_at (CN-009); nunca se setea a mano.
+  // para poder compararlo con gu_usuario.updated_at; nunca se setea a mano.
   iat?: number
 }
 
 export class AuthService {
-  /**
-   * Autenticar usuario con email y contraseña
-   */
   static async login(email: string, password: string): Promise<{ user: AuthUser; token: string } | null> {
     try {
       const supabase = createClient()
 
-      // Buscar usuario por email con su rol
       const { data: usuario, error } = await supabase
         .from('gu_usuario')
         .select(`
@@ -66,7 +62,6 @@ export class AuthService {
         return null
       }
 
-      // Verificar contraseña
       const passwordMatch = await bcrypt.compare(password, usuario.password_hash)
 
       if (!passwordMatch) {
@@ -74,7 +69,6 @@ export class AuthService {
         return null
       }
 
-      // Crear token JWT
       const payload: JWTPayload = {
         userId: usuario.id,
         email: usuario.email,
@@ -85,7 +79,6 @@ export class AuthService {
 
       const token = jwt.sign(payload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN })
 
-      // Retornar usuario y token
       return {
         user: {
           id: usuario.id,
@@ -108,7 +101,7 @@ export class AuthService {
   /**
    * Emite un token nuevo para un usuario ya autenticado.
    *
-   * Lo usa el cambio de clave propio: como la invalidación por `updated_at` (CN-009) mata
+   * Lo usa el cambio de clave propio: como la invalidación por `updated_at` mata
    * TODAS las sesiones anteriores —incluida la del que está cambiando su propia clave—,
    * hay que devolverle una cookie fresca. El efecto neto es el deseado: el usuario sigue
    * trabajando y cualquier otra sesión (la del atacante) queda muerta.
@@ -124,9 +117,6 @@ export class AuthService {
     return jwt.sign(payload, getJwtSecret(), { expiresIn: JWT_EXPIRES_IN })
   }
 
-  /**
-   * Verificar token JWT
-   */
   static async verifyToken(token: string): Promise<JWTPayload | null> {
     try {
       const decoded = jwt.verify(token, getJwtSecret()) as JWTPayload
@@ -137,9 +127,6 @@ export class AuthService {
     }
   }
 
-  /**
-   * Obtener usuario por ID
-   */
   static async getUserById(userId: number): Promise<AuthUser | null> {
     try {
       const supabase = createClient()
@@ -180,14 +167,10 @@ export class AuthService {
     }
   }
 
-  /**
-   * Cambiar contraseña
-   */
   static async changePassword(userId: number, oldPassword: string, newPassword: string): Promise<boolean> {
     try {
       const supabase = createClient()
 
-      // Obtener usuario actual
       const { data: usuario, error } = await supabase
         .from('gu_usuario')
         .select('password_hash')
@@ -198,17 +181,14 @@ export class AuthService {
         return false
       }
 
-      // Verificar contraseña actual
       const passwordMatch = await bcrypt.compare(oldPassword, usuario.password_hash)
 
       if (!passwordMatch) {
         return false
       }
 
-      // Hashear nueva contraseña
       const newPasswordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS)
 
-      // Actualizar contraseña
       const { error: updateError } = await supabase
         .from('gu_usuario')
         .update({
