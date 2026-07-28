@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { CAJA_TIPOS, MONEDAS } from "@/models/enums"
 
-// `is_active` lo fija el server (S2). La moneda se elige al crear y no se cambia después
+// `is_active` lo fija el server. La moneda se elige al crear y no se cambia después
 // (CajaService.update lo rechaza con 422): fn_op_gate depende de ella.
 export const CreateCajaSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido").max(200),

@@ -11,7 +11,7 @@ export const CreateOrdenCompraLineaSchema = z.object({
   iva_porcentaje: z.number().min(0).max(100).optional(),
 })
 
-// numero_oc lo genera la DB (fn_num_oc); `estado` lo fija el server en 'borrador' (S2);
+// numero_oc lo genera la DB (fn_num_oc); `estado` lo fija el server en 'borrador';
 // los totales los calcula el server desde las líneas. Nada de eso se acepta del cliente.
 export const CreateOrdenCompraSchema = z.object({
   proveedor_id: z.number().int().positive("El proveedor es requerido"),

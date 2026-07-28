@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-// Política de contraseñas, en un solo lugar (CN-010). Antes la regla `length >= 6` estaba
+// Política de contraseñas, en un solo lugar. Antes la regla `length >= 6` estaba
 // duplicada inline en las 3 rutas que tocan claves: alta por admin, reset por admin y
 // cambio propio — con lo cual "la política" era en realidad tres copias que podían
 // divergir, y ninguna tenía máximo.
@@ -11,7 +11,7 @@ import { z } from "zod"
 const MIN_CARACTERES = 12
 const MAX_BYTES = 72
 
-// ponytail: solo longitud, sin reglas de composición (mayúscula + símbolo + dígito).
+// Solo longitud, sin reglas de composición (mayúscula + símbolo + dígito).
 // Es lo que recomienda el NIST SP 800-63B desde 2017: las reglas de composición empujan a
 // patrones predecibles ("Password1!") sin agregar entropía real, mientras que la longitud
 // sí. Si alguna vez se exige composición por normativa, se suma acá y solo acá.

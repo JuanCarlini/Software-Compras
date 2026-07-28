@@ -1,36 +1,24 @@
 import { UserRole } from "@/models"
 
-// PERM-R2: los grupos de rol (ROLES_ESCRITURA/DESTRUCTIVO/APROBACION) y requireRole se
+// Los grupos de rol (ROLES_ESCRITURA/DESTRUCTIVO/APROBACION) y requireRole se
 // retiraron cuando el RBAC por permisos (modulo:accion) los dejó sin consumidores: hoy las
 // rutas autorizan con requirePermission contra gu_roles.permisos. Lo que queda acá son los
 // helpers por ROL que siguen vivos (secciones /admin/* y gating de botones en la UI).
 
-/**
- * Verifica si un usuario tiene permiso para anular documentos
- * Solo supervisores y administradores pueden anular documentos
- */
+// Solo supervisores y administradores pueden anular documentos.
 export function canAnularDocumento(userRole: UserRole): boolean {
   return userRole === UserRole.ADMIN || userRole === UserRole.SUPERVISOR
 }
 
-/**
- * Verifica si un usuario tiene permiso para modificar proveedores
- * Solo supervisores y administradores pueden suspender o activar proveedores
- */
+// Solo supervisores y administradores pueden suspender o activar proveedores.
 export function canModificarProveedor(userRole: UserRole): boolean {
   return userRole === UserRole.ADMIN || userRole === UserRole.SUPERVISOR
 }
 
-/**
- * Verifica si un usuario tiene permisos de administrador
- */
 export function isAdmin(userRole: UserRole): boolean {
   return userRole === UserRole.ADMIN
 }
 
-/**
- * Convierte string de rol a UserRole enum
- */
 export function stringToUserRole(rol: string): UserRole {
   const roleLower = rol.toLowerCase()
   switch (roleLower) {
@@ -46,7 +34,7 @@ export function stringToUserRole(rol: string): UserRole {
   }
 }
 
-// RBAC real (PERM-04/05). Chequeo PURO de permisos, sin DB: 'admin' pasa siempre
+// Chequeo PURO de permisos, sin DB: 'admin' pasa siempre
 // (short-circuit anti auto-lockout — no se puede lockear al sistema editando permisos);
 // el resto por membership en su array `modulo:accion`. La resolución del array (I/O contra
 // gu_roles.permisos) vive en requirePermission/rol.repository; acá solo la decisión, para

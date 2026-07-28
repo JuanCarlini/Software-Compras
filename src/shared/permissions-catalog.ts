@@ -1,7 +1,7 @@
-// Catálogo de permisos RBAC (PERM-01). Estático y atado a las rutas → fuente de verdad en
+// Catálogo de permisos RBAC. Estático y atado a las rutas → fuente de verdad en
 // código, no en la DB (evita drift). Importable desde cliente y server (sin deps, sin I/O).
 // La asignación rol→permisos vive en gu_roles.permisos (DB); esto solo enumera qué claves
-// `modulo:accion` son legítimas y sus etiquetas para la matriz de la UI (Fase 2).
+// `modulo:accion` son legítimas y sus etiquetas para la matriz de la UI.
 
 export type Accion = "ver" | "crear" | "aprobar" | "borrar"
 
@@ -31,7 +31,7 @@ export const PERMISOS_VALIDOS: Set<string> = new Set(
   )
 )
 
-// ¿La clave `modulo:accion` es un permiso legítimo del catálogo? (path de escritura, Fase 2).
+// ¿La clave `modulo:accion` es un permiso legítimo del catálogo?
 export function esPermisoValido(clave: string): boolean {
   return PERMISOS_VALIDOS.has(clave)
 }
