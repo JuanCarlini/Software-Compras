@@ -7,7 +7,7 @@ const TABLE_LINEAS = "gu_lineasdefactura"
 const TABLE_CERTS = "gu_facturas_certificaciones"
 
 // Repositorio de gu_facturas (+ líneas + puente N:M con certificaciones): única capa
-// con queries Supabase para facturas (A1). Solo I/O. Lo que es de la DB: el número
+// con queries Supabase para facturas. Solo I/O. Lo que es de la DB: el número
 // (fn_num_fact, FACT-N), la regla de imputación (fn_check_imputacion: cert aprobada +
 // Σmonto_asignado ≤ Σtotal_con_iva de las LFACT) y el estado de pago (vista v_factura_rollup).
 export class FacturaRepository {

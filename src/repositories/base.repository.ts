@@ -11,8 +11,8 @@ function db(): UntypedClient {
   return createClient() as unknown as UntypedClient
 }
 
-// CRUD genérico compartido por los repos cuya tabla tiene PK `id` y el patrón estándar
-// (A1). Semántica FIJA — solo la adoptan los repos que la comparten exacto:
+// CRUD genérico compartido por los repos cuya tabla tiene PK `id` y el patrón estándar.
+// Semántica FIJA — solo la adoptan los repos que la comparten exacto:
 //   findAll  → throw si error, [] si no hay filas
 //   findById → null si error/no encontrado
 //   insert   → throw si error (deja subir 23505/23503 a handleRouteError)

@@ -3,7 +3,7 @@ import type { Tables, TablesUpdate } from "@/lib/supabase/database.types"
 
 const TABLE = "gu_roles"
 
-// Repositorio de gu_roles: única capa con queries Supabase para roles (A1).
+// Repositorio de gu_roles: única capa con queries Supabase para roles.
 // Solo I/O — la protección de roles de sistema, la unicidad y las guardas de
 // borrado (rol en uso) viven en RolService.
 export class RolRepository {
@@ -32,7 +32,7 @@ export class RolRepository {
   }
 
   // Permisos (claves `modulo:accion`) de un rol por nombre. Fuente para requirePermission
-  // (RBAC). Rol inexistente o sin permisos → []. Única capa con .from() (A1).
+  // (RBAC). Rol inexistente o sin permisos → []. Única capa con .from().
   static async findPermisosByNombre(nombre: string): Promise<string[]> {
     const supabase = createClient()
     const { data } = await supabase.from(TABLE).select("permisos").eq("nombre", nombre).maybeSingle()

@@ -5,7 +5,7 @@ const TABLE = "gu_usuario"
 // Nunca exponer password_hash: todas las lecturas de vuelta usan esta proyección.
 const SELECT_SIN_HASH = "id, nombre, email, rol_id, estado, created_at, gu_roles(nombre)"
 
-// Repositorio de gu_usuario: única capa con queries Supabase para usuarios (A1).
+// Repositorio de gu_usuario: única capa con queries Supabase para usuarios.
 // Solo I/O — el hasheo de contraseñas y la unicidad de email viven en UsuarioService.
 // El repo estampa updated_at en cada mutación (detalle de persistencia).
 export class UsuarioRepository {

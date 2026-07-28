@@ -11,7 +11,7 @@ import {
 const TABLE = "gu_ordenesdecompra"
 const TABLE_LINEAS = "gu_lineasdeordenesdecompra"
 
-// Repositorio de gu_ordenesdecompra (+ líneas): única capa con queries Supabase (A1).
+// Repositorio de gu_ordenesdecompra (+ líneas): única capa con queries Supabase.
 // Solo I/O — el default de estado, la compensación anti-huérfanas y el cálculo de
 // totales de línea (precio/IVA) viven en OrdenCompraService.
 export class OrdenCompraRepository {
