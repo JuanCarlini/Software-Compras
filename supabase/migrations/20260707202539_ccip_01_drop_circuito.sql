@@ -1,4 +1,4 @@
--- Rediseño CCIP: rearmar las tablas del circuito. Se conservan auth/roles/usuarios,
+-- Rediseño del circuito: rearmar sus tablas. Se conservan auth/roles/usuarios,
 -- auditoría (gu_auditoria, gu_audit_log), proyectos y proveedores.
 DROP TABLE IF EXISTS
   public.gu_lineasdeordenesdepagocaja,

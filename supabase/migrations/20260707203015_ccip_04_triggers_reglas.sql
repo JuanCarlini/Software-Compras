@@ -108,7 +108,7 @@ BEGIN
   END IF; RETURN NEW; END; $$;
 CREATE TRIGGER trg_op_gate BEFORE UPDATE OF estado ON public.gu_ordenesdepago FOR EACH ROW EXECUTE FUNCTION public.fn_op_gate();
 
--- Re-enganche de auditoría (control de cambios T06) en las 4 entidades
+-- Re-enganche de auditoría (control de cambios) en las 4 entidades
 CREATE TRIGGER trg_audit_oc AFTER INSERT OR UPDATE OR DELETE ON public.gu_ordenesdecompra FOR EACH ROW EXECUTE FUNCTION public.fn_audit_log();
 CREATE TRIGGER trg_audit_cert AFTER INSERT OR UPDATE OR DELETE ON public.gu_certificaciones FOR EACH ROW EXECUTE FUNCTION public.fn_audit_log();
 CREATE TRIGGER trg_audit_factura AFTER INSERT OR UPDATE OR DELETE ON public.gu_facturas FOR EACH ROW EXECUTE FUNCTION public.fn_audit_log();

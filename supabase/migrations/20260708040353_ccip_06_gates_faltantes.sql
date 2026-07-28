@@ -1,4 +1,4 @@
--- Gates del circuito CCIP que vivían solo en la capa de app.
+-- Gates del circuito que vivían solo en la capa de app.
 -- #1 certificar solo contra OC aprobada (+ coherencia de proveedor CE<->OC)
 -- #2 pagar solo facturas finalizadas (+ coherencia proveedor/moneda, LOP inmutable fuera de borrador)
 -- #6 líneas de OC inmutables fuera de borrador/rechazado
