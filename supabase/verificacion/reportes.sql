@@ -44,22 +44,29 @@ BEGIN
   RAISE NOTICE 'Coherencia circuito/proveedores: OK';
 END $$;
 
--- Los tramos de aging tienen que sumar la deuda total: ningun tramo se pisa ni falta.
+-- Agrupar y volver a sumar es tautologico, nunca puede fallar. Se valida en
+-- cambio que saldo y tramo salgan bien calculados de sus propias columnas.
 DO $$
 DECLARE
-  v_total numeric;
-  v_tramos numeric;
+  r record;
+  v_tramo_esperado text;
 BEGIN
-  SELECT COALESCE(SUM(saldo), 0) INTO v_total
-  FROM public.rpc_reporte_deuda(NULL,NULL,NULL,NULL,NULL);
+  FOR r IN SELECT * FROM public.rpc_reporte_deuda(NULL,NULL,NULL,NULL,NULL) LOOP
+    IF abs(r.saldo - (r.total_facturado - r.pagado)) > 0.01 THEN
+      RAISE EXCEPTION 'Saldo mal calculado (factura %): saldo % vs total % - pagado %',
+        r.numero_factura, r.saldo, r.total_facturado, r.pagado;
+    END IF;
 
-  SELECT COALESCE(SUM(s), 0) INTO v_tramos
-  FROM (SELECT SUM(saldo) AS s
-        FROM public.rpc_reporte_deuda(NULL,NULL,NULL,NULL,NULL)
-        GROUP BY tramo) t;
-
-  IF abs(v_total - v_tramos) > 0.01 THEN
-    RAISE EXCEPTION 'Descuadre de aging: total % vs tramos %', v_total, v_tramos;
-  END IF;
+    v_tramo_esperado := CASE
+      WHEN r.dias <= 30 THEN '0-30'
+      WHEN r.dias <= 60 THEN '31-60'
+      WHEN r.dias <= 90 THEN '61-90'
+      ELSE '+90'
+    END;
+    IF r.tramo IS DISTINCT FROM v_tramo_esperado THEN
+      RAISE EXCEPTION 'Tramo mal asignado (factura %): tramo % para dias %, esperado %',
+        r.numero_factura, r.tramo, r.dias, v_tramo_esperado;
+    END IF;
+  END LOOP;
   RAISE NOTICE 'Coherencia de tramos de aging: OK';
 END $$;
