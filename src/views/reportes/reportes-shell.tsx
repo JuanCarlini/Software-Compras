@@ -15,7 +15,7 @@ export function ReportesShell({
   return (
     <div className="reportes-viz space-y-6">
       {/* FiltrosBar usa useSearchParams: sin Suspense, Next 15 rompe el prerenderizado
-          de la pagina en el build. */}
+          de la página en el build. */}
       <Suspense>
         <FiltrosBar proveedores={proveedores} proyectos={proyectos} />
       </Suspense>

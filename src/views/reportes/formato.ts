@@ -2,7 +2,7 @@ import type { TipoColumna } from "@/lib/export/tipos"
 import { formatCurrency } from "@/shared/format-utils"
 
 // La moneda es por fila, no global: un reporte puede traer filas en ARS y en USD
-// y formatearlas todas igual seria mentir sobre el monto real.
+// y formatearlas todas igual sería mentir sobre el monto real.
 export function formatearValor(valor: unknown, tipo: TipoColumna, moneda = "ARS"): string {
   if (valor === null || valor === undefined || valor === "") return "—"
 

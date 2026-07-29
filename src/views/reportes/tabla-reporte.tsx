@@ -10,8 +10,8 @@ import { formatearValor } from "./formato"
 // tabular-nums. Fecha y texto se leen, no se suman, y van a la izquierda.
 const TIPOS_NUMERICOS = new Set(["numero", "moneda", "porcentaje"])
 
-// Gemela obligatoria de cada grafico: ningun valor debe ser legible solo por color
-// o solo por tooltip. Es tambien la estructura que despues se exporta a Excel.
+// Gemela obligatoria de cada gráfico: ningún valor debe ser legible solo por color
+// o solo por tooltip. Es también la estructura que después se exporta a Excel.
 export function TablaReporte({ tabla }: { tabla: Tabla }) {
   if (tabla.filas.length === 0) {
     return (

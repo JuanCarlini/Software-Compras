@@ -19,9 +19,9 @@ import { useAuth } from "@/components/auth-context"
 import { isAdmin, stringToUserRole } from "@/shared/permissions"
 import { Button } from "@/components/ui/button"
 
-// `modulo` = clave de la matriz; si está, el item solo se muestra con permiso `ver`.
-// Dashboard no es modulo de matriz → siempre visible. Reportes si lo es desde el
-// rediseño: se gatea con reportes:ver como cualquier otra seccion.
+// `módulo` = clave de la matriz; si está, el item solo se muestra con permiso `ver`.
+// Dashboard no es módulo de matriz → siempre visible. Reportes sí lo es desde el
+// rediseño: se catea con reportes:ver como cualquier otra sección.
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Órdenes de Compra", url: "/ordenes-compra", icon: ShoppingCart, modulo: "ordenes_compra" },
