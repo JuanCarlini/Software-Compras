@@ -24,6 +24,14 @@ LANGUAGE sql
 STABLE
 SET search_path = public, pg_temp
 AS $$
+-- v_oc_rollup suma en neto (sin iva) y total_con_iva es bruto: restar uno de otro
+-- infla el pendiente. Se certifica desde gu_certificaciones, que ya esta en bruto.
+WITH certificado AS (
+  SELECT c.orden_compra_id, SUM(c.total_con_iva) AS monto
+  FROM public.gu_certificaciones c
+  WHERE c.estado = 'aprobado'
+  GROUP BY c.orden_compra_id
+)
 SELECT o.id,
        o.numero_oc,
        pr.nombre::text,
@@ -31,20 +39,20 @@ SELECT o.id,
        o.fecha_oc,
        o.moneda,
        o.total_con_iva,
-       r.monto_pendiente_certificar,
+       o.total_con_iva - COALESCE(ce.monto, 0),
        (current_date - o.fecha_oc)::integer
 FROM public.gu_ordenesdecompra o
-JOIN public.v_oc_rollup r ON r.orden_compra_id = o.id
+LEFT JOIN certificado ce ON ce.orden_compra_id = o.id
 JOIN public.gu_proveedores pr ON pr.id = o.proveedor_id
 LEFT JOIN public.gu_proyectos py ON py.id = o.proyecto_id
 WHERE o.estado = 'aprobado'
-  AND r.monto_pendiente_certificar > 0
+  AND o.total_con_iva - COALESCE(ce.monto, 0) > 0
   AND (p_desde        IS NULL OR o.fecha_oc     >= p_desde)
   AND (p_hasta        IS NULL OR o.fecha_oc     <= p_hasta)
   AND (p_proveedor_id IS NULL OR o.proveedor_id  = p_proveedor_id)
   AND (p_proyecto_id  IS NULL OR o.proyecto_id   = p_proyecto_id)
   AND (p_moneda       IS NULL OR o.moneda        = p_moneda)
-ORDER BY r.monto_pendiente_certificar DESC;
+ORDER BY o.total_con_iva - COALESCE(ce.monto, 0) DESC;
 $$;
 
 -- Facturas finalizadas con saldo impago, con tramo de antiguedad desde la emision.
@@ -220,8 +228,10 @@ LANGUAGE sql
 STABLE
 SET search_path = public, pg_temp
 AS $$
+-- v_oc_rollup suma en neto (sin iva) y total_con_iva es bruto: restar uno de otro
+-- infla el pendiente. Se certifica desde gu_certificaciones, que ya esta en bruto.
 WITH oc_filtradas AS (
-  SELECT o.id, o.proyecto_id, o.tarea, o.moneda, o.total_con_iva, o.fecha_oc
+  SELECT o.id, o.proyecto_id, o.tarea, o.moneda, o.total_con_iva
   FROM public.gu_ordenesdecompra o
   WHERE o.estado = 'aprobado'
     AND (p_desde        IS NULL OR o.fecha_oc     >= p_desde)
@@ -229,16 +239,22 @@ WITH oc_filtradas AS (
     AND (p_proveedor_id IS NULL OR o.proveedor_id  = p_proveedor_id)
     AND (p_proyecto_id  IS NULL OR o.proyecto_id   = p_proyecto_id)
     AND (p_moneda       IS NULL OR o.moneda        = p_moneda)
+),
+certificado AS (
+  SELECT c.orden_compra_id, SUM(c.total_con_iva) AS monto
+  FROM public.gu_certificaciones c
+  WHERE c.estado = 'aprobado'
+  GROUP BY c.orden_compra_id
 )
 SELECT f.proyecto_id,
        COALESCE(py.nombre, 'Sin proyecto')::text,
        COALESCE(f.tarea, 'Sin tarea')::text,
        f.moneda,
        SUM(f.total_con_iva)::numeric,
-       SUM(f.total_con_iva - COALESCE(r.monto_pendiente_certificar, 0))::numeric,
-       SUM(COALESCE(r.monto_pendiente_certificar, 0))::numeric
+       SUM(COALESCE(ce.monto, 0))::numeric,
+       SUM(f.total_con_iva - COALESCE(ce.monto, 0))::numeric
 FROM oc_filtradas f
-LEFT JOIN public.v_oc_rollup r ON r.orden_compra_id = f.id
+LEFT JOIN certificado ce ON ce.orden_compra_id = f.id
 LEFT JOIN public.gu_proyectos py ON py.id = f.proyecto_id
 GROUP BY f.proyecto_id, py.nombre, f.tarea, f.moneda
 ORDER BY 5 DESC;
