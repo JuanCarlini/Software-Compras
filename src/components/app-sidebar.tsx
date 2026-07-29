@@ -20,7 +20,8 @@ import { isAdmin, stringToUserRole } from "@/shared/permissions"
 import { Button } from "@/components/ui/button"
 
 // `modulo` = clave de la matriz; si está, el item solo se muestra con permiso `ver`.
-// Dashboard y Reportes no son módulos de matriz → siempre visibles.
+// Dashboard no es modulo de matriz → siempre visible. Reportes si lo es desde el
+// rediseño: se gatea con reportes:ver como cualquier otra seccion.
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: Home },
   { title: "Órdenes de Compra", url: "/ordenes-compra", icon: ShoppingCart, modulo: "ordenes_compra" },
@@ -28,7 +29,7 @@ const menuItems = [
   { title: "Facturas", url: "/facturas", icon: Receipt, modulo: "facturas" },
   { title: "Órdenes de Pago", url: "/ordenes-pago", icon: CreditCard, modulo: "ordenes_pago" },
   { title: "Proveedores", url: "/proveedores", icon: Building2, modulo: "proveedores" },
-  { title: "Reportes", url: "/reportes", icon: BarChart3 },
+  { title: "Reportes", url: "/reportes", icon: BarChart3, modulo: "reportes" },
 ]
 
 export function AppSidebar() {
@@ -39,7 +40,7 @@ export function AppSidebar() {
   const userRole = user ? stringToUserRole(user.rol) : null
   const userIsAdmin = userRole ? isAdmin(userRole) : false
 
-  // Solo los módulos que el rol puede ver (Dashboard/Reportes no llevan módulo → siempre).
+  // Solo los módulos que el rol puede ver (Dashboard no lleva módulo → siempre visible).
   const visibles = menuItems.filter((item) => !item.modulo || puede(item.modulo, "ver"))
 
   const handleLogout = async () => {
