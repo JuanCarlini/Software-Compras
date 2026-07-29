@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FiltrosBar, type Opcion } from "./filtros-bar"
 import { TabCircuito } from "./tab-circuito"
 import { TabPendiente } from "./tab-pendiente"
+import { TabDeuda } from "./tab-deuda"
 import "./paleta.css"
 
 export function ReportesShell({
@@ -33,7 +34,7 @@ export function ReportesShell({
 
         <TabsContent value="circuito" className="mt-6"><TabCircuito /></TabsContent>
         <TabsContent value="pendiente" className="mt-6"><TabPendiente /></TabsContent>
-        <TabsContent value="deuda" className="mt-6" />
+        <TabsContent value="deuda" className="mt-6"><TabDeuda /></TabsContent>
         <TabsContent value="proveedores" className="mt-6" />
         <TabsContent value="proyectos" className="mt-6" />
       </Tabs>
