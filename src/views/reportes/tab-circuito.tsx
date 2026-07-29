@@ -72,7 +72,7 @@ export function TabCircuito() {
               <CardContent><Embudo etapas={etapas} moneda={fila.moneda} /></CardContent>
             </Card>
 
-            {mesesDeLaMoneda.length > 0 && (
+            {(mesesDeLaMoneda.length > 0 || mensual.error) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Actividad mensual ({fila.moneda})</CardTitle>
@@ -83,14 +83,18 @@ export function TabCircuito() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <LineaTemporal
-                    datos={mesesDeLaMoneda}
-                    series={[
-                      { clave: "comprado", nombre: "Comprado" },
-                      { clave: "pagado", nombre: "Pagado" },
-                    ]}
-                    moneda={fila.moneda}
-                  />
+                  {mensual.error ? (
+                    <p className="text-sm text-destructive">{mensual.error}</p>
+                  ) : (
+                    <LineaTemporal
+                      datos={mesesDeLaMoneda}
+                      series={[
+                        { clave: "comprado", nombre: "Comprado" },
+                        { clave: "pagado", nombre: "Pagado" },
+                      ]}
+                      moneda={fila.moneda}
+                    />
+                  )}
                 </CardContent>
               </Card>
             )}
