@@ -7,6 +7,7 @@ import { TabCircuito } from "./tab-circuito"
 import { TabPendiente } from "./tab-pendiente"
 import { TabDeuda } from "./tab-deuda"
 import { TabProveedores } from "./tab-proveedores"
+import { TabProyectos } from "./tab-proyectos"
 import "./paleta.css"
 
 export function ReportesShell({
@@ -37,7 +38,7 @@ export function ReportesShell({
         <TabsContent value="pendiente" className="mt-6"><TabPendiente /></TabsContent>
         <TabsContent value="deuda" className="mt-6"><TabDeuda /></TabsContent>
         <TabsContent value="proveedores" className="mt-6"><TabProveedores /></TabsContent>
-        <TabsContent value="proyectos" className="mt-6" />
+        <TabsContent value="proyectos" className="mt-6"><TabProyectos /></TabsContent>
       </Tabs>
     </div>
   )
