@@ -20,7 +20,7 @@ const EJE = {
   tick: { fill: "var(--rep-tinta-mutada)", fontSize: 12 },
 }
 
-// El alto incluye la banda del eje X: fijar solo el area de trazado deja la tarjeta
+// El alto incluye la banda del eje X: fijar solo el área de trazado deja la tarjeta
 // con un scroll vertical diminuto.
 function Contenedor({ alto, children }: { alto: number; children: React.ReactElement }) {
   return (
@@ -30,8 +30,8 @@ function Contenedor({ alto, children }: { alto: number; children: React.ReactEle
   )
 }
 
-// Una serie, un color. Pintar cada barra segun su valor duplica en color lo que el
-// largo ya comunica y quema el unico canal libre.
+// Una serie, un color. Pintar cada barra según su valor duplica en color lo que el
+// largo ya comunica y quema el único canal libre.
 export function BarraHorizontal({
   datos, clave, etiqueta, moneda, alto = 320,
 }: {
@@ -57,7 +57,7 @@ export function BarraHorizontal({
   )
 }
 
-// Etapas ordenadas de una progresion, no identidades: rampa de un solo tono.
+// Etapas ordenadas de una progresión, no identidades: rampa de un solo tono.
 export function Embudo({
   etapas, moneda, alto = 280,
 }: {
@@ -84,7 +84,7 @@ export function Embudo({
 }
 
 // Solo monto. La cantidad de documentos va en la tabla: dos ejes Y inventan una
-// correlacion que no esta en los datos.
+// correlación que no está en los datos.
 export function LineaTemporal({
   datos, series, moneda, alto = 300,
 }: {
@@ -120,7 +120,7 @@ export function LineaTemporal({
   )
 }
 
-// Parte de un todo, de un vistazo, seis segmentos como maximo. Fuera de ese caso
+// Parte de un todo, de un vistazo, seis segmentos como máximo. Fuera de ese caso
 // una barra comunica mejor.
 export function TortaComposicion({
   datos, moneda, alto = 320,
@@ -132,9 +132,9 @@ export function TortaComposicion({
   return (
     <Contenedor alto={alto}>
       <PieChart>
-        <Pie data={datos} dataKey="monto" nameKey="nombre" innerRadius={0} outerRadius={110}>
+        <Pie data={datos} dataKey="monto" nameKey="nombre" innerRadius={0} outerRadius={110} paddingAngle={1}>
           {datos.map((_, i) => (
-            <Cell key={i} fill={SERIES[i % SERIES.length]} stroke="var(--rep-grid)" strokeWidth={2} />
+            <Cell key={i} fill={SERIES[i % SERIES.length]} stroke="var(--rep-superficie)" />
           ))}
         </Pie>
         <Tooltip
@@ -147,7 +147,7 @@ export function TortaComposicion({
   )
 }
 
-// Un ratio contra un limite: la forma correcta es un medidor, no un grafico.
+// Un ratio contra un límite: la forma correcta es un medidor, no un gráfico.
 export function Medidor({ valor, total }: { valor: number; total: number }) {
   const pct = total > 0 ? Math.min((valor / total) * 100, 100) : 0
   return (
@@ -162,8 +162,8 @@ export function Medidor({ valor, total }: { valor: number; total: number }) {
   )
 }
 
-// Cifras protagonistas: figuras proporcionales, no tabular-nums, que a tamano grande
-// dejan los numeros sueltos.
+// Cifras protagonistas: figuras proporcionales, no tabular-nums, que a tamaño grande
+// dejan los números sueltos.
 export function StatTile({
   titulo, valor, detalle,
 }: {
