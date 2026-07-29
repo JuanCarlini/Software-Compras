@@ -3,6 +3,7 @@
 import { Suspense } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FiltrosBar, type Opcion } from "./filtros-bar"
+import { TabCircuito } from "./tab-circuito"
 import "./paleta.css"
 
 export function ReportesShell({
@@ -29,7 +30,7 @@ export function ReportesShell({
           <TabsTrigger value="proyectos">Proyectos</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="circuito" className="mt-6" />
+        <TabsContent value="circuito" className="mt-6"><TabCircuito /></TabsContent>
         <TabsContent value="pendiente" className="mt-6" />
         <TabsContent value="deuda" className="mt-6" />
         <TabsContent value="proveedores" className="mt-6" />

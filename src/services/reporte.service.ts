@@ -52,6 +52,29 @@ export class ReporteCircuito extends ReporteBase<Record<string, unknown>> {
   }
 }
 
+export class ReporteCircuitoMensual extends ReporteBase<Record<string, unknown>> {
+  readonly nombre = "circuito-mensual"
+  readonly titulo = "Evolución mensual del circuito"
+
+  protected consultar(f: FiltrosReporte) {
+    return ReporteRepository.circuitoMensual<Record<string, unknown>>(f)
+  }
+
+  protected adaptar(filas: Record<string, unknown>[], f: FiltrosReporte): TablaReporte[] {
+    return [{
+      titulo: this.titulo,
+      filtros: describirFiltros(f),
+      columnas: [
+        { clave: "moneda", titulo: "Moneda", tipo: "texto" },
+        { clave: "mes", titulo: "Mes", tipo: "fecha" },
+        { clave: "comprado", titulo: "Comprado", tipo: "moneda" },
+        { clave: "pagado", titulo: "Pagado", tipo: "moneda" },
+      ],
+      filas,
+    }]
+  }
+}
+
 export class ReportePendienteCertificar extends ReporteBase<Record<string, unknown>> {
   readonly nombre = "pendiente-certificar"
   readonly titulo = "Pendiente de certificar"
@@ -172,6 +195,7 @@ function describirFiltros(f: FiltrosReporte): Record<string, string> {
 // Registry: despacha por nombre y es lo que evita cinco rutas copiadas.
 export const REPORTES: Record<string, ReporteBase<Record<string, unknown>>> = {
   circuito: new ReporteCircuito(),
+  "circuito-mensual": new ReporteCircuitoMensual(),
   "pendiente-certificar": new ReportePendienteCertificar(),
   deuda: new ReporteDeuda(),
   proveedores: new ReporteProveedores(),
