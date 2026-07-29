@@ -61,6 +61,7 @@ pagos_por_factura AS (
 ),
 -- el pago cubre la factura entera: se reparte entre sus imputaciones en proporcion
 -- a monto_asignado, unica forma de atribuirlo a una OC y por lo tanto a un proyecto.
+
 -- se excluyen las imputaciones cruzadas de moneda porque no hay trigger que las
 -- impida y sumarlas daria un total sin sentido.
 pagado AS (
@@ -150,6 +151,6 @@ ORDER BY 1, 2;
 $$;
 
 REVOKE EXECUTE ON FUNCTION public.rpc_reporte_circuito(date, date, bigint, bigint, public.moneda_enum)
-  FROM anon, authenticated;
+  FROM anon, authenticated, public;
 REVOKE EXECUTE ON FUNCTION public.rpc_reporte_circuito_mensual(date, date, bigint, bigint, public.moneda_enum)
-  FROM anon, authenticated;
+  FROM anon, authenticated, public;
