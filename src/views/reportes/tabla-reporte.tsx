@@ -6,7 +6,7 @@ import {
 import type { TablaReporte as Tabla } from "@/lib/export/tipos"
 import { formatearValor } from "./formato"
 
-// Solo numero/moneda/porcentaje se comparan en columna: van a la derecha con
+// Solo número/moneda/porcentaje se comparan en columna: van a la derecha con
 // tabular-nums. Fecha y texto se leen, no se suman, y van a la izquierda.
 const TIPOS_NUMERICOS = new Set(["numero", "moneda", "porcentaje"])
 

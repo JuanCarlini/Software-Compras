@@ -18,7 +18,7 @@ interface FilaDeuda {
 }
 
 // Severidad real, no identidad de serie: por eso paleta de estado. La etiqueta del
-// tramo esta siempre visible en la leyenda; un color de estado nunca comunica solo.
+// tramo está siempre visible en la leyenda; un color de estado nunca comunica solo.
 const TRAMOS = [
   { clave: "0-30", color: "var(--rep-estado-bueno)" },
   { clave: "31-60", color: "var(--rep-estado-aviso)" },
@@ -104,7 +104,7 @@ export function TabDeuda() {
                           fill={t.color}
                           barSize={18}
                           // Separación por hueco de superficie, no un borde: un trazo en color
-                          // de grilla seria una linea dibujada alrededor de cada segmento.
+                          // de grilla sería una línea dibujada alrededor de cada segmento.
                           stroke="var(--rep-superficie)"
                           strokeWidth={2}
                         />

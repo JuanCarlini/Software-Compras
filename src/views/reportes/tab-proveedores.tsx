@@ -39,9 +39,8 @@ export function TabProveedores() {
           comprado: Number(f.comprado),
         }))
 
-        // Top cinco mas "Otros": seis segmentos como maximo, el limite en el que una torta
-        // sigue siendo legible de un vistazo. Con cinco proveedores o menos en esta moneda
-        // no queda resto que agrupar, y un segmento "Otros" en cero mentiria sobre los datos.
+        // Top cinco más "Otros": seis segmentos como máximo, el límite legible de un vistazo.
+        // Con cinco proveedores o menos no queda resto, y "Otros" en cero mentiría sobre los datos.
         const top5 = ordenadas.slice(0, 5).map((f) => ({ nombre: f.proveedor, monto: Number(f.comprado) }))
         const resto = ordenadas.slice(5).reduce((s, f) => s + Number(f.comprado), 0)
         const composicion = resto > 0 ? [...top5, { nombre: "Otros", monto: resto }] : top5
