@@ -1,6 +1,7 @@
 import { ReporteRepository } from "@/repositories/reporte.repository"
 import { FiltrosReporteSchema, type FiltrosReporte } from "@/shared/validation/reporte-validation"
 import type { TablaReporte } from "@/lib/export/tipos"
+import { COLUMNAS, calcularTotales, describirFiltros } from "@/lib/export/tablas"
 
 export interface ReporteResultado {
   titulo: string
@@ -8,8 +9,8 @@ export interface ReporteResultado {
   tablas: TablaReporte[]
 }
 
-// Template Method: el esqueleto validar -> consultar -> adaptar es identico en los cinco
-// reportes; las subclases solo aportan los dos pasos que varian.
+// Template Method: el esqueleto validar -> consultar -> adaptar es identico en los seis
+// reportes; las subclases solo aportan consultar, que es el unico paso que varia.
 export abstract class ReporteBase<TFila> {
   abstract readonly nombre: string
   abstract readonly titulo: string
@@ -25,7 +26,20 @@ export abstract class ReporteBase<TFila> {
   }
 
   protected abstract consultar(f: FiltrosReporte): Promise<TFila[]>
-  protected abstract adaptar(filas: TFila[], f: FiltrosReporte): TablaReporte[]
+
+  // Paso sobrescribible con implementacion por defecto: las columnas salen de COLUMNAS
+  // por nombre de reporte, asi que ninguna subclase necesita repetir este cuerpo.
+  protected adaptar(filas: TFila[], f: FiltrosReporte): TablaReporte[] {
+    const columnas = COLUMNAS[this.nombre]
+    const filasGenericas = filas as unknown as Array<Record<string, unknown>>
+    return [{
+      titulo: this.titulo,
+      filtros: describirFiltros(f),
+      columnas,
+      filas: filasGenericas,
+      totales: calcularTotales(columnas, filasGenericas),
+    }]
+  }
 }
 
 export class ReporteCircuito extends ReporteBase<Record<string, unknown>> {
@@ -34,21 +48,6 @@ export class ReporteCircuito extends ReporteBase<Record<string, unknown>> {
 
   protected consultar(f: FiltrosReporte) {
     return ReporteRepository.circuito<Record<string, unknown>>(f)
-  }
-
-  protected adaptar(filas: Record<string, unknown>[], f: FiltrosReporte): TablaReporte[] {
-    return [{
-      titulo: this.titulo,
-      filtros: describirFiltros(f),
-      columnas: [
-        { clave: "moneda", titulo: "Moneda", tipo: "texto" },
-        { clave: "comprado", titulo: "Comprado", tipo: "moneda" },
-        { clave: "certificado", titulo: "Certificado", tipo: "moneda" },
-        { clave: "facturado", titulo: "Facturado", tipo: "moneda" },
-        { clave: "pagado", titulo: "Pagado", tipo: "moneda" },
-      ],
-      filas,
-    }]
   }
 }
 
@@ -59,20 +58,6 @@ export class ReporteCircuitoMensual extends ReporteBase<Record<string, unknown>>
   protected consultar(f: FiltrosReporte) {
     return ReporteRepository.circuitoMensual<Record<string, unknown>>(f)
   }
-
-  protected adaptar(filas: Record<string, unknown>[], f: FiltrosReporte): TablaReporte[] {
-    return [{
-      titulo: this.titulo,
-      filtros: describirFiltros(f),
-      columnas: [
-        { clave: "moneda", titulo: "Moneda", tipo: "texto" },
-        { clave: "mes", titulo: "Mes", tipo: "fecha" },
-        { clave: "comprado", titulo: "Comprado", tipo: "moneda" },
-        { clave: "pagado", titulo: "Pagado", tipo: "moneda" },
-      ],
-      filas,
-    }]
-  }
 }
 
 export class ReportePendienteCertificar extends ReporteBase<Record<string, unknown>> {
@@ -81,24 +66,6 @@ export class ReportePendienteCertificar extends ReporteBase<Record<string, unkno
 
   protected consultar(f: FiltrosReporte) {
     return ReporteRepository.pendienteCertificar<Record<string, unknown>>(f)
-  }
-
-  protected adaptar(filas: Record<string, unknown>[], f: FiltrosReporte): TablaReporte[] {
-    return [{
-      titulo: this.titulo,
-      filtros: describirFiltros(f),
-      columnas: [
-        { clave: "numero_oc", titulo: "OC", tipo: "texto" },
-        { clave: "proveedor", titulo: "Proveedor", tipo: "texto" },
-        { clave: "proyecto", titulo: "Proyecto", tipo: "texto" },
-        { clave: "fecha_oc", titulo: "Fecha", tipo: "fecha" },
-        { clave: "moneda", titulo: "Moneda", tipo: "texto" },
-        { clave: "total_oc", titulo: "Total OC", tipo: "moneda" },
-        { clave: "pendiente", titulo: "Pendiente", tipo: "moneda" },
-        { clave: "dias", titulo: "Días", tipo: "numero" },
-      ],
-      filas,
-    }]
   }
 }
 
@@ -109,25 +76,6 @@ export class ReporteDeuda extends ReporteBase<Record<string, unknown>> {
   protected consultar(f: FiltrosReporte) {
     return ReporteRepository.deuda<Record<string, unknown>>(f)
   }
-
-  protected adaptar(filas: Record<string, unknown>[], f: FiltrosReporte): TablaReporte[] {
-    return [{
-      titulo: this.titulo,
-      filtros: describirFiltros(f),
-      columnas: [
-        { clave: "numero_factura", titulo: "Factura", tipo: "texto" },
-        { clave: "proveedor", titulo: "Proveedor", tipo: "texto" },
-        { clave: "fecha_emision", titulo: "Emisión", tipo: "fecha" },
-        { clave: "moneda", titulo: "Moneda", tipo: "texto" },
-        { clave: "total_facturado", titulo: "Total", tipo: "moneda" },
-        { clave: "pagado", titulo: "Pagado", tipo: "moneda" },
-        { clave: "saldo", titulo: "Saldo", tipo: "moneda" },
-        { clave: "dias", titulo: "Días", tipo: "numero" },
-        { clave: "tramo", titulo: "Tramo", tipo: "texto" },
-      ],
-      filas,
-    }]
-  }
 }
 
 export class ReporteProveedores extends ReporteBase<Record<string, unknown>> {
@@ -136,25 +84,6 @@ export class ReporteProveedores extends ReporteBase<Record<string, unknown>> {
 
   protected consultar(f: FiltrosReporte) {
     return ReporteRepository.proveedores<Record<string, unknown>>(f)
-  }
-
-  protected adaptar(filas: Record<string, unknown>[], f: FiltrosReporte): TablaReporte[] {
-    return [{
-      titulo: this.titulo,
-      filtros: describirFiltros(f),
-      columnas: [
-        { clave: "proveedor", titulo: "Proveedor", tipo: "texto" },
-        { clave: "estado", titulo: "Estado", tipo: "texto" },
-        { clave: "moneda", titulo: "Moneda", tipo: "texto" },
-        { clave: "comprado", titulo: "Comprado", tipo: "moneda" },
-        { clave: "certificado", titulo: "Certificado", tipo: "moneda" },
-        { clave: "facturado", titulo: "Facturado", tipo: "moneda" },
-        { clave: "pagado", titulo: "Pagado", tipo: "moneda" },
-        { clave: "deuda", titulo: "Deuda", tipo: "moneda" },
-        { clave: "cantidad_oc", titulo: "OC", tipo: "numero" },
-      ],
-      filas,
-    }]
   }
 }
 
@@ -165,34 +94,9 @@ export class ReporteProyectos extends ReporteBase<Record<string, unknown>> {
   protected consultar(f: FiltrosReporte) {
     return ReporteRepository.proyectos<Record<string, unknown>>(f)
   }
-
-  protected adaptar(filas: Record<string, unknown>[], f: FiltrosReporte): TablaReporte[] {
-    return [{
-      titulo: this.titulo,
-      filtros: describirFiltros(f),
-      columnas: [
-        { clave: "proyecto", titulo: "Proyecto", tipo: "texto" },
-        { clave: "tarea", titulo: "Tarea", tipo: "texto" },
-        { clave: "moneda", titulo: "Moneda", tipo: "texto" },
-        { clave: "comprado", titulo: "Comprado", tipo: "moneda" },
-        { clave: "certificado", titulo: "Certificado", tipo: "moneda" },
-        { clave: "pendiente", titulo: "Pendiente", tipo: "moneda" },
-      ],
-      filas,
-    }]
-  }
 }
 
-function describirFiltros(f: FiltrosReporte): Record<string, string> {
-  return {
-    Período: `${f.desde} a ${f.hasta}`,
-    Moneda: f.moneda ?? "Todas",
-    Proveedor: f.proveedorId ? String(f.proveedorId) : "Todos",
-    Proyecto: f.proyectoId ? String(f.proyectoId) : "Todos",
-  }
-}
-
-// Registry: despacha por nombre y es lo que evita cinco rutas copiadas.
+// Registry: despacha por nombre y es lo que evita seis rutas copiadas.
 export const REPORTES: Record<string, ReporteBase<Record<string, unknown>>> = {
   circuito: new ReporteCircuito(),
   "circuito-mensual": new ReporteCircuitoMensual(),
