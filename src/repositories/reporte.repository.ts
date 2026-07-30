@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/service"
-import type { FiltrosReporte } from "@/shared/validation/reporte.schema"
+import type { FiltrosReporte } from "@/shared/validation/reporte-validation"
 
-// Los RPC hacen toda la agregacion: aca solo se traducen los filtros a parametros.
+// Los RPC hacen toda la agregación: acá solo se traducen los filtros a parámetros.
 // No usa createBaseRepository porque no es CRUD sobre una tabla.
 function parametros(f: FiltrosReporte) {
   return {
