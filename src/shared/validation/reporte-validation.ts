@@ -13,13 +13,20 @@ function hoy(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
+export const MONEDA_TODAS = "todas"
+
+const MONEDA_FILTRO = [...MONEDAS, MONEDA_TODAS] as const
+
 export const FiltrosReporteSchema = z
   .object({
     desde: z.string().date().default(haceDoceMeses),
     hasta: z.string().date().default(hoy),
     proveedorId: z.coerce.number().int().positive().nullable().default(null),
     proyectoId: z.coerce.number().int().positive().nullable().default(null),
-    moneda: z.enum(MONEDAS).nullable().default("ARS"),
+    moneda: z
+      .enum(MONEDA_FILTRO)
+      .default("ARS")
+      .transform((v) => (v === MONEDA_TODAS ? null : v)),
   })
   .refine((f) => f.desde <= f.hasta, {
     message: "La fecha desde no puede ser posterior a la fecha hasta",

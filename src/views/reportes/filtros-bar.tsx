@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { MONEDAS } from "@/models/enums"
+import { MONEDA_TODAS } from "@/shared/validation/reporte-validation"
 
 export interface Opcion {
   id: number
@@ -33,11 +34,21 @@ export function FiltrosBar({
   const pathname = usePathname()
   const params = useSearchParams()
 
+  function navegar(siguiente: URLSearchParams) {
+    router.replace(`${pathname}?${siguiente.toString()}`)
+  }
+
   function setFiltro(clave: string, valor: string) {
     const siguiente = new URLSearchParams(params.toString())
     if (valor === "" || valor === TODAS) siguiente.delete(clave)
     else siguiente.set(clave, valor)
-    router.replace(`${pathname}?${siguiente.toString()}`)
+    navegar(siguiente)
+  }
+
+  function setMoneda(valor: string) {
+    const siguiente = new URLSearchParams(params.toString())
+    siguiente.set("moneda", valor)
+    navegar(siguiente)
   }
 
   return (
@@ -66,7 +77,7 @@ export function FiltrosBar({
         <Label htmlFor="moneda">Moneda</Label>
         <Select
           value={params.get("moneda") ?? "ARS"}
-          onValueChange={(v) => setFiltro("moneda", v)}
+          onValueChange={(v) => setMoneda(v)}
         >
           <SelectTrigger id="moneda" className="w-32">
             <SelectValue />
@@ -77,7 +88,7 @@ export function FiltrosBar({
                 {m}
               </SelectItem>
             ))}
-            <SelectItem value={TODAS}>Todas</SelectItem>
+            <SelectItem value={MONEDA_TODAS}>Todas</SelectItem>
           </SelectContent>
         </Select>
       </div>
