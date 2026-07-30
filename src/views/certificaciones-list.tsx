@@ -8,11 +8,19 @@ import { SearchBar } from "@/components/ui/search-bar"
 import { SearchStats } from "@/components/ui/search-stats"
 import { Eye } from "lucide-react"
 import { ListShell } from "@/components/ui/list-shell"
+import { OrdenControl, useOrden, type CampoOrden } from "@/components/ui/orden-control"
 import Link from "next/link"
 import { searchWithScore } from "@/shared/search-utils"
 import { formatCurrency } from "@/shared/format-utils"
 import { showErrorToast } from "@/shared/toast-helpers"
 import { StatusBadge } from "@/components/status-badge"
+
+const CAMPOS_ORDEN: CampoOrden[] = [
+  { clave: "numero_cert", etiqueta: "Número de certificación" },
+  { clave: "fecha_cert", etiqueta: "Fecha" },
+  { clave: "total_con_iva", etiqueta: "Total" },
+  { clave: "estado", etiqueta: "Estado" },
+]
 
 export function CertificacionesList() {
   const [certificaciones, setCertificaciones] = useState<any[]>([])
@@ -40,12 +48,17 @@ export function CertificacionesList() {
     }
   }
 
+  const orden = useOrden(CAMPOS_ORDEN)
+
+
   const filteredCertificaciones = searchWithScore(
     certificaciones,
     searchTerm,
     ["numero_cert", "numero_oc", "proveedor_nombre", "estado"],
     { numero_cert: 3, numero_oc: 2, proveedor_nombre: 2, estado: 2 }
   )
+
+  const ordenados = orden.ordenar(filteredCertificaciones)
 
   return (
     <ListShell loading={loading} error={error} loadingText="Cargando certificaciones...">
@@ -69,6 +82,10 @@ export function CertificacionesList() {
           entityName="certificación"
         />
 
+        <div className="mb-4 flex justify-end">
+          <OrdenControl {...orden} />
+        </div>
+
         <div className="space-y-4">
           {filteredCertificaciones.length === 0 ? (
             <div className="text-center py-8">
@@ -79,7 +96,7 @@ export function CertificacionesList() {
               </p>
             </div>
           ) : (
-            filteredCertificaciones.map((cert: any) => (
+            ordenados.map((cert: any) => (
               <div
                 key={cert.id}
                 className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors"

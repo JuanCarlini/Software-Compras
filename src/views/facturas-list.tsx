@@ -8,10 +8,18 @@ import { SearchStats } from "@/components/ui/search-stats"
 import { Eye } from "lucide-react"
 import Link from "next/link"
 import { ListShell } from "@/components/ui/list-shell"
+import { OrdenControl, useOrden, type CampoOrden } from "@/components/ui/orden-control"
 import { searchWithScore } from "@/shared/search-utils"
 import { formatCurrency } from "@/shared/format-utils"
 import { showErrorToast } from "@/shared/toast-helpers"
 import { StatusBadge } from "@/components/status-badge"
+
+const CAMPOS_ORDEN: CampoOrden[] = [
+  { clave: "numero_factura", etiqueta: "Número de factura" },
+  { clave: "fecha_emision", etiqueta: "Fecha de emisión" },
+  { clave: "total_con_iva", etiqueta: "Total" },
+  { clave: "estado", etiqueta: "Estado" },
+]
 
 export function FacturasList() {
   const [facturas, setFacturas] = useState<any[]>([])
@@ -39,12 +47,17 @@ export function FacturasList() {
     }
   }
 
+  const orden = useOrden(CAMPOS_ORDEN)
+
+
   const filteredFacturas = searchWithScore(
     facturas,
     searchTerm,
     ["numero_factura", "proveedor_nombre", "estado"],
     { numero_factura: 3, proveedor_nombre: 2, estado: 2 }
   )
+
+  const ordenados = orden.ordenar(filteredFacturas)
 
   return (
     <ListShell loading={loading} error={error} loadingText="Cargando facturas...">
@@ -68,6 +81,10 @@ export function FacturasList() {
           entityName="factura"
         />
 
+        <div className="mb-4 flex justify-end">
+          <OrdenControl {...orden} />
+        </div>
+
         <div className="space-y-4">
           {filteredFacturas.length === 0 ? (
             <div className="text-center py-8">
@@ -78,7 +95,7 @@ export function FacturasList() {
               </p>
             </div>
           ) : (
-            filteredFacturas.map((factura: any) => (
+            ordenados.map((factura: any) => (
               <div
                 key={factura.id}
                 className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors"

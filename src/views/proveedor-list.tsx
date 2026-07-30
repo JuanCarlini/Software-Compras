@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { SearchBar } from "@/components/ui/search-bar"
 import { Eye, Edit, CheckCircle, XCircle, Building2, Mail, Phone, MapPin } from "lucide-react"
 import { ListShell } from "@/components/ui/list-shell"
+import { OrdenControl, useOrden, type CampoOrden } from "@/components/ui/orden-control"
 import Link from "next/link"
 import { useState } from "react"
 import { useProveedores } from "@/hooks/use-proveedores"
@@ -14,6 +15,12 @@ import { SearchStats } from "@/components/ui/search-stats"
 import { StatusBadge } from "@/components/status-badge"
 import { useAuth } from "@/components/auth-context"
 import { canModificarProveedor, stringToUserRole } from "@/shared/permissions"
+
+const CAMPOS_ORDEN: CampoOrden[] = [
+  { clave: "nombre", etiqueta: "Nombre" },
+  { clave: "cuit", etiqueta: "CUIT" },
+  { clave: "estado", etiqueta: "Estado" },
+]
 
 export function ProveedorList() {
   const { proveedores, loading, error, activarProveedor, suspenderProveedor } = useProveedores()
@@ -25,6 +32,8 @@ export function ProveedorList() {
   const canModify = userRole ? canModificarProveedor(userRole) : false
 
   // buscamos solo por los campos que realmente existen en el formulario/base
+  const orden = useOrden(CAMPOS_ORDEN)
+
   const filteredProveedores = searchWithScore(
     proveedores,
     searchTerm,
@@ -37,6 +46,7 @@ export function ProveedorList() {
       direccion: 1,
     }
   )
+  const ordenados = orden.ordenar(filteredProveedores)
 
   const handleActivar = async (id: number) => {
     try {
@@ -82,6 +92,10 @@ export function ProveedorList() {
           entityName="proveedor"
         />
 
+        <div className="mb-4 flex justify-end">
+          <OrdenControl {...orden} />
+        </div>
+
         <div className="space-y-4">
           {filteredProveedores.length === 0 ? (
             <div className="text-center py-8">
@@ -92,7 +106,7 @@ export function ProveedorList() {
               </p>
             </div>
           ) : (
-            filteredProveedores.map((proveedor) => (
+            ordenados.map((proveedor) => (
               <div
                 key={proveedor.id}
                 className="border border-border rounded-lg p-4 hover:bg-accent transition-colors"

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { SearchBar } from "@/components/ui/search-bar"
 import { SearchStats } from "@/components/ui/search-stats"
 import { ListShell } from "@/components/ui/list-shell"
+import { OrdenControl, useOrden, type CampoOrden } from "@/components/ui/orden-control"
 import { Edit, FolderKanban } from "lucide-react"
 import { useProyectos } from "@/hooks/use-proyectos"
 import { useAuth } from "@/components/auth-context"
@@ -23,18 +24,28 @@ const ESTILO_ESTADO: Record<EstadoProyecto, string> = {
   cancelado: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100",
 }
 
+const CAMPOS_ORDEN: CampoOrden[] = [
+  { clave: "nombre", etiqueta: "Nombre" },
+  { clave: "codigo", etiqueta: "Código" },
+  { clave: "fecha_inicio", etiqueta: "Fecha de inicio" },
+  { clave: "estado", etiqueta: "Estado" },
+]
+
 export function ProyectoList() {
   const { proyectos, cargando, error } = useProyectos()
   const { puede } = useAuth()
   const [busqueda, setBusqueda] = useState("")
+  const orden = useOrden(CAMPOS_ORDEN, "asc")
 
   const puedeEditar = puede("proyectos", "crear")
 
-  const filtrados = searchWithScore(
-    proyectos,
-    busqueda,
-    ["nombre", "codigo", "descripcion"],
-    { nombre: 3, codigo: 3, descripcion: 1 }
+  const filtrados = orden.ordenar(
+    searchWithScore(
+      proyectos,
+      busqueda,
+      ["nombre", "codigo", "descripcion"],
+      { nombre: 3, codigo: 3, descripcion: 1 }
+    )
   )
 
   return (
@@ -45,12 +56,15 @@ export function ProyectoList() {
           onChange={setBusqueda}
           placeholder="Buscar por nombre, código o descripción..."
         />
-        <SearchStats
-          totalItems={proyectos.length}
-          filteredItems={filtrados.length}
-          searchTerm={busqueda}
-          entityName="proyectos"
-        />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <SearchStats
+            totalItems={proyectos.length}
+            filteredItems={filtrados.length}
+            searchTerm={busqueda}
+            entityName="proyectos"
+          />
+          <OrdenControl {...orden} />
+        </div>
 
         {filtrados.length === 0 ? (
           <Card>

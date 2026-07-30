@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { SearchBar } from "@/components/ui/search-bar"
 import { Eye, CheckCircle, XCircle, Loader2 } from "lucide-react"
 import { ListShell } from "@/components/ui/list-shell"
+import { OrdenControl, useOrden, type CampoOrden } from "@/components/ui/orden-control"
 import Link from "next/link"
 import { useOrders } from "@/hooks/use-orders"
 import { formatCurrency } from "@/shared/format-utils"
@@ -16,6 +17,13 @@ import { StatusBadge } from "@/components/status-badge"
 import { useAuth } from "@/components/auth-context"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 
+const CAMPOS_ORDEN: CampoOrden[] = [
+  { clave: "numero_oc", etiqueta: "Número de OC" },
+  { clave: "fecha_oc", etiqueta: "Fecha" },
+  { clave: "total_con_iva", etiqueta: "Total" },
+  { clave: "estado", etiqueta: "Estado" },
+]
+
 export function OrdenCompraList() {
   const { orders, loading, error, cambiarEstadoOrden } = useOrders()
   const { user } = useAuth()
@@ -24,6 +32,9 @@ export function OrdenCompraList() {
 
   const userRole = user ? stringToUserRole(user.rol) : null
   const canAnular = userRole ? canAnularDocumento(userRole) : false
+
+  const orden = useOrden(CAMPOS_ORDEN)
+
 
   const filteredOrders = searchWithScore(
     orders,
@@ -35,6 +46,8 @@ export function OrdenCompraList() {
       observaciones: 1,
     }
   )
+
+  const ordenados = orden.ordenar(filteredOrders)
 
   // El circuito no saltea etapas: de borrador se manda a aprobar, y recién de
   // en_aprobacion se aprueba. Ir directo a 'aprobado' devuelve 409.
@@ -75,6 +88,10 @@ export function OrdenCompraList() {
           entityName="orden"
         />
 
+        <div className="mb-4 flex justify-end">
+          <OrdenControl {...orden} />
+        </div>
+
         <div className="space-y-4">
           {filteredOrders.length === 0 ? (
             <div className="text-center py-8">
@@ -85,7 +102,7 @@ export function OrdenCompraList() {
               </p>
             </div>
           ) : (
-            filteredOrders.map((orden: any) => (
+            ordenados.map((orden: any) => (
               <div
                 key={orden.id}
                 className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors"
@@ -94,7 +111,7 @@ export function OrdenCompraList() {
                   {/* columna 1: número y fecha */}
                   <div>
                     <p className="font-medium text-foreground">
-                      {orden.numero_oc ? `OC #${orden.numero_oc}` : `OC ID ${orden.id}`}
+                      {orden.numero_oc ?? `OC ID ${orden.id}`}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {/* en la tabla la fecha es fecha_oc (date), no fecha_creacion */}
