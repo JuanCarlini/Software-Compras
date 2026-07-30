@@ -1,6 +1,6 @@
 "use client"
 
-import { BarChart3, Building2, CreditCard, ShoppingCart, Home, FileCheck, Receipt, Shield, LogOut, ClipboardList } from "lucide-react"
+import { BarChart3, Building2, CreditCard, ShoppingCart, Home, FileCheck, FolderKanban, Receipt, Shield, LogOut, ClipboardList } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
@@ -29,6 +29,7 @@ const menuItems = [
   { title: "Facturas", url: "/facturas", icon: Receipt, modulo: "facturas" },
   { title: "Órdenes de Pago", url: "/ordenes-pago", icon: CreditCard, modulo: "ordenes_pago" },
   { title: "Proveedores", url: "/proveedores", icon: Building2, modulo: "proveedores" },
+  { title: "Proyectos", url: "/proyectos", icon: FolderKanban, modulo: "proyectos" },
   { title: "Reportes", url: "/reportes", icon: BarChart3, modulo: "reportes" },
 ]
 
