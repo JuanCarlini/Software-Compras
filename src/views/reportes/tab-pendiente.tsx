@@ -15,13 +15,13 @@ interface FilaPendiente {
 }
 
 export function TabPendiente() {
-  const { resultado, cargando, error } = useReporte("pendiente-certificar")
+  const { reporte, loading, error } = useReporte("pendiente-certificar")
 
-  if (!resultado) {
+  if (!reporte) {
     return <p className="py-8 text-center text-muted-foreground">{error ?? "Cargando…"}</p>
   }
 
-  const tabla = resultado.tablas[0]
+  const tabla = reporte.tablas[0]
   const filas = tabla.filas as unknown as FilaPendiente[]
 
   // Con el filtro de moneda en "todas" las filas llegan mezcladas en ARS y USD: sumar
@@ -30,7 +30,7 @@ export function TabPendiente() {
 
   return (
     // Al refiltrar se conserva el render anterior atenuado: sin salto a esqueleto.
-    <div className={`space-y-6 ${cargando ? "opacity-40 transition-opacity" : ""}`}>
+    <div className={`space-y-6 ${loading ? "opacity-40 transition-opacity" : ""}`}>
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       {monedas.map((moneda) => {

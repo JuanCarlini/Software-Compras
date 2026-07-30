@@ -18,13 +18,13 @@ interface FilaProyecto {
 }
 
 export function TabProyectos() {
-  const { resultado, cargando, error } = useReporte("proyectos")
+  const { reporte, loading, error } = useReporte("proyectos")
 
-  if (!resultado) {
+  if (!reporte) {
     return <p className="py-8 text-center text-muted-foreground">{error ?? "Cargando…"}</p>
   }
 
-  const filas = resultado.tablas[0].filas as unknown as FilaProyecto[]
+  const filas = reporte.tablas[0].filas as unknown as FilaProyecto[]
 
   // Con el filtro de moneda en "todas" las filas llegan mezcladas en ARS y USD: la
   // barra por proyecto se arma por moneda, igual que en las otras pestañas.
@@ -32,7 +32,7 @@ export function TabProyectos() {
 
   return (
     // Al refiltrar se conserva el render anterior atenuado: sin salto a esqueleto.
-    <div className={`space-y-6 ${cargando ? "opacity-40 transition-opacity" : ""}`}>
+    <div className={`space-y-6 ${loading ? "opacity-40 transition-opacity" : ""}`}>
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       {monedas.map((moneda) => {

@@ -16,30 +16,30 @@ export function useReporte(nombre: string) {
   const searchParams = useSearchParams()
   const query = searchParams.toString()
 
-  const [resultado, setResultado] = useState<ResultadoReporte | null>(null)
-  const [cargando, setCargando] = useState(true)
+  const [reporte, setReporte] = useState<ResultadoReporte | null>(null)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const control = new AbortController()
 
     async function traer() {
-      setCargando(true)
+      setLoading(true)
       try {
         const res = await fetch(`/api/reportes/${nombre}?${query}`, { signal: control.signal })
         if (!res.ok) {
           const cuerpo = await res.json().catch(() => ({}))
           throw new Error(cuerpo.error ?? `Error ${res.status}`)
         }
-        setResultado(await res.json())
+        setReporte(await res.json())
         setError(null)
       } catch (e) {
         if ((e as Error).name === "AbortError") return
-        // Se conserva el resultado anterior a propósito: vaciar la pantalla ante un
+        // Se conserva el reporte anterior a propósito: vaciar la pantalla ante un
         // fallo de red descarta lo que el usuario estaba leyendo.
         setError(e instanceof Error ? e.message : "Error desconocido")
       } finally {
-        if (!control.signal.aborted) setCargando(false)
+        if (!control.signal.aborted) setLoading(false)
       }
     }
 
@@ -47,5 +47,5 @@ export function useReporte(nombre: string) {
     return () => control.abort()
   }, [nombre, query])
 
-  return { resultado, cargando, error }
+  return { reporte, loading, error }
 }

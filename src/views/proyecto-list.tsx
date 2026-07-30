@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { SearchBar } from "@/components/ui/search-bar"
 import { SearchStats } from "@/components/ui/search-stats"
 import { ListShell } from "@/components/ui/list-shell"
-import { OrdenControl, useOrden, type CampoOrden } from "@/components/ui/orden-control"
+import { SortControl, useSort, type SortField } from "@/components/ui/sort-control"
 import { Edit, FolderKanban } from "lucide-react"
 import { useProyectos } from "@/hooks/use-proyectos"
 import { useAuth } from "@/components/auth-context"
@@ -24,49 +24,49 @@ const ESTILO_ESTADO: Record<EstadoProyecto, string> = {
   cancelado: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100",
 }
 
-const CAMPOS_ORDEN: CampoOrden[] = [
-  { clave: "nombre", etiqueta: "Nombre" },
-  { clave: "codigo", etiqueta: "Código" },
-  { clave: "fecha_inicio", etiqueta: "Fecha de inicio" },
-  { clave: "estado", etiqueta: "Estado" },
+const SORT_FIELDS: SortField[] = [
+  { key: "nombre", label: "Nombre" },
+  { key: "codigo", label: "Código" },
+  { key: "fecha_inicio", label: "Fecha de inicio" },
+  { key: "estado", label: "Estado" },
 ]
 
 export function ProyectoList() {
-  const { proyectos, cargando, error } = useProyectos()
+  const { proyectos, loading, error } = useProyectos()
   const { puede } = useAuth()
-  const [busqueda, setBusqueda] = useState("")
-  const orden = useOrden(CAMPOS_ORDEN, "asc")
+  const [searchTerm, setSearchTerm] = useState("")
+  const sort = useSort(SORT_FIELDS, "asc")
 
-  const puedeEditar = puede("proyectos", "crear")
+  const canEdit = puede("proyectos", "crear")
 
-  const filtrados = orden.ordenar(
+  const filteredProyectos = sort.apply(
     searchWithScore(
       proyectos,
-      busqueda,
+      searchTerm,
       ["nombre", "codigo", "descripcion"],
       { nombre: 3, codigo: 3, descripcion: 1 }
     )
   )
 
   return (
-    <ListShell loading={cargando} error={error} loadingText="Cargando proyectos...">
+    <ListShell loading={loading} error={error} loadingText="Cargando proyectos...">
       <div className="space-y-4">
         <SearchBar
-          value={busqueda}
-          onChange={setBusqueda}
+          value={searchTerm}
+          onChange={setSearchTerm}
           placeholder="Buscar por nombre, código o descripción..."
         />
         <div className="flex flex-wrap items-center justify-between gap-2">
           <SearchStats
             totalItems={proyectos.length}
-            filteredItems={filtrados.length}
-            searchTerm={busqueda}
+            filteredItems={filteredProyectos.length}
+            searchTerm={searchTerm}
             entityName="proyectos"
           />
-          <OrdenControl {...orden} />
+          <SortControl {...sort} />
         </div>
 
-        {filtrados.length === 0 ? (
+        {filteredProyectos.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-muted-foreground">
               {proyectos.length === 0
@@ -76,7 +76,7 @@ export function ProyectoList() {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {filtrados.map((proyecto) => (
+            {filteredProyectos.map((proyecto) => (
               <Card key={proyecto.id}>
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
                   <div className="space-y-1">
@@ -94,7 +94,7 @@ export function ProyectoList() {
                         {LABEL_PROYECTO_ESTADO[proyecto.estado]}
                       </Badge>
                     )}
-                    {puedeEditar && (
+                    {canEdit && (
                       <Button variant="outline" size="sm" asChild>
                         <Link href={`/proyectos/${proyecto.id}/editar`}>
                           <Edit className="mr-2 h-4 w-4" />

@@ -24,22 +24,22 @@ interface FilaMensual extends Record<string, unknown> {
 }
 
 export function TabCircuito() {
-  const { resultado, cargando, error } = useReporte("circuito")
+  const { reporte, loading, error } = useReporte("circuito")
   const mensual = useReporte("circuito-mensual")
 
-  if (!resultado) {
+  if (!reporte) {
     return <p className="py-8 text-center text-muted-foreground">
       {error ?? "Cargando…"}
     </p>
   }
 
-  const tabla = resultado.tablas[0]
+  const tabla = reporte.tablas[0]
   const filas = tabla.filas as unknown as FilaCircuito[]
-  const filasMensuales = (mensual.resultado?.tablas[0]?.filas ?? []) as unknown as FilaMensual[]
+  const filasMensuales = (mensual.reporte?.tablas[0]?.filas ?? []) as unknown as FilaMensual[]
 
   return (
     // Al refiltrar se conserva el render anterior atenuado: sin salto a esqueleto.
-    <div className={`space-y-6 ${cargando ? "opacity-40 transition-opacity" : ""}`}>
+    <div className={`space-y-6 ${loading ? "opacity-40 transition-opacity" : ""}`}>
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       {filas.map((fila) => {

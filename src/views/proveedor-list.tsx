@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { SearchBar } from "@/components/ui/search-bar"
 import { Eye, Edit, CheckCircle, XCircle, Building2, Mail, Phone, MapPin } from "lucide-react"
 import { ListShell } from "@/components/ui/list-shell"
-import { OrdenControl, useOrden, type CampoOrden } from "@/components/ui/orden-control"
+import { SortControl, useSort, type SortField } from "@/components/ui/sort-control"
 import Link from "next/link"
 import { useState } from "react"
 import { useProveedores } from "@/hooks/use-proveedores"
@@ -16,10 +16,10 @@ import { StatusBadge } from "@/components/status-badge"
 import { useAuth } from "@/components/auth-context"
 import { canModificarProveedor, stringToUserRole } from "@/shared/permissions"
 
-const CAMPOS_ORDEN: CampoOrden[] = [
-  { clave: "nombre", etiqueta: "Nombre" },
-  { clave: "cuit", etiqueta: "CUIT" },
-  { clave: "estado", etiqueta: "Estado" },
+const SORT_FIELDS: SortField[] = [
+  { key: "nombre", label: "Nombre" },
+  { key: "cuit", label: "CUIT" },
+  { key: "estado", label: "Estado" },
 ]
 
 export function ProveedorList() {
@@ -32,7 +32,7 @@ export function ProveedorList() {
   const canModify = userRole ? canModificarProveedor(userRole) : false
 
   // buscamos solo por los campos que realmente existen en el formulario/base
-  const orden = useOrden(CAMPOS_ORDEN)
+  const sort = useSort(SORT_FIELDS)
 
   const filteredProveedores = searchWithScore(
     proveedores,
@@ -46,7 +46,7 @@ export function ProveedorList() {
       direccion: 1,
     }
   )
-  const ordenados = orden.ordenar(filteredProveedores)
+  const sorted = sort.apply(filteredProveedores)
 
   const handleActivar = async (id: number) => {
     try {
@@ -93,7 +93,7 @@ export function ProveedorList() {
         />
 
         <div className="mb-4 flex justify-end">
-          <OrdenControl {...orden} />
+          <SortControl {...sort} />
         </div>
 
         <div className="space-y-4">
@@ -106,7 +106,7 @@ export function ProveedorList() {
               </p>
             </div>
           ) : (
-            ordenados.map((proveedor) => (
+            sorted.map((proveedor) => (
               <div
                 key={proveedor.id}
                 className="border border-border rounded-lg p-4 hover:bg-accent transition-colors"

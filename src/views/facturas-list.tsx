@@ -8,17 +8,17 @@ import { SearchStats } from "@/components/ui/search-stats"
 import { Eye } from "lucide-react"
 import Link from "next/link"
 import { ListShell } from "@/components/ui/list-shell"
-import { OrdenControl, useOrden, type CampoOrden } from "@/components/ui/orden-control"
+import { SortControl, useSort, type SortField } from "@/components/ui/sort-control"
 import { searchWithScore } from "@/shared/search-utils"
 import { formatCurrency } from "@/shared/format-utils"
 import { showErrorToast } from "@/shared/toast-helpers"
 import { StatusBadge } from "@/components/status-badge"
 
-const CAMPOS_ORDEN: CampoOrden[] = [
-  { clave: "numero_factura", etiqueta: "Número de factura" },
-  { clave: "fecha_emision", etiqueta: "Fecha de emisión" },
-  { clave: "total_con_iva", etiqueta: "Total" },
-  { clave: "estado", etiqueta: "Estado" },
+const SORT_FIELDS: SortField[] = [
+  { key: "numero_factura", label: "Número de factura" },
+  { key: "fecha_emision", label: "Fecha de emisión" },
+  { key: "total_con_iva", label: "Total" },
+  { key: "estado", label: "Estado" },
 ]
 
 export function FacturasList() {
@@ -47,7 +47,7 @@ export function FacturasList() {
     }
   }
 
-  const orden = useOrden(CAMPOS_ORDEN)
+  const sort = useSort(SORT_FIELDS)
 
 
   const filteredFacturas = searchWithScore(
@@ -57,7 +57,7 @@ export function FacturasList() {
     { numero_factura: 3, proveedor_nombre: 2, estado: 2 }
   )
 
-  const ordenados = orden.ordenar(filteredFacturas)
+  const sorted = sort.apply(filteredFacturas)
 
   return (
     <ListShell loading={loading} error={error} loadingText="Cargando facturas...">
@@ -82,7 +82,7 @@ export function FacturasList() {
         />
 
         <div className="mb-4 flex justify-end">
-          <OrdenControl {...orden} />
+          <SortControl {...sort} />
         </div>
 
         <div className="space-y-4">
@@ -95,7 +95,7 @@ export function FacturasList() {
               </p>
             </div>
           ) : (
-            ordenados.map((factura: any) => (
+            sorted.map((factura: any) => (
               <div
                 key={factura.id}
                 className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors"

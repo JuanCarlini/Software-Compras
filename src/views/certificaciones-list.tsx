@@ -8,18 +8,18 @@ import { SearchBar } from "@/components/ui/search-bar"
 import { SearchStats } from "@/components/ui/search-stats"
 import { Eye } from "lucide-react"
 import { ListShell } from "@/components/ui/list-shell"
-import { OrdenControl, useOrden, type CampoOrden } from "@/components/ui/orden-control"
+import { SortControl, useSort, type SortField } from "@/components/ui/sort-control"
 import Link from "next/link"
 import { searchWithScore } from "@/shared/search-utils"
 import { formatCurrency } from "@/shared/format-utils"
 import { showErrorToast } from "@/shared/toast-helpers"
 import { StatusBadge } from "@/components/status-badge"
 
-const CAMPOS_ORDEN: CampoOrden[] = [
-  { clave: "numero_cert", etiqueta: "Número de certificación" },
-  { clave: "fecha_cert", etiqueta: "Fecha" },
-  { clave: "total_con_iva", etiqueta: "Total" },
-  { clave: "estado", etiqueta: "Estado" },
+const SORT_FIELDS: SortField[] = [
+  { key: "numero_cert", label: "Número de certificación" },
+  { key: "fecha_cert", label: "Fecha" },
+  { key: "total_con_iva", label: "Total" },
+  { key: "estado", label: "Estado" },
 ]
 
 export function CertificacionesList() {
@@ -48,7 +48,7 @@ export function CertificacionesList() {
     }
   }
 
-  const orden = useOrden(CAMPOS_ORDEN)
+  const sort = useSort(SORT_FIELDS)
 
 
   const filteredCertificaciones = searchWithScore(
@@ -58,7 +58,7 @@ export function CertificacionesList() {
     { numero_cert: 3, numero_oc: 2, proveedor_nombre: 2, estado: 2 }
   )
 
-  const ordenados = orden.ordenar(filteredCertificaciones)
+  const sorted = sort.apply(filteredCertificaciones)
 
   return (
     <ListShell loading={loading} error={error} loadingText="Cargando certificaciones...">
@@ -83,7 +83,7 @@ export function CertificacionesList() {
         />
 
         <div className="mb-4 flex justify-end">
-          <OrdenControl {...orden} />
+          <SortControl {...sort} />
         </div>
 
         <div className="space-y-4">
@@ -96,7 +96,7 @@ export function CertificacionesList() {
               </p>
             </div>
           ) : (
-            ordenados.map((cert: any) => (
+            sorted.map((cert: any) => (
               <div
                 key={cert.id}
                 className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors"

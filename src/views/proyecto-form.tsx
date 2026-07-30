@@ -32,31 +32,31 @@ import type { Proyecto } from "@/models/proyecto.model"
 type Props = { proyecto?: Proyecto }
 
 export function ProyectoForm({ proyecto }: Props) {
-  const editando = Boolean(proyecto)
+  const isEditing = Boolean(proyecto)
   const router = useRouter()
-  const [enviando, setEnviando] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const form = useForm<CreateProyecto & Partial<UpdateProyecto>>({
-    resolver: zodResolver(editando ? UpdateProyectoSchema : CreateProyectoSchema),
+    resolver: zodResolver(isEditing ? UpdateProyectoSchema : CreateProyectoSchema),
     defaultValues: {
       nombre: proyecto?.nombre ?? "",
       codigo: proyecto?.codigo ?? "",
       descripcion: proyecto?.descripcion ?? "",
       fecha_inicio: proyecto?.fecha_inicio ?? "",
       fecha_fin: proyecto?.fecha_fin ?? "",
-      ...(editando ? { estado: proyecto?.estado ?? "planificado" } : {}),
+      ...(isEditing ? { estado: proyecto?.estado ?? "planificado" } : {}),
     },
   })
 
   const onSubmit = form.handleSubmit(async (data) => {
-    setEnviando(true)
+    setIsLoading(true)
     setError(null)
     try {
       const res = await fetch(
-        editando ? `/api/proyectos/${proyecto!.id}` : "/api/proyectos",
+        isEditing ? `/api/proyectos/${proyecto!.id}` : "/api/proyectos",
         {
-          method: editando ? "PUT" : "POST",
+          method: isEditing ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         }
@@ -67,7 +67,7 @@ export function ProyectoForm({ proyecto }: Props) {
         throw new Error(cuerpo.error ?? `Error ${res.status}`)
       }
 
-      showSuccessToast(editando ? "Proyecto actualizado" : "Proyecto creado")
+      showSuccessToast(isEditing ? "Proyecto actualizado" : "Proyecto creado")
       router.push("/proyectos")
       router.refresh()
     } catch (e) {
@@ -75,14 +75,14 @@ export function ProyectoForm({ proyecto }: Props) {
       setError(mensaje)
       showErrorToast(mensaje)
     } finally {
-      setEnviando(false)
+      setIsLoading(false)
     }
   })
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{editando ? "Editar proyecto" : "Datos del proyecto"}</CardTitle>
+        <CardTitle>{isEditing ? "Editar proyecto" : "Datos del proyecto"}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="space-y-4">
@@ -121,7 +121,7 @@ export function ProyectoForm({ proyecto }: Props) {
               <Input id="fecha_fin" type="date" {...form.register("fecha_fin")} />
             </div>
 
-            {editando && (
+            {isEditing && (
               <div className="space-y-2">
                 <Label htmlFor="estado">Estado</Label>
                 <Select
@@ -154,9 +154,9 @@ export function ProyectoForm({ proyecto }: Props) {
             <Button type="button" variant="outline" onClick={() => router.back()}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={enviando}>
-              {enviando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {editando ? "Guardar cambios" : "Crear proyecto"}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEditing ? "Guardar cambios" : "Crear proyecto"}
             </Button>
           </div>
         </form>

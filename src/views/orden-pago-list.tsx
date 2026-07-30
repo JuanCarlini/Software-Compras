@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { SearchBar } from "@/components/ui/search-bar"
 import { Eye, CheckCircle, XCircle, DollarSign } from "lucide-react"
 import { ListShell } from "@/components/ui/list-shell"
-import { OrdenControl, useOrden, type CampoOrden } from "@/components/ui/orden-control"
+import { SortControl, useSort, type SortField } from "@/components/ui/sort-control"
 import Link from "next/link"
 import { useState } from "react"
 import { useOrdensPago } from "@/hooks/use-ordenes-pago"
@@ -17,11 +17,11 @@ import { StatusBadge } from "@/components/status-badge"
 import { useAuth } from "@/components/auth-context"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 
-const CAMPOS_ORDEN: CampoOrden[] = [
-  { clave: "numero_op", etiqueta: "Número de OP" },
-  { clave: "fecha_op", etiqueta: "Fecha" },
-  { clave: "total_a_pagar", etiqueta: "Total a pagar" },
-  { clave: "estado", etiqueta: "Estado" },
+const SORT_FIELDS: SortField[] = [
+  { key: "numero_op", label: "Número de OP" },
+  { key: "fecha_op", label: "Fecha" },
+  { key: "total_a_pagar", label: "Total a pagar" },
+  { key: "estado", label: "Estado" },
 ]
 
 export function OrdenPagoList() {
@@ -33,7 +33,7 @@ export function OrdenPagoList() {
   const userRole = user ? stringToUserRole(user.rol) : null
   const canModify = userRole ? canAnularDocumento(userRole) : false
 
-  const orden = useOrden(CAMPOS_ORDEN)
+  const sort = useSort(SORT_FIELDS)
 
 
   const filteredOrders = searchWithScore(
@@ -47,7 +47,7 @@ export function OrdenPagoList() {
     }
   )
 
-  const ordenados = orden.ordenar(filteredOrders)
+  const sorted = sort.apply(filteredOrders)
 
   const handleAprobar = async (id: number) => {
     try {
@@ -118,7 +118,7 @@ export function OrdenPagoList() {
         />
 
         <div className="mb-4 flex justify-end">
-          <OrdenControl {...orden} />
+          <SortControl {...sort} />
         </div>
 
         <div className="space-y-4">
@@ -132,7 +132,7 @@ export function OrdenPagoList() {
               </p>
             </div>
           ) : (
-            ordenados.map((orden) => (
+            sorted.map((orden) => (
               <div 
                 key={orden.id}
                 className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors"

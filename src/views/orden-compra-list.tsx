@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { SearchBar } from "@/components/ui/search-bar"
 import { Eye, CheckCircle, XCircle, Loader2 } from "lucide-react"
 import { ListShell } from "@/components/ui/list-shell"
-import { OrdenControl, useOrden, type CampoOrden } from "@/components/ui/orden-control"
+import { SortControl, useSort, type SortField } from "@/components/ui/sort-control"
 import Link from "next/link"
 import { useOrders } from "@/hooks/use-orders"
 import { formatCurrency } from "@/shared/format-utils"
@@ -17,11 +17,11 @@ import { StatusBadge } from "@/components/status-badge"
 import { useAuth } from "@/components/auth-context"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
 
-const CAMPOS_ORDEN: CampoOrden[] = [
-  { clave: "numero_oc", etiqueta: "Número de OC" },
-  { clave: "fecha_oc", etiqueta: "Fecha" },
-  { clave: "total_con_iva", etiqueta: "Total" },
-  { clave: "estado", etiqueta: "Estado" },
+const SORT_FIELDS: SortField[] = [
+  { key: "numero_oc", label: "Número de OC" },
+  { key: "fecha_oc", label: "Fecha" },
+  { key: "total_con_iva", label: "Total" },
+  { key: "estado", label: "Estado" },
 ]
 
 export function OrdenCompraList() {
@@ -33,7 +33,7 @@ export function OrdenCompraList() {
   const userRole = user ? stringToUserRole(user.rol) : null
   const canAnular = userRole ? canAnularDocumento(userRole) : false
 
-  const orden = useOrden(CAMPOS_ORDEN)
+  const sort = useSort(SORT_FIELDS)
 
 
   const filteredOrders = searchWithScore(
@@ -47,7 +47,7 @@ export function OrdenCompraList() {
     }
   )
 
-  const ordenados = orden.ordenar(filteredOrders)
+  const sorted = sort.apply(filteredOrders)
 
   // El circuito no saltea etapas: de borrador se manda a aprobar, y recién de
   // en_aprobacion se aprueba. Ir directo a 'aprobado' devuelve 409.
@@ -89,7 +89,7 @@ export function OrdenCompraList() {
         />
 
         <div className="mb-4 flex justify-end">
-          <OrdenControl {...orden} />
+          <SortControl {...sort} />
         </div>
 
         <div className="space-y-4">
@@ -102,7 +102,7 @@ export function OrdenCompraList() {
               </p>
             </div>
           ) : (
-            ordenados.map((orden: any) => (
+            sorted.map((orden: any) => (
               <div
                 key={orden.id}
                 className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent transition-colors"

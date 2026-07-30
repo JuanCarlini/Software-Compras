@@ -5,11 +5,11 @@ import type { Proyecto } from "@/models/proyecto.model"
 
 export function useProyectos() {
   const [proyectos, setProyectos] = useState<Proyecto[]>([])
-  const [cargando, setCargando] = useState(true)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const refrescar = useCallback(async () => {
-    setCargando(true)
+  const refreshProyectos = useCallback(async () => {
+    setLoading(true)
     try {
       const res = await fetch("/api/proyectos")
       if (!res.ok) {
@@ -21,13 +21,13 @@ export function useProyectos() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error desconocido")
     } finally {
-      setCargando(false)
+      setLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    refrescar()
-  }, [refrescar])
+    refreshProyectos()
+  }, [refreshProyectos])
 
-  return { proyectos, cargando, error, refrescar }
+  return { proyectos, loading, error, refreshProyectos }
 }
