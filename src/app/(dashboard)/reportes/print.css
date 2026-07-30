@@ -1,5 +1,5 @@
 @media print {
-  /* Solo queda el contenido del reporte: la navegacion no aporta nada en papel.
+  /* Solo queda el contenido del reporte: la navegación no aporta nada en papel.
      El sidebar de shadcn se marca con data-sidebar, no con data-slot; no hay aside/nav reales. */
   header,
   [data-sidebar="sidebar"],
@@ -8,38 +8,57 @@
     display: none !important;
   }
 
-  /* Sin esto el navegador descarta los rellenos y los graficos salen en blanco. */
+  /* Sin esto el navegador descarta los rellenos y los gráficos salen en blanco. */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Tokens claros forzados: en modo oscuro el PDF saldria con fondo negro.
-     --background/--foreground/--card son HSL sin la funcion hsl(), igual que en globals.css. */
+  /* Tokens claros forzados: en modo oscuro el PDF saldría con fondo negro y el texto
+     de las tarjetas, casi blanco sobre blanco, quedaría ilegible. */
+  /* Van con !important porque el selector .dark empata en especificidad con el de
+     globals.css: sin esto el override dependería del orden de carga del CSS. */
   :root,
   .dark,
   .reportes-viz,
   .dark .reportes-viz {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --muted-foreground: 0 0% 45.1%;
-    --rep-grid: #e1e0d9;
-    --rep-eje: #c3c2b7;
-    --rep-tinta: #0b0b0b;
-    --rep-tinta-suave: #52514e;
-    --rep-tinta-mutada: #898781;
-    --rep-serie-1: #2a78d6;
-    --rep-serie-2: #eb6834;
-    --rep-serie-3: #1baf7a;
-    --rep-serie-4: #eda100;
-    --rep-serie-5: #e87ba4;
-    --rep-serie-6: #008300;
-    --rep-ordinal-1: #86b6ef;
-    --rep-ordinal-2: #3987e5;
-    --rep-ordinal-3: #2a78d6;
-    --rep-ordinal-4: #1c5cab;
-    --rep-superficie: #ffffff;
+    --background: 0 0% 100% !important;
+    --foreground: 0 0% 3.9% !important;
+    --card: 0 0% 100% !important;
+    --card-foreground: 0 0% 3.9% !important;
+    --popover: 0 0% 100% !important;
+    --popover-foreground: 0 0% 3.9% !important;
+    --primary: 0 0% 9% !important;
+    --primary-foreground: 0 0% 98% !important;
+    --secondary: 0 0% 96.1% !important;
+    --secondary-foreground: 0 0% 9% !important;
+    --muted: 0 0% 96.1% !important;
+    --muted-foreground: 0 0% 45.1% !important;
+    --accent: 0 0% 96.1% !important;
+    --accent-foreground: 0 0% 9% !important;
+    --destructive: 0 84.2% 60.2% !important;
+    --destructive-foreground: 0 0% 98% !important;
+    --border: 0 0% 89.8% !important;
+    --input: 0 0% 89.8% !important;
+
+    /* Los mismos valores del bloque claro de paleta.css, que son los validados
+       para daltonismo: cualquier otro paso invalida esa verificación. */
+    --rep-grid: #e1e0d9 !important;
+    --rep-eje: #c3c2b7 !important;
+    --rep-tinta: #0b0b0b !important;
+    --rep-tinta-suave: #52514e !important;
+    --rep-tinta-mutada: #898781 !important;
+    --rep-serie-1: #2a78d6 !important;
+    --rep-serie-2: #eb6834 !important;
+    --rep-serie-3: #1baf7a !important;
+    --rep-serie-4: #eda100 !important;
+    --rep-serie-5: #e87ba4 !important;
+    --rep-serie-6: #008300 !important;
+    --rep-ordinal-1: #104281 !important;
+    --rep-ordinal-2: #256abf !important;
+    --rep-ordinal-3: #3987e5 !important;
+    --rep-ordinal-4: #86b6ef !important;
+    --rep-superficie: #ffffff !important;
   }
 
   body {
@@ -47,8 +66,8 @@
     color: #0b0b0b !important;
   }
 
-  /* Ningun grafico ni tabla partido entre dos hojas.
-     Card no trae data-slot en esta version de shadcn: se ancla a la clase bg-card. */
+  /* Ningún gráfico ni tabla partido entre dos hojas.
+     Card no trae data-slot en esta versión de shadcn: se ancla a la clase bg-card. */
   .bg-card,
   table {
     break-inside: avoid;
@@ -67,7 +86,7 @@
   }
 }
 
-/* En pantalla el encabezado de impresion no existe. */
+/* En pantalla el encabezado de impresión no existe. */
 .encabezado-impresion {
   display: none;
 }
