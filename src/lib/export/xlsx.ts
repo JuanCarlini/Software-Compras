@@ -18,8 +18,17 @@ function formatoNumerico(tipo: ColumnaReporte["tipo"]): string | undefined {
 // no lo ejecuta al abrir. Igual neutralizamos, por si otra planilla difiere.
 function convertir(valor: unknown, tipo: ColumnaReporte["tipo"]): unknown {
   if (valor === null || valor === undefined) return null
-  if (tipo === "moneda" || tipo === "numero" || tipo === "porcentaje") return Number(valor)
-  if (tipo === "fecha") return new Date(String(valor))
+
+  // Sin la guarda, un valor no convertible escribiría un NaN literal dentro de una
+  // celda numérica: celda vacía es preferible a una planilla corrupta.
+  if (tipo === "moneda" || tipo === "numero" || tipo === "porcentaje") {
+    const numero = Number(valor)
+    return Number.isFinite(numero) ? numero : null
+  }
+  if (tipo === "fecha") {
+    const fecha = new Date(String(valor))
+    return Number.isNaN(fecha.getTime()) ? null : fecha
+  }
   return neutralizarFormula(String(valor))
 }
 
