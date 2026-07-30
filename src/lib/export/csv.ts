@@ -1,8 +1,7 @@
 import type { EstrategiaExport, TablaReporte } from "./tipos"
 
-// Arranca con estos caracteres y Excel lo lee como formula al abrir el archivo.
-// Los campos de texto (proveedor, observaciones) los carga el usuario, asi que
-// hay que neutralizarlo antes de escribirlo, no solo escaparlo para el CSV.
+// Arranca con estos caracteres: Excel lo lee como fórmula al abrir. Los campos de
+// texto los carga el usuario, así que hay que neutralizarlo, no solo escaparlo para el CSV.
 const INICIO_FORMULA = /^[=+\-@]/
 
 // Exportada: xlsx.ts la reutiliza para el mismo riesgo en celdas de texto.
@@ -14,12 +13,12 @@ function escapar(valor: unknown): string {
   if (valor === null || valor === undefined) return ""
   const texto = String(valor)
   // Comillas dobles duplicadas y campo entrecomillado si trae el separador, una
-  // comilla o un salto de linea (\r incluido: sin el, una fila se parte en dos).
+  // comilla o un salto de línea (\r incluido: sin él, una fila se parte en dos).
   return /["\r\n;]/.test(texto) ? `"${texto.replace(/"/g, '""')}"` : texto
 }
 
 // Formatea una celda de fila: solo las columnas de texto pasan por el filtro de
-// formulas, porque numero/moneda/fecha los calcula el sistema, no el usuario.
+// fórmulas, porque número/moneda/fecha los calcula el sistema, no el usuario.
 function celda(valor: unknown, tipo: string): string {
   if (tipo === "texto" && typeof valor === "string") {
     return escapar(neutralizarFormula(valor))
@@ -50,8 +49,8 @@ export class ExportCsv implements EstrategiaExport {
       lineas.push("")
     }
 
-    // BOM UTF-8 como escape (constante nombrada, no caracter invisible en el
-    // fuente): sin el, Excel abre los acentos como caracteres rotos.
+    // BOM UTF-8 como escape (constante nombrada, no carácter invisible en el
+    // fuente): sin él, Excel abre los acentos como caracteres rotos.
     return Buffer.from(BOM_UTF8 + lineas.join("\r\n"), "utf-8")
   }
 }

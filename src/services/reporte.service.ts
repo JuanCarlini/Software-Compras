@@ -9,8 +9,8 @@ export interface ReporteResultado {
   tablas: TablaReporte[]
 }
 
-// Template Method: el esqueleto validar -> consultar -> adaptar es identico en los seis
-// reportes; las subclases solo aportan consultar, que es el unico paso que varia.
+// Template Method: el esqueleto validar -> consultar -> adaptar es idéntico en los seis
+// reportes; las subclases solo aportan consultar, que es el único paso que varía.
 export abstract class ReporteBase<TFila> {
   abstract readonly nombre: string
   abstract readonly titulo: string
@@ -27,8 +27,8 @@ export abstract class ReporteBase<TFila> {
 
   protected abstract consultar(f: FiltrosReporte): Promise<TFila[]>
 
-  // Paso sobrescribible con implementacion por defecto: las columnas salen de COLUMNAS
-  // por nombre de reporte, asi que ninguna subclase necesita repetir este cuerpo.
+  // Paso sobrescribible con implementación por defecto: las columnas salen de COLUMNAS
+  // por nombre de reporte, así que ninguna subclase necesita repetir este cuerpo.
   protected adaptar(filas: TFila[], f: FiltrosReporte): TablaReporte[] {
     const columnas = COLUMNAS[this.nombre]
     const filasGenericas = filas as unknown as Array<Record<string, unknown>>

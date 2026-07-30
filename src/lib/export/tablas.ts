@@ -1,7 +1,7 @@
 import type { ColumnaReporte } from "./tipos"
 import type { FiltrosReporte } from "@/shared/validation/reporte-validation"
 
-// Unica definicion de que columnas tiene cada reporte, como se titulan y como se
+// Única definición de que columnas tiene cada reporte, como se titulan y como se
 // formatean. La alimentan la tabla en pantalla, el Excel y el PDF.
 export const COLUMNAS: Record<string, ColumnaReporte[]> = {
   circuito: [
@@ -59,9 +59,8 @@ export const COLUMNAS: Record<string, ColumnaReporte[]> = {
   ],
 }
 
-// Los seis reportes traen una columna "moneda" por fila, y el filtro por defecto
-// no fuerza una sola divisa (se puede elegir "Todas"). Sumar montos de filas con
-// distinta moneda da un numero sin unidad, asi que no se totaliza en ese caso.
+// Los seis reportes traen una columna "moneda" por fila y el filtro no fuerza una
+// sola divisa (se puede elegir "Todas"); sumar monedas distintas no tiene sentido, no se totaliza.
 export function calcularTotales(
   columnas: ColumnaReporte[],
   filas: Array<Record<string, unknown>>
