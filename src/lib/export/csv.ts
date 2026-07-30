@@ -5,7 +5,8 @@ import type { EstrategiaExport, TablaReporte } from "./tipos"
 // hay que neutralizarlo antes de escribirlo, no solo escaparlo para el CSV.
 const INICIO_FORMULA = /^[=+\-@]/
 
-function neutralizarFormula(texto: string): string {
+// Exportada: xlsx.ts la reutiliza para el mismo riesgo en celdas de texto.
+export function neutralizarFormula(texto: string): string {
   return INICIO_FORMULA.test(texto) ? `'${texto}` : texto
 }
 
