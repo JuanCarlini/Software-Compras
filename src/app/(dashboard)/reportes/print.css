@@ -1,0 +1,73 @@
+@media print {
+  /* Solo queda el contenido del reporte: la navegacion no aporta nada en papel.
+     El sidebar de shadcn se marca con data-sidebar, no con data-slot; no hay aside/nav reales. */
+  header,
+  [data-sidebar="sidebar"],
+  [data-sidebar="rail"],
+  .no-imprimir {
+    display: none !important;
+  }
+
+  /* Sin esto el navegador descarta los rellenos y los graficos salen en blanco. */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Tokens claros forzados: en modo oscuro el PDF saldria con fondo negro.
+     --background/--foreground/--card son HSL sin la funcion hsl(), igual que en globals.css. */
+  :root,
+  .dark,
+  .reportes-viz,
+  .dark .reportes-viz {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --muted-foreground: 0 0% 45.1%;
+    --rep-grid: #e1e0d9;
+    --rep-eje: #c3c2b7;
+    --rep-tinta: #0b0b0b;
+    --rep-tinta-suave: #52514e;
+    --rep-tinta-mutada: #898781;
+    --rep-serie-1: #2a78d6;
+    --rep-serie-2: #eb6834;
+    --rep-serie-3: #1baf7a;
+    --rep-serie-4: #eda100;
+    --rep-serie-5: #e87ba4;
+    --rep-serie-6: #008300;
+    --rep-ordinal-1: #86b6ef;
+    --rep-ordinal-2: #3987e5;
+    --rep-ordinal-3: #2a78d6;
+    --rep-ordinal-4: #1c5cab;
+    --rep-superficie: #ffffff;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #0b0b0b !important;
+  }
+
+  /* Ningun grafico ni tabla partido entre dos hojas.
+     Card no trae data-slot en esta version de shadcn: se ancla a la clase bg-card. */
+  .bg-card,
+  table {
+    break-inside: avoid;
+  }
+
+  .encabezado-impresion {
+    display: block !important;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #c3c2b7;
+    padding-bottom: 0.5rem;
+  }
+
+  @page {
+    margin: 15mm;
+    size: A4 landscape;
+  }
+}
+
+/* En pantalla el encabezado de impresion no existe. */
+.encabezado-impresion {
+  display: none;
+}
