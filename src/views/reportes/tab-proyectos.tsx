@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useReporte } from "@/hooks/use-reporte"
 import { BarraHorizontal, Medidor } from "./graficos"
 import { formatearValor } from "./formato"
+import { porMoneda } from "./moneda"
 
 interface FilaProyecto {
   proyecto: string
@@ -20,24 +21,21 @@ interface FilaProyecto {
 export function TabProyectos() {
   const { reporte, loading, error } = useReporte("proyectos")
 
+  if (error && !reporte) {
+    return <p role="alert" className="py-8 text-center text-destructive">Error: {error}</p>
+  }
   if (!reporte) {
-    return <p className="py-8 text-center text-muted-foreground">{error ?? "Cargando…"}</p>
+    return <p className="py-8 text-center text-muted-foreground">Cargando…</p>
   }
 
   const filas = reporte.tablas[0].filas as unknown as FilaProyecto[]
 
-  // Con el filtro de moneda en "todas" las filas llegan mezcladas en ARS y USD: la
-  // barra por proyecto se arma por moneda, igual que en las otras pestañas.
-  const monedas = [...new Set(filas.map((f) => f.moneda))]
-
   return (
     // Al refiltrar se conserva el render anterior atenuado: sin salto a esqueleto.
-    <div className={`space-y-6 ${loading ? "opacity-40 transition-opacity" : ""}`}>
+    <div aria-busy={loading} className={`space-y-6 ${loading ? "opacity-40 transition-opacity" : ""}`}>
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      {monedas.map((moneda) => {
-        const filasMoneda = filas.filter((f) => f.moneda === moneda)
-
+      {porMoneda(filas).map(([moneda, filasMoneda]) => {
         const porProyecto = Object.values(
           filasMoneda.reduce<Record<string, { etiqueta: string; comprado: number }>>((acc, f) => {
             acc[f.proyecto] ??= { etiqueta: f.proyecto, comprado: 0 }
@@ -56,6 +54,11 @@ export function TabProyectos() {
                 etiqueta="etiqueta"
                 moneda={moneda}
                 alto={360}
+                // Este agregado por proyecto no existe en la tabla (que abre por tarea):
+                // la descripción es su única forma textual.
+                descripcion={`Total comprado por proyecto en ${moneda}: ${porProyecto
+                  .map((p) => `${p.etiqueta} ${formatearValor(p.comprado, "moneda", moneda)}`)
+                  .join(", ")}`}
               />
             </CardContent>
           </Card>
@@ -67,7 +70,7 @@ export function TabProyectos() {
         <CardContent>
           {filas.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">
-              Sin datos para los filtros elegidos. Probá ampliar el período o aflojar los filtros.
+              Sin datos para los filtros elegidos. Probá ampliar el período o aflojar los filtros aplicados.
             </p>
           ) : (
             <div className="overflow-x-auto">

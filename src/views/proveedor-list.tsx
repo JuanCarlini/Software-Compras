@@ -2,16 +2,16 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { SearchBar } from "@/components/ui/search-bar"
+import { SearchBar } from "@/components/search-bar"
 import { Eye, Edit, CheckCircle, XCircle, Building2, Mail, Phone, MapPin } from "lucide-react"
-import { ListShell } from "@/components/ui/list-shell"
-import { SortControl, useSort, type SortField } from "@/components/ui/sort-control"
+import { ListShell } from "@/components/list-shell"
+import { SortControl, useSort, type SortField } from "@/components/sort-control"
 import Link from "next/link"
 import { useState } from "react"
 import { useProveedores } from "@/hooks/use-proveedores"
 import { EstadoProveedor } from "@/models"
 import { searchWithScore } from "@/shared/search-utils"
-import { SearchStats } from "@/components/ui/search-stats"
+import { SearchStats } from "@/components/search-stats"
 import { StatusBadge } from "@/components/status-badge"
 import { useAuth } from "@/components/auth-context"
 import { canModificarProveedor, stringToUserRole } from "@/shared/permissions"
@@ -31,9 +31,9 @@ export function ProveedorList() {
   const userRole = user ? stringToUserRole(user.rol) : null
   const canModify = userRole ? canModificarProveedor(userRole) : false
 
-  // buscamos solo por los campos que realmente existen en el formulario/base
   const sort = useSort(SORT_FIELDS)
 
+  // buscamos solo por los campos que realmente existen en el formulario/base
   const filteredProveedores = searchWithScore(
     proveedores,
     searchTerm,

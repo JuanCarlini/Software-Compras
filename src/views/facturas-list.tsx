@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { SearchBar } from "@/components/ui/search-bar"
-import { SearchStats } from "@/components/ui/search-stats"
+import { SearchBar } from "@/components/search-bar"
+import { SearchStats } from "@/components/search-stats"
 import { Eye } from "lucide-react"
 import Link from "next/link"
-import { ListShell } from "@/components/ui/list-shell"
-import { SortControl, useSort, type SortField } from "@/components/ui/sort-control"
+import { ListShell } from "@/components/list-shell"
+import { SortControl, useSort, type SortField } from "@/components/sort-control"
+import { LABEL_ESTADO } from "@/models"
 import { searchWithScore } from "@/shared/search-utils"
 import { formatCurrency } from "@/shared/format-utils"
 import { showErrorToast } from "@/shared/toast-helpers"
@@ -18,7 +19,8 @@ const SORT_FIELDS: SortField[] = [
   { key: "numero_factura", label: "Número de factura" },
   { key: "fecha_emision", label: "Fecha de emisión" },
   { key: "total_con_iva", label: "Total" },
-  { key: "estado", label: "Estado" },
+  // Ordena por la etiqueta visible, no por el valor crudo del enum.
+  { key: "estado", label: "Estado", get: (i) => LABEL_ESTADO[i.estado as keyof typeof LABEL_ESTADO] ?? i.estado },
 ]
 
 export function FacturasList() {
@@ -121,7 +123,7 @@ export function FacturasList() {
 
                   <div>
                     <p className="font-medium text-foreground">
-                      {formatCurrency(factura.total_con_iva ?? 0)}
+                      {formatCurrency(factura.total_con_iva ?? 0, factura.moneda ?? "ARS")}
                     </p>
                     <StatusBadge estado={factura.estado} showIcon />
                   </div>

@@ -5,6 +5,7 @@ import {
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts"
 import { formatearValor } from "./formato"
+import { parseFecha } from "@/shared/date-utils"
 
 const ORDINAL = [
   "var(--rep-ordinal-1)", "var(--rep-ordinal-2)",
@@ -15,16 +16,24 @@ const SERIES = [
   "var(--rep-serie-4)", "var(--rep-serie-5)", "var(--rep-serie-6)",
 ]
 
-const EJE = {
+// Exportados para que ninguna pestaña reimplemente el estilo de ejes ni el wrapper.
+export const EJE = {
   stroke: "var(--rep-eje)",
   tick: { fill: "var(--rep-tinta-mutada)", fontSize: 12 },
 }
 
 // El alto incluye la banda del eje X: fijar solo el área de trazado deja la tarjeta
-// con un scroll vertical diminuto.
-function Contenedor({ alto, children }: { alto: number; children: React.ReactElement }) {
+// con un scroll vertical diminuto. `descripcion` es el nombre accesible del gráfico:
+// el SVG de Recharts no anuncia nada por sí solo.
+export function Contenedor({
+  alto, descripcion, children,
+}: {
+  alto: number
+  descripcion?: string
+  children: React.ReactElement
+}) {
   return (
-    <div style={{ height: alto }}>
+    <div style={{ height: alto }} role={descripcion ? "img" : undefined} aria-label={descripcion}>
       <ResponsiveContainer width="100%" height="100%">{children}</ResponsiveContainer>
     </div>
   )
@@ -33,16 +42,17 @@ function Contenedor({ alto, children }: { alto: number; children: React.ReactEle
 // Una serie, un color. Pintar cada barra según su valor duplica en color lo que el
 // largo ya comunica y quema el único canal libre.
 export function BarraHorizontal({
-  datos, clave, etiqueta, moneda, alto = 320,
+  datos, clave, etiqueta, moneda, alto = 320, descripcion,
 }: {
   datos: Array<Record<string, unknown>>
   clave: string
   etiqueta: string
   moneda?: string
   alto?: number
+  descripcion?: string
 }) {
   return (
-    <Contenedor alto={alto}>
+    <Contenedor alto={alto} descripcion={descripcion ?? `Gráfico de barras de ${clave} por ${etiqueta}`}>
       <BarChart data={datos} layout="vertical" margin={{ left: 24, right: 48 }}>
         <CartesianGrid horizontal={false} stroke="var(--rep-grid)" />
         <XAxis type="number" {...EJE} tickFormatter={(v) => formatearValor(v, "moneda", moneda)} />
@@ -66,7 +76,7 @@ export function Embudo({
   alto?: number
 }) {
   return (
-    <Contenedor alto={alto}>
+    <Contenedor alto={alto} descripcion={`Embudo del circuito en ${moneda}: ${etapas.map((e) => e.etapa).join(", ")}`}>
       <BarChart data={etapas} layout="vertical" margin={{ left: 24, right: 96 }}>
         <CartesianGrid horizontal={false} stroke="var(--rep-grid)" />
         <XAxis type="number" {...EJE} tickFormatter={(v) => formatearValor(v, "moneda", moneda)} />
@@ -93,14 +103,20 @@ export function LineaTemporal({
   moneda: string
   alto?: number
 }) {
+  // "2026-03-01" (date_trunc de la RPC) se rotula como "mar 26": el string crudo en el
+  // eje no lo lee nadie, y parseado local para no correr un día (UTC-3).
+  const mesCorto = (v: unknown) =>
+    parseFecha(String(v)).toLocaleDateString("es-AR", { month: "short", year: "2-digit" })
+
   return (
-    <Contenedor alto={alto}>
+    <Contenedor alto={alto} descripcion={`Evolución mensual en ${moneda}: ${series.map((s) => s.nombre).join(" y ")}`}>
       <LineChart data={datos} margin={{ left: 24, right: 24 }}>
         <CartesianGrid vertical={false} stroke="var(--rep-grid)" />
-        <XAxis dataKey="mes" {...EJE} />
+        <XAxis dataKey="mes" {...EJE} tickFormatter={mesCorto} />
         <YAxis {...EJE} tickFormatter={(v) => formatearValor(v, "moneda", moneda)} />
         <Tooltip
           formatter={(v) => formatearValor(v, "moneda", moneda)}
+          labelFormatter={mesCorto}
           contentStyle={{ background: "var(--rep-grid)", border: "none", borderRadius: 8 }}
         />
         <Legend />
@@ -130,11 +146,13 @@ export function TortaComposicion({
   alto?: number
 }) {
   return (
-    <Contenedor alto={alto}>
+    <Contenedor alto={alto} descripcion={`Composición por ${datos.map((d) => d.nombre).join(", ")} en ${moneda}`}>
       <PieChart>
         <Pie data={datos} dataKey="monto" nameKey="nombre" innerRadius={0} outerRadius={110} paddingAngle={1}>
-          {datos.map((_, i) => (
-            <Cell key={i} fill={SERIES[i % SERIES.length]} stroke="var(--rep-superficie)" />
+          {/* key por nombre: con el índice, al cambiar el filtro Recharts reusa los
+              segmentos y puede pintar un frame con el color anterior */}
+          {datos.map((d, i) => (
+            <Cell key={d.nombre} fill={SERIES[i % SERIES.length]} stroke="var(--rep-superficie)" />
           ))}
         </Pie>
         <Tooltip

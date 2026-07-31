@@ -2,17 +2,18 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { SearchBar } from "@/components/ui/search-bar"
+import { SearchBar } from "@/components/search-bar"
 import { Eye, CheckCircle, XCircle, DollarSign } from "lucide-react"
-import { ListShell } from "@/components/ui/list-shell"
-import { SortControl, useSort, type SortField } from "@/components/ui/sort-control"
+import { ListShell } from "@/components/list-shell"
+import { SortControl, useSort, type SortField } from "@/components/sort-control"
+import { LABEL_ESTADO } from "@/models"
 import Link from "next/link"
 import { useState } from "react"
-import { useOrdensPago } from "@/hooks/use-ordenes-pago"
+import { useOrdenesPago } from "@/hooks/use-ordenes-pago"
 import { formatCurrency } from "@/shared/format-utils"
 import { formatDateShort } from "@/shared/date-utils"
 import { searchWithScore } from "@/shared/search-utils"
-import { SearchStats } from "@/components/ui/search-stats"
+import { SearchStats } from "@/components/search-stats"
 import { StatusBadge } from "@/components/status-badge"
 import { useAuth } from "@/components/auth-context"
 import { canAnularDocumento, stringToUserRole } from "@/shared/permissions"
@@ -21,11 +22,12 @@ const SORT_FIELDS: SortField[] = [
   { key: "numero_op", label: "Número de OP" },
   { key: "fecha_op", label: "Fecha" },
   { key: "total_a_pagar", label: "Total a pagar" },
-  { key: "estado", label: "Estado" },
+  // Ordena por la etiqueta visible, no por el valor crudo del enum.
+  { key: "estado", label: "Estado", get: (i) => LABEL_ESTADO[i.estado as keyof typeof LABEL_ESTADO] ?? i.estado },
 ]
 
 export function OrdenPagoList() {
-  const { orders, loading, error, cambiarEstado, aprobarOrder, pagarOrder, rechazarOrder } = useOrdensPago()
+  const { orders, loading, error, cambiarEstado, aprobarOrden, pagarOrden, rechazarOrden } = useOrdenesPago()
   const { user } = useAuth()
   const [processingId, setProcessingId] = useState<number | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -52,7 +54,7 @@ export function OrdenPagoList() {
   const handleAprobar = async (id: number) => {
     try {
       setProcessingId(id)
-      await aprobarOrder(id)
+      await aprobarOrden(id)
     } catch (error) {
       console.error("Error al aprobar orden:", error)
     } finally {
@@ -76,7 +78,7 @@ export function OrdenPagoList() {
   const handlePagar = async (id: number) => {
     try {
       setProcessingId(id)
-      await pagarOrder(id)
+      await pagarOrden(id)
     } catch (error) {
       console.error("Error al registrar pago:", error)
     } finally {
@@ -87,7 +89,7 @@ export function OrdenPagoList() {
   const handleRechazar = async (id: number) => {
     try {
       setProcessingId(id)
-      await rechazarOrder(id)
+      await rechazarOrden(id)
     } catch (error) {
       console.error("Error al rechazar orden:", error)
     } finally {
@@ -146,7 +148,7 @@ export function OrdenPagoList() {
                     <p className="text-sm text-foreground">{orden.proveedor_nombre}</p>
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">{formatCurrency(orden.total_a_pagar)}</p>
+                    <p className="font-medium text-foreground">{formatCurrency(orden.total_a_pagar, orden.moneda ?? "ARS")}</p>
                   </div>
                   <div>
                     <StatusBadge estado={orden.estado} showIcon />

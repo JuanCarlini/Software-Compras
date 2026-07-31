@@ -47,6 +47,7 @@ interface CertDetalle {
   fecha_cert: string | null
   observaciones: string | null
   numero_oc: string | null
+  moneda: string | null
   proveedor_nombre: string | null
   proveedor_cuit: string | null
   estado_facturacion: string | null
@@ -183,7 +184,7 @@ export function CertificacionDetail({ params }: Props) {
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-green-600">
-                {formatCurrency(Number(cert.total_con_iva ?? 0))}
+                {formatCurrency(Number(cert.total_con_iva ?? 0), cert.moneda ?? "ARS")}
               </div>
               <div className="text-sm text-muted-foreground">Total con IVA</div>
             </div>
@@ -276,7 +277,7 @@ export function CertificacionDetail({ params }: Props) {
                     </div>
                     <div className="col-span-2 text-right">
                       <div className="text-sm text-muted-foreground">Precio Unit.</div>
-                      <div>{formatCurrency(Number(ocLinea?.precio_unitario_neto ?? 0))}</div>
+                      <div>{formatCurrency(Number(ocLinea?.precio_unitario_neto ?? 0), cert.moneda ?? "ARS")}</div>
                     </div>
                     <div className="col-span-1 text-right">
                       <div className="text-sm text-muted-foreground">IVA</div>
@@ -284,7 +285,7 @@ export function CertificacionDetail({ params }: Props) {
                     </div>
                     <div className="col-span-2 text-right">
                       <div className="text-sm text-muted-foreground">Total</div>
-                      <div className="font-semibold">{formatCurrency(totalConIva)}</div>
+                      <div className="font-semibold">{formatCurrency(totalConIva, cert.moneda ?? "ARS")}</div>
                     </div>
                   </div>
                 </div>
@@ -297,13 +298,13 @@ export function CertificacionDetail({ params }: Props) {
               <div className="text-right">
                 <div className="text-sm text-muted-foreground">Total Neto</div>
                 <div className="text-xl font-bold">
-                  {formatCurrency(Number(cert.total_neto ?? 0))}
+                  {formatCurrency(Number(cert.total_neto ?? 0), cert.moneda ?? "ARS")}
                 </div>
               </div>
               <div className="text-right">
                 <div className="text-sm text-muted-foreground">Total con IVA</div>
                 <div className="text-2xl font-bold text-green-600">
-                  {formatCurrency(Number(cert.total_con_iva ?? 0))}
+                  {formatCurrency(Number(cert.total_con_iva ?? 0), cert.moneda ?? "ARS")}
                 </div>
               </div>
             </div>

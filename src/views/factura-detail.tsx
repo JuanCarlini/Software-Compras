@@ -41,6 +41,7 @@ interface FacturaLineaDetalle {
 interface FacturaDetalle {
   numero_factura: string | null
   estado: string
+  moneda: string | null
   total_neto: Num
   total_iva: Num
   total_con_iva: Num
@@ -159,7 +160,7 @@ export function FacturaDetail({ params }: Props) {
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-green-600">
-                {formatCurrency(Number(factura.total_con_iva ?? 0))}
+                {formatCurrency(Number(factura.total_con_iva ?? 0), factura.moneda ?? "ARS")}
               </div>
               <div className="text-sm text-muted-foreground">Total con IVA</div>
             </div>
@@ -209,19 +210,19 @@ export function FacturaDetail({ params }: Props) {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal (Neto)</span>
                 <span className="font-semibold">
-                  {formatCurrency(Number(factura.total_neto ?? 0))}
+                  {formatCurrency(Number(factura.total_neto ?? 0), factura.moneda ?? "ARS")}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">IVA</span>
                 <span className="font-semibold">
-                  {formatCurrency(Number(factura.total_iva ?? 0))}
+                  {formatCurrency(Number(factura.total_iva ?? 0), factura.moneda ?? "ARS")}
                 </span>
               </div>
               <div className="flex justify-between text-lg font-bold border-t pt-2">
                 <span>Total con IVA</span>
                 <span className="text-green-600">
-                  {formatCurrency(Number(factura.total_con_iva ?? 0))}
+                  {formatCurrency(Number(factura.total_con_iva ?? 0), factura.moneda ?? "ARS")}
                 </span>
               </div>
             </div>
@@ -248,13 +249,13 @@ export function FacturaDetail({ params }: Props) {
                   <div>
                     <div className="font-semibold">{imp.gu_certificaciones?.numero_cert}</div>
                     <div className="text-sm text-muted-foreground">
-                      Certificado: {formatCurrency(Number(imp.gu_certificaciones?.total_con_iva ?? 0))}
+                      Certificado: {formatCurrency(Number(imp.gu_certificaciones?.total_con_iva ?? 0), factura.moneda ?? "ARS")}
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-xs text-muted-foreground">Imputado</div>
                     <div className="text-sm font-medium mt-1">
-                      {formatCurrency(Number(imp.monto_asignado ?? 0))}
+                      {formatCurrency(Number(imp.monto_asignado ?? 0), factura.moneda ?? "ARS")}
                     </div>
                   </div>
                 </div>
@@ -287,13 +288,13 @@ export function FacturaDetail({ params }: Props) {
                     <div>
                       <div className="text-sm text-muted-foreground">Precio Unitario</div>
                       <div className="font-medium">
-                        {formatCurrency(Number(linea.precio_unitario ?? 0))}
+                        {formatCurrency(Number(linea.precio_unitario ?? 0), factura.moneda ?? "ARS")}
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-sm text-muted-foreground">Total</div>
                       <div className="font-bold text-green-600">
-                        {formatCurrency(Number(linea.total_con_iva ?? 0))}
+                        {formatCurrency(Number(linea.total_con_iva ?? 0), factura.moneda ?? "ARS")}
                       </div>
                       <div className="text-xs text-muted-foreground">IVA: {linea.iva_porcentaje}%</div>
                     </div>

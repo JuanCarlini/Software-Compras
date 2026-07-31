@@ -27,10 +27,11 @@ export function TabCircuito() {
   const { reporte, loading, error } = useReporte("circuito")
   const mensual = useReporte("circuito-mensual")
 
+  if (error && !reporte) {
+    return <p role="alert" className="py-8 text-center text-destructive">Error: {error}</p>
+  }
   if (!reporte) {
-    return <p className="py-8 text-center text-muted-foreground">
-      {error ?? "Cargando…"}
-    </p>
+    return <p className="py-8 text-center text-muted-foreground">Cargando…</p>
   }
 
   const tabla = reporte.tablas[0]
@@ -39,7 +40,7 @@ export function TabCircuito() {
 
   return (
     // Al refiltrar se conserva el render anterior atenuado: sin salto a esqueleto.
-    <div className={`space-y-6 ${loading ? "opacity-40 transition-opacity" : ""}`}>
+    <div aria-busy={loading} className={`space-y-6 ${loading ? "opacity-40 transition-opacity" : ""}`}>
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       {filas.map((fila) => {

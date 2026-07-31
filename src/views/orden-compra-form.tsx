@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { FormRootError } from "@/components/ui/form-root-error"
+import { FormRootError } from "@/components/form-root-error"
 import { Loader2, Plus, Trash2, ShoppingCart } from "lucide-react"
 import { Proveedor, Item } from "@/models"
 import { showSuccessToast, showErrorToast } from "@/shared/toast-helpers"
@@ -57,6 +57,7 @@ export function OrdenCompraForm() {
     },
   })
   const isLoading = form.formState.isSubmitting
+  const monedaElegida = form.watch("moneda")
 
   const [proveedores, setProveedores] = useState<Proveedor[]>([])
   const [loadingProveedores, setLoadingProveedores] = useState(true)
@@ -410,9 +411,9 @@ export function OrdenCompraForm() {
                         {item.descripcion && <p className="text-sm text-muted-foreground">{item.descripcion}</p>}
                       </div>
                       <div className="col-span-2 text-right">{item.cantidad}</div>
-                      <div className="col-span-2 text-right">{formatCurrency(item.precio_unitario)}</div>
+                      <div className="col-span-2 text-right">{formatCurrency(item.precio_unitario, monedaElegida)}</div>
                       <div className="col-span-1 text-right">{item.iva_porcentaje}%</div>
-                      <div className="col-span-2 text-right font-medium">{formatCurrency(item.subtotal)}</div>
+                      <div className="col-span-2 text-right font-medium">{formatCurrency(item.subtotal, monedaElegida)}</div>
                       <div className="col-span-1 flex justify-end">
                         <Button
                           type="button"
@@ -441,15 +442,15 @@ export function OrdenCompraForm() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Total Neto:</span>
-                    <span className="font-medium">{formatCurrency(calcularSubtotal())}</span>
+                    <span className="font-medium">{formatCurrency(calcularSubtotal(), monedaElegida)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>IVA:</span>
-                    <span className="font-medium">{formatCurrency(calcularImpuestos())}</span>
+                    <span className="font-medium">{formatCurrency(calcularImpuestos(), monedaElegida)}</span>
                   </div>
                   <div className="flex justify-between pt-2 border-t text-lg font-bold">
                     <span>Total con IVA:</span>
-                    <span className="text-green-600">{formatCurrency(calcularTotal())}</span>
+                    <span className="text-green-600">{formatCurrency(calcularTotal(), monedaElegida)}</span>
                   </div>
                 </div>
               </div>

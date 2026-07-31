@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs"
 import type { ColumnaReporte, EstrategiaExport, TablaReporte, TipoColumna } from "./tipos"
 import { neutralizarFormula } from "./csv"
+import { parseFecha } from "@/shared/date-utils"
 
 const PALETA = {
   encabezado: "FF104281",
@@ -50,7 +51,7 @@ function convertir(valor: unknown, tipo: TipoColumna): unknown {
     return Number.isFinite(numero) ? numero : null
   }
   if (tipo === "fecha") {
-    const fecha = new Date(String(valor))
+    const fecha = parseFecha(String(valor))
     return Number.isNaN(fecha.getTime()) ? null : fecha
   }
   return neutralizarFormula(String(valor))

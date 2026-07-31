@@ -1,8 +1,3 @@
-import { fileURLToPath } from "node:url"
-import { dirname } from "node:path"
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
-
 const esDev = process.env.NODE_ENV === "development"
 
 // Cabeceras de seguridad: el proyecto no tenía ninguna.
@@ -44,14 +39,11 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Raíz para el rastreo de archivos: evita que Next tome un lockfile de un directorio
-  // superior cuando hay más de uno en el árbol.
-  outputFileTracingRoot: __dirname,
   eslint: {
-    ignoreDuringBuilds: false, // ✅ Habilitar ESLint warnings
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    ignoreBuildErrors: false, // ✅ Habilitar TypeScript errors
+    ignoreBuildErrors: false,
   },
   images: {
     unoptimized: true,

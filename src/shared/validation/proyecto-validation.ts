@@ -11,12 +11,19 @@ export const LABEL_PROYECTO_ESTADO: Record<(typeof PROYECTO_ESTADOS)[number], st
   cancelado: "Cancelado",
 }
 
+// El form manda "" cuando la fecha está vacía; a la DB tiene que llegar undefined (columna
+// date con default null), y una fecha malformada se rechaza acá con 400, no con un 500 de DB.
+const FechaOpcional = z
+  .string()
+  .transform((v) => (v === "" ? undefined : v))
+  .pipe(z.string().date("Fecha inválida (AAAA-MM-DD)").optional())
+
 export const CreateProyectoSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
   codigo: z.string().optional(),
   descripcion: z.string().optional(),
-  fecha_inicio: z.string().optional(),
-  fecha_fin: z.string().optional(),
+  fecha_inicio: FechaOpcional,
+  fecha_fin: FechaOpcional,
 })
 
 export const UpdateProyectoSchema = CreateProyectoSchema.extend({

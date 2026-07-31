@@ -15,30 +15,33 @@ import { sortBy, type SortDirection } from "@/shared/sort-utils"
 export interface SortField {
   key: string
   label: string
+  // Valor por el que ordenar (p.ej. la etiqueta visible de un enum); default: item[key].
+  get?: (item: Record<string, unknown>) => unknown
 }
 
 export function useSort(fields: SortField[], initial?: SortDirection) {
-  const [field, setCampo] = useState(fields[0].key)
-  const [direction, setDireccion] = useState<SortDirection>(initial ?? "desc")
+  const [field, setField] = useState(fields[0].key)
+  const [direction, setDirection] = useState<SortDirection>(initial ?? "desc")
 
   const apply = useCallback(
-    <T extends Record<string, unknown>>(items: T[]) => sortBy(items, field, direction),
-    [field, direction]
+    <T extends Record<string, unknown>>(items: T[]) =>
+      sortBy(items, field, direction, fields.find((f) => f.key === field)?.get),
+    [fields, field, direction]
   )
 
-  return { fields, field, setCampo, direction, setDireccion, apply }
+  return { fields, field, setField, direction, setDirection, apply }
 }
 
 type Props = Omit<ReturnType<typeof useSort>, "apply">
 
-export function SortControl({ fields, field, setCampo, direction, setDireccion }: Props) {
+export function SortControl({ fields, field, setField, direction, setDirection }: Props) {
   const ascending = direction === "asc"
   const Icon = ascending ? ArrowUpNarrowWide : ArrowDownWideNarrow
 
   return (
     <div className="flex items-center gap-2">
       <span className="text-sm text-muted-foreground">Ordenar por</span>
-      <Select value={field} onValueChange={setCampo}>
+      <Select value={field} onValueChange={setField}>
         <SelectTrigger className="w-48">
           <SelectValue />
         </SelectTrigger>
@@ -54,9 +57,9 @@ export function SortControl({ fields, field, setCampo, direction, setDireccion }
         type="button"
         variant="outline"
         size="icon"
-        onClick={() => setDireccion(ascending ? "desc" : "asc")}
+        onClick={() => setDirection(ascending ? "desc" : "asc")}
         title={ascending ? "Ascendente" : "Descendente"}
-        aria-label={`Orden ${ascending ? "ascending" : "descendente"}, cambiar`}
+        aria-label={`Orden ${ascending ? "ascendente" : "descendente"}, cambiar`}
       >
         <Icon className="h-4 w-4" />
       </Button>

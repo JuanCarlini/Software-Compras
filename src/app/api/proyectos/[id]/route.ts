@@ -5,10 +5,7 @@ import { requirePermission } from "@/lib/auth/permissions-server"
 import { parseId } from "@/lib/route/parse-id"
 import { handleRouteError } from "@/lib/route/handle-route-error"
 import { getByIdRoute } from "@/lib/route/crud-route"
-
-interface Params {
-  params: Promise<{ id: string }>
-}
+import type { IdParams } from "@/lib/route/params"
 
 export const GET = getByIdRoute({
   autorizar: () => requirePermission("proyectos", "ver"),
@@ -17,7 +14,7 @@ export const GET = getByIdRoute({
   contexto: "GET /api/proyectos/[id]",
 })
 
-export async function PUT(request: NextRequest, { params }: Params) {
+export async function PUT(request: NextRequest, { params }: IdParams) {
   try {
     const { error: authError } = await requirePermission("proyectos", "crear")
     if (authError) return authError

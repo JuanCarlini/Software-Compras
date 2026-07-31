@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import type { Proyecto } from "@/models/proyecto.model"
+import { api } from "@/shared/api-client"
 
 export function useProyectos() {
   const [proyectos, setProyectos] = useState<Proyecto[]>([])
@@ -11,12 +12,7 @@ export function useProyectos() {
   const refreshProyectos = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch("/api/proyectos")
-      if (!res.ok) {
-        const cuerpo = await res.json().catch(() => ({}))
-        throw new Error(cuerpo.error ?? `Error ${res.status}`)
-      }
-      setProyectos(await res.json())
+      setProyectos(await api("/api/proyectos"))
       setError(null)
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error desconocido")

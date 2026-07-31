@@ -1,4 +1,5 @@
-// Estructura única que alimenta la tabla en pantalla, el Excel y el PDF. El tipo de
+// Estructura única que alimenta la tabla en pantalla y los exports (el "PDF" es la
+// impresión del navegador sobre esa misma tabla, no una estrategia más). El tipo de
 // columna es lo que hace que en Excel los montos sean números y las fechas, fechas.
 export type TipoColumna = "texto" | "numero" | "moneda" | "fecha" | "porcentaje"
 

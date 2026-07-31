@@ -1,13 +1,12 @@
 "use client"
 
-import {
-  Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis,
-} from "recharts"
+import { Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useReporte } from "@/hooks/use-reporte"
-import { StatTile } from "./graficos"
+import { Contenedor, EJE, StatTile } from "./graficos"
 import { TablaReporte } from "./tabla-reporte"
 import { formatearValor } from "./formato"
+import { porMoneda } from "./moneda"
 
 interface FilaDeuda {
   proveedor: string
@@ -29,28 +28,28 @@ const TRAMOS = [
 export function TabDeuda() {
   const { reporte, loading, error } = useReporte("deuda")
 
+  if (error && !reporte) {
+    return <p role="alert" className="py-8 text-center text-destructive">Error: {error}</p>
+  }
   if (!reporte) {
-    return <p className="py-8 text-center text-muted-foreground">{error ?? "Cargando…"}</p>
+    return <p className="py-8 text-center text-muted-foreground">Cargando…</p>
   }
 
   const tabla = reporte.tablas[0]
   const filas = tabla.filas as unknown as FilaDeuda[]
 
-  // Con el filtro de moneda en "todas" las filas llegan mezcladas en ARS y USD: sumar
-  // la deuda global mezclaría montos, así que cada bloque se agrupa por moneda.
-  const monedas = [...new Set(filas.map((f) => f.moneda))]
-
   return (
     // Al refiltrar se conserva el render anterior atenuado: sin salto a esqueleto.
-    <div className={`space-y-6 ${loading ? "opacity-40 transition-opacity" : ""}`}>
+    <div aria-busy={loading} className={`space-y-6 ${loading ? "opacity-40 transition-opacity" : ""}`}>
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      {monedas.map((moneda) => {
-        const filasMoneda = filas.filter((f) => f.moneda === moneda)
+      {porMoneda(filas).map(([moneda, filasMoneda]) => {
         const total = filasMoneda.reduce((s, f) => s + Number(f.saldo), 0)
-        const diasPromedio = Math.round(
-          filasMoneda.reduce((s, f) => s + Number(f.dias), 0) / filasMoneda.length
-        )
+        // Ponderado por saldo: una factura de $100 no pesa lo mismo que una de $10M.
+        // El promedio simple subestimaba la exposición con muchas facturas chicas nuevas.
+        const diasPromedio = total > 0
+          ? Math.round(filasMoneda.reduce((s, f) => s + Number(f.dias) * Number(f.saldo), 0) / total)
+          : 0
 
         // La suma de los cuatro tramos por proveedor tiene que dar el saldo total del
         // indicador: cada fila aporta su saldo entero al tramo que le corresponde.
@@ -73,45 +72,32 @@ export function TabDeuda() {
             <Card>
               <CardHeader><CardTitle>Antigüedad de la deuda por proveedor ({moneda})</CardTitle></CardHeader>
               <CardContent>
-                <div style={{ height: 420 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={porProveedor} layout="vertical" margin={{ left: 24, right: 48 }}>
-                      <CartesianGrid horizontal={false} stroke="var(--rep-grid)" />
-                      <XAxis
-                        type="number"
-                        stroke="var(--rep-eje)"
-                        tick={{ fill: "var(--rep-tinta-mutada)", fontSize: 12 }}
-                        tickFormatter={(v) => formatearValor(v, "moneda", moneda)}
+                <Contenedor alto={420} descripcion={`Deuda por proveedor y tramo de antigüedad en ${moneda}`}>
+                  <BarChart data={porProveedor} layout="vertical" margin={{ left: 24, right: 48 }}>
+                    <CartesianGrid horizontal={false} stroke="var(--rep-grid)" />
+                    <XAxis type="number" {...EJE} tickFormatter={(v) => formatearValor(v, "moneda", moneda)} />
+                    <YAxis type="category" dataKey="proveedor" width={180} {...EJE} />
+                    <Tooltip
+                      formatter={(v) => formatearValor(v, "moneda", moneda)}
+                      contentStyle={{ background: "var(--rep-grid)", border: "none", borderRadius: 8 }}
+                    />
+                    <Legend />
+                    {TRAMOS.map((t) => (
+                      <Bar
+                        key={t.clave}
+                        dataKey={t.clave}
+                        name={`${t.clave} días`}
+                        stackId="aging"
+                        fill={t.color}
+                        barSize={18}
+                        // Separación por hueco de superficie, no un borde: un trazo en color
+                        // de grilla sería una línea dibujada alrededor de cada segmento.
+                        stroke="var(--rep-superficie)"
+                        strokeWidth={2}
                       />
-                      <YAxis
-                        type="category"
-                        dataKey="proveedor"
-                        width={180}
-                        stroke="var(--rep-eje)"
-                        tick={{ fill: "var(--rep-tinta-mutada)", fontSize: 12 }}
-                      />
-                      <Tooltip
-                        formatter={(v) => formatearValor(v, "moneda", moneda)}
-                        contentStyle={{ background: "var(--rep-grid)", border: "none", borderRadius: 8 }}
-                      />
-                      <Legend />
-                      {TRAMOS.map((t) => (
-                        <Bar
-                          key={t.clave}
-                          dataKey={t.clave}
-                          name={`${t.clave} días`}
-                          stackId="aging"
-                          fill={t.color}
-                          barSize={18}
-                          // Separación por hueco de superficie, no un borde: un trazo en color
-                          // de grilla sería una línea dibujada alrededor de cada segmento.
-                          stroke="var(--rep-superficie)"
-                          strokeWidth={2}
-                        />
-                      ))}
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+                    ))}
+                  </BarChart>
+                </Contenedor>
               </CardContent>
             </Card>
           </div>

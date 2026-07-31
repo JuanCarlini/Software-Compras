@@ -12,23 +12,16 @@ import { AccionesExport } from "./acciones-export"
 import "./paleta.css"
 import "@/app/(dashboard)/reportes/print.css"
 
-// La pestaña activa viaja al nombre real del reporte: el value de la pestaña
-// no siempre coincide con el nombre que espera la ruta de export.
-const NOMBRE_API: Record<string, string> = {
-  circuito: "circuito",
-  pendiente: "pendiente-certificar",
-  deuda: "deuda",
-  proveedores: "proveedores",
-  proyectos: "proyectos",
-}
-
-const TITULO_PESTANA: Record<string, string> = {
-  circuito: "Circuito",
-  pendiente: "Pendiente de certificar",
-  deuda: "Deuda",
-  proveedores: "Proveedores",
-  proyectos: "Proyectos",
-}
+// Una sola lista de pestañas: value de la pestaña, nombre que espera la API de export,
+// título visible y componente. Con tres listas paralelas, agregar un reporte obligaba a
+// editar las tres y nada avisaba si se olvidaba una.
+const PESTANAS = [
+  { value: "circuito", api: "circuito", titulo: "Circuito", Componente: TabCircuito },
+  { value: "pendiente", api: "pendiente-certificar", titulo: "Pendiente de certificar", Componente: TabPendiente },
+  { value: "deuda", api: "deuda", titulo: "Deuda", Componente: TabDeuda },
+  { value: "proveedores", api: "proveedores", titulo: "Proveedores", Componente: TabProveedores },
+  { value: "proyectos", api: "proyectos", titulo: "Proyectos", Componente: TabProyectos },
+] as const
 
 export function ReportesShell({
   proveedores,
@@ -38,13 +31,18 @@ export function ReportesShell({
   proyectos: Opcion[]
 }) {
   const [activa, setActiva] = useState("circuito")
+  const pestanaActiva = PESTANAS.find((p) => p.value === activa) ?? PESTANAS[0]
 
   return (
     <div className="reportes-viz space-y-6">
-      {/* Solo visible al imprimir: en pantalla los filtros y las pestañas ya lo dicen. */}
+      {/* Solo visible al imprimir: en pantalla los filtros y las pestañas ya lo dicen.
+          suppressHydrationWarning: la fecha se calcula en el server y de nuevo al hidratar;
+          cruzando la medianoche difieren y React lo marcaría como mismatch. */}
       <div className="encabezado-impresion">
-        <h2 className="text-xl font-bold">Reportes — {TITULO_PESTANA[activa]}</h2>
-        <p className="text-sm">Generado el {new Date().toLocaleDateString("es-AR")}</p>
+        <h2 className="text-xl font-bold">Reportes — {pestanaActiva.titulo}</h2>
+        <p className="text-sm" suppressHydrationWarning>
+          Generado el {new Date().toLocaleDateString("es-AR")}
+        </p>
       </div>
 
       {/* FiltrosBar usa useSearchParams: sin Suspense, Next 15 rompe el prerenderizado
@@ -56,20 +54,16 @@ export function ReportesShell({
       <Tabs value={activa} onValueChange={setActiva}>
         <div className="flex items-center justify-between">
           <TabsList className="no-imprimir">
-            <TabsTrigger value="circuito">Circuito</TabsTrigger>
-            <TabsTrigger value="pendiente">Pendiente de certificar</TabsTrigger>
-            <TabsTrigger value="deuda">Deuda</TabsTrigger>
-            <TabsTrigger value="proveedores">Proveedores</TabsTrigger>
-            <TabsTrigger value="proyectos">Proyectos</TabsTrigger>
+            {PESTANAS.map((p) => (
+              <TabsTrigger key={p.value} value={p.value}>{p.titulo}</TabsTrigger>
+            ))}
           </TabsList>
-          <AccionesExport reporte={NOMBRE_API[activa]} />
+          <AccionesExport reporte={pestanaActiva.api} />
         </div>
 
-        <TabsContent value="circuito" className="mt-6"><TabCircuito /></TabsContent>
-        <TabsContent value="pendiente" className="mt-6"><TabPendiente /></TabsContent>
-        <TabsContent value="deuda" className="mt-6"><TabDeuda /></TabsContent>
-        <TabsContent value="proveedores" className="mt-6"><TabProveedores /></TabsContent>
-        <TabsContent value="proyectos" className="mt-6"><TabProyectos /></TabsContent>
+        {PESTANAS.map(({ value, Componente }) => (
+          <TabsContent key={value} value={value} className="mt-6"><Componente /></TabsContent>
+        ))}
       </Tabs>
     </div>
   )

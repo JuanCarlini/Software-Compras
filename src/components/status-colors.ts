@@ -1,4 +1,5 @@
-// Semaforización unificada de estados: todos los estados de la app usan estos colores.
+// Semaforización de los estados del circuito (OC/CE/FACT/OP), consumida vía StatusBadge.
+// Proyectos y roles de admin tienen sus propios mapas de color.
 
 import {
   CheckCircle,

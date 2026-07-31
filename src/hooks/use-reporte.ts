@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
+import { api } from "@/shared/api-client"
 import type { TablaReporte } from "@/lib/export/tipos"
 
-export interface ResultadoReporte {
+interface ResultadoReporte {
   titulo: string
   filtros: Record<string, unknown>
   tablas: TablaReporte[]
@@ -26,12 +27,7 @@ export function useReporte(nombre: string) {
     async function traer() {
       setLoading(true)
       try {
-        const res = await fetch(`/api/reportes/${nombre}?${query}`, { signal: control.signal })
-        if (!res.ok) {
-          const cuerpo = await res.json().catch(() => ({}))
-          throw new Error(cuerpo.error ?? `Error ${res.status}`)
-        }
-        setReporte(await res.json())
+        setReporte(await api(`/api/reportes/${nombre}?${query}`, { signal: control.signal }))
         setError(null)
       } catch (e) {
         if ((e as Error).name === "AbortError") return

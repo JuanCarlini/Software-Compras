@@ -3,105 +3,50 @@ import { FiltrosReporteSchema, type FiltrosReporte } from "@/shared/validation/r
 import type { TablaReporte } from "@/lib/export/tipos"
 import { COLUMNAS, calcularTotales, describirFiltros } from "@/lib/export/tablas"
 
-export interface ReporteResultado {
+interface ReporteResultado {
   titulo: string
   filtros: FiltrosReporte
   tablas: TablaReporte[]
 }
 
-// Template Method: el esqueleto validar -> consultar -> adaptar es idéntico en los seis
-// reportes; las subclases solo aportan consultar, que es el único paso que varía.
-export abstract class ReporteBase<TFila> {
-  abstract readonly nombre: string
-  abstract readonly titulo: string
+type Fila = Record<string, unknown>
 
-  async generar(crudos: unknown): Promise<ReporteResultado> {
-    const filtros = this.validar(crudos)
-    const filas = await this.consultar(filtros)
-    return { titulo: this.titulo, filtros, tablas: this.adaptar(filas, filtros) }
-  }
-
-  protected validar(crudos: unknown): FiltrosReporte {
-    return FiltrosReporteSchema.parse(crudos)
-  }
-
-  protected abstract consultar(f: FiltrosReporte): Promise<TFila[]>
-
-  // Paso sobrescribible con implementación por defecto: las columnas salen de COLUMNAS
-  // por nombre de reporte, así que ninguna subclase necesita repetir este cuerpo.
-  protected adaptar(filas: TFila[], f: FiltrosReporte): TablaReporte[] {
-    const columnas = COLUMNAS[this.nombre]
-    const filasGenericas = filas as unknown as Array<Record<string, unknown>>
-    return [{
-      titulo: this.titulo,
-      filtros: describirFiltros(f),
-      columnas,
-      filas: filasGenericas,
-      totales: calcularTotales(columnas, filasGenericas),
-    }]
-  }
-}
-
-export class ReporteCircuito extends ReporteBase<Record<string, unknown>> {
-  readonly nombre = "circuito"
-  readonly titulo = "Circuito de compras"
-
-  protected consultar(f: FiltrosReporte) {
-    return ReporteRepository.circuito<Record<string, unknown>>(f)
-  }
-}
-
-export class ReporteCircuitoMensual extends ReporteBase<Record<string, unknown>> {
-  readonly nombre = "circuito-mensual"
-  readonly titulo = "Evolución mensual del circuito"
-
-  protected consultar(f: FiltrosReporte) {
-    return ReporteRepository.circuitoMensual<Record<string, unknown>>(f)
-  }
-}
-
-export class ReportePendienteCertificar extends ReporteBase<Record<string, unknown>> {
-  readonly nombre = "pendiente-certificar"
-  readonly titulo = "Pendiente de certificar"
-
-  protected consultar(f: FiltrosReporte) {
-    return ReporteRepository.pendienteCertificar<Record<string, unknown>>(f)
-  }
-}
-
-export class ReporteDeuda extends ReporteBase<Record<string, unknown>> {
-  readonly nombre = "deuda"
-  readonly titulo = "Deuda con proveedores"
-
-  protected consultar(f: FiltrosReporte) {
-    return ReporteRepository.deuda<Record<string, unknown>>(f)
-  }
-}
-
-export class ReporteProveedores extends ReporteBase<Record<string, unknown>> {
-  readonly nombre = "proveedores"
-  readonly titulo = "Circuito por proveedor"
-
-  protected consultar(f: FiltrosReporte) {
-    return ReporteRepository.proveedores<Record<string, unknown>>(f)
-  }
-}
-
-export class ReporteProyectos extends ReporteBase<Record<string, unknown>> {
-  readonly nombre = "proyectos"
-  readonly titulo = "Ejecución por proyecto"
-
-  protected consultar(f: FiltrosReporte) {
-    return ReporteRepository.proyectos<Record<string, unknown>>(f)
+// El esqueleto validar -> consultar -> adaptar es idéntico en los seis reportes; lo único
+// que varía es el título y qué RPC se consulta. Un mapa alcanza: no hace falta una clase
+// por reporte. Las columnas salen de COLUMNAS por nombre.
+function reporte(nombre: string, titulo: string, consultar: (f: FiltrosReporte) => Promise<Fila[]>) {
+  return {
+    async generar(crudos: unknown): Promise<ReporteResultado> {
+      const filtros = FiltrosReporteSchema.parse(crudos)
+      const filas = await consultar(filtros)
+      const columnas = COLUMNAS[nombre]
+      return {
+        titulo,
+        filtros,
+        tablas: [
+          {
+            titulo,
+            filtros: describirFiltros(filtros),
+            columnas,
+            filas,
+            totales: calcularTotales(columnas, filas),
+          },
+        ],
+      }
+    },
   }
 }
 
 // Registry: despacha por nombre y es lo que evita seis rutas copiadas.
-export const REPORTES: Record<string, ReporteBase<Record<string, unknown>>> = {
-  circuito: new ReporteCircuito(),
-  "circuito-mensual": new ReporteCircuitoMensual(),
-  "pendiente-certificar": new ReportePendienteCertificar(),
-  deuda: new ReporteDeuda(),
-  proveedores: new ReporteProveedores(),
-  proyectos: new ReporteProyectos(),
+export const REPORTES: Record<string, ReturnType<typeof reporte>> = {
+  circuito: reporte("circuito", "Circuito de compras", (f) => ReporteRepository.circuito<Fila>(f)),
+  "circuito-mensual": reporte("circuito-mensual", "Evolución mensual del circuito", (f) =>
+    ReporteRepository.circuitoMensual<Fila>(f)
+  ),
+  "pendiente-certificar": reporte("pendiente-certificar", "Pendiente de certificar", (f) =>
+    ReporteRepository.pendienteCertificar<Fila>(f)
+  ),
+  deuda: reporte("deuda", "Deuda con proveedores", (f) => ReporteRepository.deuda<Fila>(f)),
+  proveedores: reporte("proveedores", "Circuito por proveedor", (f) => ReporteRepository.proveedores<Fila>(f)),
+  proyectos: reporte("proyectos", "Ejecución por proyecto", (f) => ReporteRepository.proyectos<Fila>(f)),
 }

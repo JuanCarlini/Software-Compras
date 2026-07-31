@@ -3,14 +3,15 @@
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { SearchBar } from "@/components/ui/search-bar"
+import { SearchBar } from "@/components/search-bar"
 import { Eye, CheckCircle, XCircle, Loader2 } from "lucide-react"
-import { ListShell } from "@/components/ui/list-shell"
-import { SortControl, useSort, type SortField } from "@/components/ui/sort-control"
+import { ListShell } from "@/components/list-shell"
+import { SortControl, useSort, type SortField } from "@/components/sort-control"
+import { LABEL_ESTADO } from "@/models"
 import Link from "next/link"
 import { useOrders } from "@/hooks/use-orders"
 import { formatCurrency } from "@/shared/format-utils"
-import { SearchStats } from "@/components/ui/search-stats"
+import { SearchStats } from "@/components/search-stats"
 import { searchWithScore } from "@/shared/search-utils"
 import { showErrorToast } from "@/shared/toast-helpers"
 import { StatusBadge } from "@/components/status-badge"
@@ -21,7 +22,8 @@ const SORT_FIELDS: SortField[] = [
   { key: "numero_oc", label: "Número de OC" },
   { key: "fecha_oc", label: "Fecha" },
   { key: "total_con_iva", label: "Total" },
-  { key: "estado", label: "Estado" },
+  // Ordena por la etiqueta visible, no por el valor crudo del enum.
+  { key: "estado", label: "Estado", get: (i) => LABEL_ESTADO[i.estado as keyof typeof LABEL_ESTADO] ?? i.estado },
 ]
 
 export function OrdenCompraList() {
@@ -137,7 +139,7 @@ export function OrdenCompraList() {
                   {/* columna 3: totales y estado */}
                   <div>
                     <p className="font-medium text-foreground">
-                      {formatCurrency(orden.total_con_iva ?? orden.total_neto ?? 0)}
+                      {formatCurrency(orden.total_con_iva ?? orden.total_neto ?? 0, orden.moneda ?? "ARS")}
                     </p>
                     <StatusBadge estado={orden.estado} showIcon />
                   </div>

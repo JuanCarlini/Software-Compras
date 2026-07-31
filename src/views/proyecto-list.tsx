@@ -1,14 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { SearchBar } from "@/components/ui/search-bar"
-import { SearchStats } from "@/components/ui/search-stats"
-import { ListShell } from "@/components/ui/list-shell"
-import { SortControl, useSort, type SortField } from "@/components/ui/sort-control"
+import { SearchBar } from "@/components/search-bar"
+import { SearchStats } from "@/components/search-stats"
+import { ListShell } from "@/components/list-shell"
+import { SortControl, useSort, type SortField } from "@/components/sort-control"
 import { Edit, FolderKanban } from "lucide-react"
 import { useProyectos } from "@/hooks/use-proyectos"
 import { useAuth } from "@/components/auth-context"
@@ -28,7 +28,8 @@ const SORT_FIELDS: SortField[] = [
   { key: "nombre", label: "Nombre" },
   { key: "codigo", label: "Código" },
   { key: "fecha_inicio", label: "Fecha de inicio" },
-  { key: "estado", label: "Estado" },
+  // Ordena por la etiqueta visible, no por el valor crudo del enum.
+  { key: "estado", label: "Estado", get: (p) => LABEL_PROYECTO_ESTADO[p.estado as EstadoProyecto] ?? p.estado },
 ]
 
 export function ProyectoList() {
@@ -39,13 +40,20 @@ export function ProyectoList() {
 
   const canEdit = puede("proyectos", "crear")
 
-  const filteredProyectos = sort.apply(
-    searchWithScore(
-      proyectos,
-      searchTerm,
-      ["nombre", "codigo", "descripcion"],
-      { nombre: 3, codigo: 3, descripcion: 1 }
-    )
+  // Memoizado: sin esto se re-puntúa y reordena la lista completa en cada render.
+  // `apply` es estable (useCallback en useSort): cambia solo si cambia el criterio.
+  const { apply } = sort
+  const filteredProyectos = useMemo(
+    () =>
+      apply(
+        searchWithScore(
+          proyectos,
+          searchTerm,
+          ["nombre", "codigo", "descripcion"],
+          { nombre: 3, codigo: 3, descripcion: 1 }
+        )
+      ),
+    [proyectos, searchTerm, apply]
   )
 
   return (

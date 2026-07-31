@@ -5,6 +5,7 @@ import { useReporte } from "@/hooks/use-reporte"
 import { BarraHorizontal, StatTile } from "./graficos"
 import { TablaReporte } from "./tabla-reporte"
 import { formatearValor } from "./formato"
+import { porMoneda } from "./moneda"
 
 interface FilaPendiente {
   numero_oc: string
@@ -17,24 +18,22 @@ interface FilaPendiente {
 export function TabPendiente() {
   const { reporte, loading, error } = useReporte("pendiente-certificar")
 
+  if (error && !reporte) {
+    return <p role="alert" className="py-8 text-center text-destructive">Error: {error}</p>
+  }
   if (!reporte) {
-    return <p className="py-8 text-center text-muted-foreground">{error ?? "Cargando…"}</p>
+    return <p className="py-8 text-center text-muted-foreground">Cargando…</p>
   }
 
   const tabla = reporte.tablas[0]
   const filas = tabla.filas as unknown as FilaPendiente[]
 
-  // Con el filtro de moneda en "todas" las filas llegan mezcladas en ARS y USD: sumar
-  // el pendiente global mezclaría montos, así que cada bloque se agrupa por moneda.
-  const monedas = [...new Set(filas.map((f) => f.moneda))]
-
   return (
     // Al refiltrar se conserva el render anterior atenuado: sin salto a esqueleto.
-    <div className={`space-y-6 ${loading ? "opacity-40 transition-opacity" : ""}`}>
+    <div aria-busy={loading} className={`space-y-6 ${loading ? "opacity-40 transition-opacity" : ""}`}>
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      {monedas.map((moneda) => {
-        const filasMoneda = filas.filter((f) => f.moneda === moneda)
+      {porMoneda(filas).map(([moneda, filasMoneda]) => {
         const total = filasMoneda.reduce((s, f) => s + Number(f.pendiente), 0)
         const top = [...filasMoneda]
           .sort((a, b) => Number(b.pendiente) - Number(a.pendiente))

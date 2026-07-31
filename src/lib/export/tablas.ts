@@ -46,7 +46,7 @@ export const COLUMNAS: Record<string, ColumnaReporte[]> = {
     { clave: "certificado", titulo: "Certificado", tipo: "moneda" },
     { clave: "facturado", titulo: "Facturado", tipo: "moneda" },
     { clave: "pagado", titulo: "Pagado", tipo: "moneda" },
-    { clave: "deuda", titulo: "Deuda", tipo: "moneda" },
+    { clave: "deuda", titulo: "Deuda (imputada)", tipo: "moneda" },
     { clave: "cantidad_oc", titulo: "OC", tipo: "numero" },
   ],
   proyectos: [
