@@ -80,9 +80,9 @@ export function DashboardOverview() {
     {
       title: "Órdenes de Pago",
       value: stats.ordenesPago.total.toString(),
-      change: `${stats.ordenesPago.vencidas} vencida${stats.ordenesPago.vencidas !== 1 ? 's' : ''}`,
+      change: `${stats.ordenesPago.porPagar} por pagar`,
       icon: CreditCard,
-      color: stats.ordenesPago.vencidas > 0 ? "text-red-600" : "text-green-600",
+      color: stats.ordenesPago.porPagar > 0 ? "text-red-600" : "text-green-600",
       details: `${stats.ordenesPago.pendientes} pendientes, ${stats.ordenesPago.aprobadas} aprobadas`
     },
     {
@@ -95,7 +95,10 @@ export function DashboardOverview() {
     },
     {
       title: "Total Pagado",
-      value: formatCurrency(stats.ordenesPago.montoTotal, "ARS"),
+      value:
+        Object.entries(stats.ordenesPago.montoPagadoPorMoneda)
+          .map(([moneda, monto]) => formatCurrency(monto, moneda))
+          .join(" · ") || formatCurrency(0, "ARS"),
       change: "Órdenes completadas",
       icon: TrendingUp,
       color: "text-orange-600",
@@ -170,18 +173,18 @@ export function DashboardOverview() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Órdenes de pago vencidas */}
-              {stats.ordenesPago.vencidas > 0 && (
+              {/* Órdenes de pago aprobadas sin pagar */}
+              {stats.ordenesPago.porPagar > 0 && (
                 <div className="flex items-center justify-between p-3 bg-destructive/10 rounded-lg">
                   <div className="flex items-center space-x-2">
                     <AlertTriangle className="h-4 w-4 text-destructive" />
                     <div>
-                      <p className="text-sm font-medium text-destructive">Órdenes Vencidas</p>
-                      <p className="text-xs text-destructive">{stats.ordenesPago.vencidas} órdenes de pago vencidas</p>
+                      <p className="text-sm font-medium text-destructive">Pagos pendientes</p>
+                      <p className="text-xs text-destructive">{stats.ordenesPago.porPagar} órdenes de pago aprobadas sin pagar</p>
                     </div>
                   </div>
                   <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
-                    Urgente
+                    Por pagar
                   </Badge>
                 </div>
               )}
@@ -203,7 +206,7 @@ export function DashboardOverview() {
               )}
 
               {/* Si todo está bien */}
-              {stats.ordenesPago.vencidas === 0 && stats.ordenesCompra.pendientes === 0 && (
+              {stats.ordenesPago.porPagar === 0 && stats.ordenesCompra.pendientes === 0 && (
                 <div className="flex items-center space-x-2 p-3 bg-emerald-500/10 rounded-lg">
                   <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                   <div>

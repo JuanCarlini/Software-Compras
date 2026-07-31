@@ -23,6 +23,15 @@ async function invocar<T>(fn: string, f: FiltrosReporte): Promise<T[]> {
 }
 
 export const ReporteRepository = {
+  // Resumen del dashboard: mismo rediseño que los reportes (agrega SQL, no el cliente).
+  resumenDashboard: async (): Promise<Record<string, unknown>> => {
+    const supabase = createClient() as unknown as {
+      rpc: (name: string) => Promise<{ data: Record<string, unknown> | null; error: unknown }>
+    }
+    const { data, error } = await supabase.rpc("rpc_dashboard_resumen")
+    if (error) throw error
+    return data ?? {}
+  },
   circuito: <T>(f: FiltrosReporte) => invocar<T>("rpc_reporte_circuito", f),
   circuitoMensual: <T>(f: FiltrosReporte) => invocar<T>("rpc_reporte_circuito_mensual", f),
   pendienteCertificar: <T>(f: FiltrosReporte) => invocar<T>("rpc_reporte_pendiente_certificar", f),
