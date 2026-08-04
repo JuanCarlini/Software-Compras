@@ -22,6 +22,20 @@ export const EJE = {
   tick: { fill: "var(--rep-tinta-mutada)", fontSize: 12 },
 }
 
+// Eje Y categórico: 180px fijos se comían medio viewport en móvil. Ancho contenido
+// y etiqueta truncada; el nombre completo vive en el Tooltip.
+export const EJE_CATEGORIA = {
+  width: 110,
+  tickFormatter: (v: unknown) => {
+    const s = String(v)
+    return s.length > 14 ? `${s.slice(0, 13)}…` : s
+  },
+}
+
+// Montos abreviados para ticks de eje ("$ 34,6 M"): el monto exacto va en el Tooltip.
+const COMPACTO = new Intl.NumberFormat("es-AR", { notation: "compact", maximumFractionDigits: 1 })
+export const monedaCompacta = (v: unknown) => `$ ${COMPACTO.format(Number(v))}`
+
 // El alto incluye la banda del eje X: fijar solo el área de trazado deja la tarjeta
 // con un scroll vertical diminuto. `descripcion` es el nombre accesible del gráfico:
 // el SVG de Recharts no anuncia nada por sí solo.
@@ -53,10 +67,10 @@ export function BarraHorizontal({
 }) {
   return (
     <Contenedor alto={alto} descripcion={descripcion ?? `Gráfico de barras de ${clave} por ${etiqueta}`}>
-      <BarChart data={datos} layout="vertical" margin={{ left: 24, right: 48 }}>
+      <BarChart data={datos} layout="vertical" margin={{ left: 8, right: 24 }}>
         <CartesianGrid horizontal={false} stroke="var(--rep-grid)" />
-        <XAxis type="number" {...EJE} tickFormatter={(v) => formatearValor(v, "moneda", moneda)} />
-        <YAxis type="category" dataKey={etiqueta} width={180} {...EJE} />
+        <XAxis type="number" {...EJE} tickFormatter={monedaCompacta} />
+        <YAxis type="category" dataKey={etiqueta} {...EJE} {...EJE_CATEGORIA} />
         <Tooltip
           formatter={(v) => formatearValor(v, "moneda", moneda)}
           contentStyle={{ background: "var(--rep-grid)", border: "none", borderRadius: 8 }}
@@ -77,9 +91,9 @@ export function Embudo({
 }) {
   return (
     <Contenedor alto={alto} descripcion={`Embudo del circuito en ${moneda}: ${etapas.map((e) => e.etapa).join(", ")}`}>
-      <BarChart data={etapas} layout="vertical" margin={{ left: 24, right: 96 }}>
+      <BarChart data={etapas} layout="vertical" margin={{ left: 8, right: 48 }}>
         <CartesianGrid horizontal={false} stroke="var(--rep-grid)" />
-        <XAxis type="number" {...EJE} tickFormatter={(v) => formatearValor(v, "moneda", moneda)} />
+        <XAxis type="number" {...EJE} tickFormatter={monedaCompacta} />
         <YAxis type="category" dataKey="etapa" width={110} {...EJE} />
         <Tooltip
           formatter={(v) => formatearValor(v, "moneda", moneda)}
@@ -113,7 +127,7 @@ export function LineaTemporal({
       <LineChart data={datos} margin={{ left: 24, right: 24 }}>
         <CartesianGrid vertical={false} stroke="var(--rep-grid)" />
         <XAxis dataKey="mes" {...EJE} tickFormatter={mesCorto} />
-        <YAxis {...EJE} tickFormatter={(v) => formatearValor(v, "moneda", moneda)} />
+        <YAxis {...EJE} tickFormatter={monedaCompacta} />
         <Tooltip
           formatter={(v) => formatearValor(v, "moneda", moneda)}
           labelFormatter={mesCorto}

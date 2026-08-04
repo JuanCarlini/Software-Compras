@@ -3,7 +3,7 @@
 import { Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useReporte } from "@/hooks/use-reporte"
-import { Contenedor, EJE, StatTile } from "./graficos"
+import { Contenedor, EJE, EJE_CATEGORIA, monedaCompacta, StatTile } from "./graficos"
 import { TablaReporte } from "./tabla-reporte"
 import { formatearValor } from "./formato"
 import { porMoneda } from "./moneda"
@@ -73,10 +73,10 @@ export function TabDeuda() {
               <CardHeader><CardTitle>Antigüedad de la deuda por proveedor ({moneda})</CardTitle></CardHeader>
               <CardContent>
                 <Contenedor alto={420} descripcion={`Deuda por proveedor y tramo de antigüedad en ${moneda}`}>
-                  <BarChart data={porProveedor} layout="vertical" margin={{ left: 24, right: 48 }}>
+                  <BarChart data={porProveedor} layout="vertical" margin={{ left: 8, right: 24 }}>
                     <CartesianGrid horizontal={false} stroke="var(--rep-grid)" />
-                    <XAxis type="number" {...EJE} tickFormatter={(v) => formatearValor(v, "moneda", moneda)} />
-                    <YAxis type="category" dataKey="proveedor" width={180} {...EJE} />
+                    <XAxis type="number" {...EJE} tickFormatter={monedaCompacta} />
+                    <YAxis type="category" dataKey="proveedor" {...EJE} {...EJE_CATEGORIA} />
                     <Tooltip
                       formatter={(v) => formatearValor(v, "moneda", moneda)}
                       contentStyle={{ background: "var(--rep-grid)", border: "none", borderRadius: 8 }}

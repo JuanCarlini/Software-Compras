@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { SearchBar } from "@/components/search-bar"
 import { SearchStats } from "@/components/search-stats"
-import { Eye } from "lucide-react"
+import { Eye, FileCheck } from "lucide-react"
+import { EmptyState } from "@/components/empty-state"
+import { CrearButton } from "@/components/crear-button"
 import { ListShell } from "@/components/list-shell"
 import { SortControl, useSort, type SortField } from "@/components/sort-control"
 import { LABEL_ESTADO } from "@/models"
@@ -66,13 +68,13 @@ export function CertificacionesList() {
     <ListShell loading={loading} error={error} loadingText="Cargando certificaciones...">
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle>Certificaciones ({filteredCertificaciones.length})</CardTitle>
           <SearchBar
             value={searchTerm}
             onChange={setSearchTerm}
             placeholder="Buscar por número, OC, proveedor..."
-            className="w-80"
+            className="w-full sm:w-80"
           />
         </div>
       </CardHeader>
@@ -90,13 +92,18 @@ export function CertificacionesList() {
 
         <div className="space-y-4">
           {filteredCertificaciones.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">
-                {searchTerm
+            <EmptyState
+              icon={FileCheck}
+              title={
+                searchTerm
                   ? `No se encontraron certificaciones que coincidan con "${searchTerm}"`
-                  : "No hay certificaciones registradas"}
-              </p>
-            </div>
+                  : "No hay certificaciones registradas"
+              }
+            >
+              {!searchTerm && (
+                <CrearButton modulo="certificaciones" href="/certificaciones/nueva" label="Crear la primera certificación" />
+              )}
+            </EmptyState>
           ) : (
             sorted.map((cert: any) => (
               <div
@@ -121,7 +128,7 @@ export function CertificacionesList() {
                   </div>
 
                   <div>
-                    <p className="font-medium text-foreground">
+                    <p className="font-medium text-foreground tabular-nums">
                       {formatCurrency(cert.total_con_iva ?? 0, cert.moneda ?? "ARS")}
                     </p>
                     <div className="flex flex-wrap items-center gap-2">

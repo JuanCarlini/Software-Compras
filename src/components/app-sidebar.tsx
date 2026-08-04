@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button"
 // Dashboard no es módulo de matriz → siempre visible. Reportes sí lo es desde el
 // rediseño: se catea con reportes:ver como cualquier otra sección.
 const menuItems = [
-  { title: "Dashboard", url: "/dashboard", icon: Home },
+  { title: "Inicio", url: "/dashboard", icon: Home },
   { title: "Órdenes de Compra", url: "/ordenes-compra", icon: ShoppingCart, modulo: "ordenes_compra" },
   { title: "Certificaciones", url: "/certificaciones", icon: FileCheck, modulo: "certificaciones" },
   { title: "Facturas", url: "/facturas", icon: Receipt, modulo: "facturas" },

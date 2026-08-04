@@ -52,8 +52,8 @@ export function ReportesShell({
       </Suspense>
 
       <Tabs value={activa} onValueChange={setActiva}>
-        <div className="flex items-center justify-between">
-          <TabsList className="no-imprimir">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <TabsList className="no-imprimir max-w-full justify-start overflow-x-auto scrollbar-none">
             {PESTANAS.map((p) => (
               <TabsTrigger key={p.value} value={p.value}>{p.titulo}</TabsTrigger>
             ))}

@@ -244,7 +244,7 @@ export function OrdenPagoForm() {
                 </div>
               ))}
               <div className="flex justify-end text-sm">
-                <span className={!sumasCoinciden && totalCajas > 0 ? "text-red-600" : ""}>
+                <span className={!sumasCoinciden && totalCajas > 0 ? "text-destructive" : ""}>
                   Total cajas: <strong>{formatCurrency(totalCajas, moneda)}</strong>
                 </span>
               </div>
@@ -252,7 +252,7 @@ export function OrdenPagoForm() {
           </Card>
         )}
 
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-wrap justify-end gap-3">
           <Button type="button" variant="outline" onClick={() => router.back()} disabled={isSubmitting}>
             Cancelar
           </Button>

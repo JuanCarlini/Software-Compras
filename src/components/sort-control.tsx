@@ -40,9 +40,9 @@ export function SortControl({ fields, field, setField, direction, setDirection }
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-muted-foreground">Ordenar por</span>
+      <span className="hidden sm:inline text-sm text-muted-foreground">Ordenar por</span>
       <Select value={field} onValueChange={setField}>
-        <SelectTrigger className="w-48">
+        <SelectTrigger className="w-40 sm:w-48" aria-label="Ordenar por">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

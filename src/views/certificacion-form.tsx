@@ -259,7 +259,7 @@ export function CertificacionForm() {
                         placeholder="0"
                       />
                       {excede && (
-                        <p className="text-xs text-red-600">
+                        <p className="text-xs text-destructive">
                           Máximo {linea.cantidad_disponible} (el resto ya está certificado)
                         </p>
                       )}
@@ -268,7 +268,7 @@ export function CertificacionForm() {
                 )
               })}
 
-              <div className="flex justify-end gap-6 pt-2 text-sm">
+              <div className="flex flex-wrap justify-end gap-x-6 gap-y-1 pt-2 text-sm">
                 <span>
                   Neto: <strong>{formatCurrency(totalNeto, ocElegida?.moneda)}</strong>
                 </span>

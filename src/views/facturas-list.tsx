@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { SearchBar } from "@/components/search-bar"
 import { SearchStats } from "@/components/search-stats"
-import { Eye } from "lucide-react"
+import { Eye, Receipt } from "lucide-react"
+import { EmptyState } from "@/components/empty-state"
+import { CrearButton } from "@/components/crear-button"
 import Link from "next/link"
 import { ListShell } from "@/components/list-shell"
 import { SortControl, useSort, type SortField } from "@/components/sort-control"
@@ -65,13 +67,13 @@ export function FacturasList() {
     <ListShell loading={loading} error={error} loadingText="Cargando facturas...">
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle>Facturas ({filteredFacturas.length})</CardTitle>
           <SearchBar
             value={searchTerm}
             onChange={setSearchTerm}
             placeholder="Buscar por número, proveedor, estado..."
-            className="w-80"
+            className="w-full sm:w-80"
           />
         </div>
       </CardHeader>
@@ -89,13 +91,18 @@ export function FacturasList() {
 
         <div className="space-y-4">
           {filteredFacturas.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">
-                {searchTerm
+            <EmptyState
+              icon={Receipt}
+              title={
+                searchTerm
                   ? `No se encontraron facturas que coincidan con "${searchTerm}"`
-                  : "No hay facturas registradas"}
-              </p>
-            </div>
+                  : "No hay facturas registradas"
+              }
+            >
+              {!searchTerm && (
+                <CrearButton modulo="facturas" href="/facturas/nueva" label="Crear la primera factura" />
+              )}
+            </EmptyState>
           ) : (
             sorted.map((factura: any) => (
               <div
@@ -122,7 +129,7 @@ export function FacturasList() {
                   </div>
 
                   <div>
-                    <p className="font-medium text-foreground">
+                    <p className="font-medium text-foreground tabular-nums">
                       {formatCurrency(factura.total_con_iva ?? 0, factura.moneda ?? "ARS")}
                     </p>
                     <StatusBadge estado={factura.estado} showIcon />

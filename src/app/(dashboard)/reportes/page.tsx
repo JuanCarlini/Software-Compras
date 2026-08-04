@@ -1,4 +1,5 @@
 import { requirePagePermission } from "@/lib/auth/permissions-server"
+import { PageHeader } from "@/components/page-header"
 import { ReportesShell } from "@/views/reportes/reportes-shell"
 import { ProveedorService } from "@/services/proveedor.service"
 import { ProyectoService } from "@/services/proyecto.service"
@@ -15,10 +16,7 @@ export default async function ReportesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Reportes</h1>
-        <p className="text-muted-foreground">Indicadores del circuito de compras</p>
-      </div>
+      <PageHeader title="Reportes" description="Indicadores del circuito de compras" />
       <ReportesShell
         proveedores={proveedores.map((p) => ({ id: p.id, nombre: p.nombre }))}
         proyectos={proyectos.map((p) => ({ id: p.id, nombre: p.nombre }))}

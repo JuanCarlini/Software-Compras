@@ -4,7 +4,9 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { SearchBar } from "@/components/search-bar"
-import { Eye, CheckCircle, XCircle, Loader2 } from "lucide-react"
+import { Eye, CheckCircle, XCircle, Loader2, ShoppingCart } from "lucide-react"
+import { EmptyState } from "@/components/empty-state"
+import { CrearButton } from "@/components/crear-button"
 import { ListShell } from "@/components/list-shell"
 import { SortControl, useSort, type SortField } from "@/components/sort-control"
 import { LABEL_ESTADO } from "@/models"
@@ -72,13 +74,13 @@ export function OrdenCompraList() {
     <ListShell loading={loading} error={error} loadingText="Cargando órdenes...">
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle>Órdenes de Compra ({filteredOrders.length})</CardTitle>
           <SearchBar
             value={searchTerm}
             onChange={setSearchTerm}
             placeholder="Buscar por número, estado u observación..."
-            className="w-80"
+            className="w-full sm:w-80"
           />
         </div>
       </CardHeader>
@@ -96,13 +98,18 @@ export function OrdenCompraList() {
 
         <div className="space-y-4">
           {filteredOrders.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">
-                {searchTerm
+            <EmptyState
+              icon={ShoppingCart}
+              title={
+                searchTerm
                   ? `No se encontraron órdenes que coincidan con "${searchTerm}"`
-                  : "No hay órdenes de compra registradas"}
-              </p>
-            </div>
+                  : "No hay órdenes de compra registradas"
+              }
+            >
+              {!searchTerm && (
+                <CrearButton modulo="ordenes_compra" href="/ordenes-compra/nueva" label="Crear la primera orden" />
+              )}
+            </EmptyState>
           ) : (
             sorted.map((orden: any) => (
               <div
@@ -138,7 +145,7 @@ export function OrdenCompraList() {
 
                   {/* columna 3: totales y estado */}
                   <div>
-                    <p className="font-medium text-foreground">
+                    <p className="font-medium text-foreground tabular-nums">
                       {formatCurrency(orden.total_con_iva ?? orden.total_neto ?? 0, orden.moneda ?? "ARS")}
                     </p>
                     <StatusBadge estado={orden.estado} showIcon />
@@ -168,7 +175,7 @@ export function OrdenCompraList() {
                           {updatingId === orden.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                           )}
                         </Button>
                         <Button
@@ -182,7 +189,7 @@ export function OrdenCompraList() {
                           {updatingId === orden.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
-                            <XCircle className="h-4 w-4 text-red-600" />
+                            <XCircle className="h-4 w-4 text-destructive" />
                           )}
                         </Button>
                       </>

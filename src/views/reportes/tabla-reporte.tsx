@@ -43,7 +43,7 @@ export function TablaReporte({ tabla }: { tabla: Tabla }) {
               {tabla.columnas.map((c) => (
                 <TableCell
                   key={c.clave}
-                  className={TIPOS_NUMERICOS.has(c.tipo) ? "text-right tabular-nums" : ""}
+                  className={TIPOS_NUMERICOS.has(c.tipo) ? "text-right tabular-nums whitespace-nowrap" : ""}
                 >
                   {formatearValor(fila[c.clave], c.tipo, String(fila.moneda ?? "ARS"))}
                 </TableCell>

@@ -287,7 +287,7 @@ export function FacturaForm() {
                   <div key={cert.id} className="grid grid-cols-1 md:grid-cols-3 gap-2 items-end border-b pb-2">
                     <div className="md:col-span-2">
                       <p className="font-mono text-sm">{cert.numero_cert}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground break-words">
                         Certificado: {formatCurrency(cert.total_con_iva, cert.moneda ?? "ARS")} · Saldo a facturar:{" "}
                         <strong>{formatCurrency(cert.saldo_facturable, cert.moneda ?? "ARS")}</strong>
                       </p>
@@ -306,14 +306,14 @@ export function FacturaForm() {
                         placeholder="0"
                       />
                       {excede && (
-                        <p className="text-xs text-red-600">Máximo {formatCurrency(cert.saldo_facturable, cert.moneda ?? "ARS")}</p>
+                        <p className="text-xs text-destructive">Máximo {formatCurrency(cert.saldo_facturable, cert.moneda ?? "ARS")}</p>
                       )}
                     </div>
                   </div>
                 )
               })}
               <div className="flex justify-end text-sm">
-                <span className={totalImputado > totalLineas + 0.01 ? "text-red-600" : ""}>
+                <span className={totalImputado > totalLineas + 0.01 ? "text-destructive" : ""}>
                   Total imputado: <strong>{formatCurrency(totalImputado)}</strong>
                 </span>
               </div>

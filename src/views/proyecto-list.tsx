@@ -14,15 +14,11 @@ import { useProyectos } from "@/hooks/use-proyectos"
 import { useAuth } from "@/components/auth-context"
 import { searchWithScore } from "@/shared/search-utils"
 import { formatDateShort } from "@/shared/date-utils"
+import { getStatusStyle } from "@/components/status-colors"
+import { EmptyState } from "@/components/empty-state"
+import { CrearButton } from "@/components/crear-button"
 import { LABEL_PROYECTO_ESTADO } from "@/shared/validation/proyecto-validation"
 import type { EstadoProyecto } from "@/models/proyecto.model"
-
-const ESTILO_ESTADO: Record<EstadoProyecto, string> = {
-  planificado: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100",
-  en_ejecucion: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100",
-  finalizado: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100",
-  cancelado: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100",
-}
 
 const SORT_FIELDS: SortField[] = [
   { key: "nombre", label: "Nombre" },
@@ -76,19 +72,28 @@ export function ProyectoList() {
 
         {filteredProyectos.length === 0 ? (
           <Card>
-            <CardContent className="py-10 text-center text-muted-foreground">
-              {proyectos.length === 0
-                ? "Todavía no hay proyectos cargados."
-                : "Ningún proyecto coincide con la búsqueda."}
+            <CardContent>
+              <EmptyState
+                icon={FolderKanban}
+                title={
+                  proyectos.length === 0
+                    ? "Todavía no hay proyectos cargados."
+                    : "Ningún proyecto coincide con la búsqueda."
+                }
+              >
+                {proyectos.length === 0 && (
+                  <CrearButton modulo="proyectos" href="/proyectos/nuevo" label="Crear el primer proyecto" />
+                )}
+              </EmptyState>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-4">
             {filteredProyectos.map((proyecto) => (
               <Card key={proyecto.id}>
-                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-                  <div className="space-y-1">
-                    <CardTitle className="flex items-center gap-2 text-lg">
+                <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2 space-y-0 pb-3">
+                  <div className="space-y-1 min-w-0">
+                    <CardTitle className="flex items-center gap-2 text-lg break-words">
                       <FolderKanban className="h-4 w-4 text-muted-foreground" />
                       {proyecto.nombre}
                     </CardTitle>
@@ -98,7 +103,7 @@ export function ProyectoList() {
                   </div>
                   <div className="flex items-center gap-2">
                     {proyecto.estado && (
-                      <Badge className={ESTILO_ESTADO[proyecto.estado]}>
+                      <Badge className={getStatusStyle(proyecto.estado).color}>
                         {LABEL_PROYECTO_ESTADO[proyecto.estado]}
                       </Badge>
                     )}

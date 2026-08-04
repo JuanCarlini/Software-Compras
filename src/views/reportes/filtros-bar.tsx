@@ -52,7 +52,7 @@ export function FiltrosBar({
   }
 
   return (
-    <div className="no-imprimir flex flex-wrap items-end gap-4 rounded-lg border p-4">
+    <div className="no-imprimir grid grid-cols-2 items-end gap-4 rounded-lg border p-4 lg:flex lg:flex-wrap">
       <div className="space-y-1">
         <Label htmlFor="desde">Desde</Label>
         <Input
@@ -79,7 +79,7 @@ export function FiltrosBar({
           value={params.get("moneda") ?? "ARS"}
           onValueChange={(v) => setMoneda(v)}
         >
-          <SelectTrigger id="moneda" className="w-32">
+          <SelectTrigger id="moneda" className="w-full lg:w-32">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -93,13 +93,13 @@ export function FiltrosBar({
         </Select>
       </div>
 
-      <div className="space-y-1">
+      <div className="col-span-2 space-y-1 sm:col-span-1">
         <Label htmlFor="proveedor">Proveedor</Label>
         <Select
           value={params.get("proveedorId") ?? TODAS}
           onValueChange={(v) => setFiltro("proveedorId", v)}
         >
-          <SelectTrigger id="proveedor" className="w-56">
+          <SelectTrigger id="proveedor" className="w-full lg:w-56">
             <SelectValue placeholder="Todos" />
           </SelectTrigger>
           <SelectContent>
@@ -113,13 +113,13 @@ export function FiltrosBar({
         </Select>
       </div>
 
-      <div className="space-y-1">
+      <div className="col-span-2 space-y-1 sm:col-span-1">
         <Label htmlFor="proyecto">Proyecto</Label>
         <Select
           value={params.get("proyectoId") ?? TODAS}
           onValueChange={(v) => setFiltro("proyectoId", v)}
         >
-          <SelectTrigger id="proyecto" className="w-56">
+          <SelectTrigger id="proyecto" className="w-full lg:w-56">
             <SelectValue placeholder="Todos" />
           </SelectTrigger>
           <SelectContent>
