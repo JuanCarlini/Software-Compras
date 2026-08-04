@@ -78,11 +78,23 @@ export function calcularTotales(
 
 // Etiquetas legibles de los filtros aplicados: encabezan la tabla en pantalla y el
 // export, para que quede registrado con qué recorte se generó el reporte.
-export function describirFiltros(f: FiltrosReporte): Record<string, string> {
+// Los nombres los resuelve el servicio: acá un id suelto ("Proveedor: 7") no le dice
+// nada a quien recibe el archivo.
+export function describirFiltros(
+  f: FiltrosReporte,
+  nombres: { proveedor?: string; proyecto?: string } = {}
+): Record<string, string> {
   return {
     Período: `${f.desde} a ${f.hasta}`,
     Moneda: f.moneda ?? "Todas",
-    Proveedor: f.proveedorId ? String(f.proveedorId) : "Todos",
-    Proyecto: f.proyectoId ? String(f.proyectoId) : "Todos",
+    Proveedor: nombres.proveedor ?? "Todos",
+    Proyecto: nombres.proyecto ?? "Todos",
+    // Zona fija: el archivo se genera en el servidor (UTC) y sin esto la marca de
+    // hora sale tres horas adelantada respecto de cuando la pidieron.
+    Generado: new Intl.DateTimeFormat("es-AR", {
+      dateStyle: "short",
+      timeStyle: "short",
+      timeZone: "America/Argentina/Buenos_Aires",
+    }).format(new Date()),
   }
 }

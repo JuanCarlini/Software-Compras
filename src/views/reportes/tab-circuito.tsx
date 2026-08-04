@@ -24,8 +24,9 @@ interface FilaMensual extends Record<string, unknown> {
 }
 
 export function TabCircuito() {
+  // Dos tablas en una sola respuesta: resumen por moneda y evolución mensual. Antes
+  // eran dos peticiones y la mensual no entraba en ningún export.
   const { reporte, loading, error } = useReporte("circuito")
-  const mensual = useReporte("circuito-mensual")
 
   if (error && !reporte) {
     return <p role="alert" className="py-8 text-center text-destructive">Error: {error}</p>
@@ -36,7 +37,7 @@ export function TabCircuito() {
 
   const tabla = reporte.tablas[0]
   const filas = tabla.filas as unknown as FilaCircuito[]
-  const filasMensuales = (mensual.reporte?.tablas[0]?.filas ?? []) as unknown as FilaMensual[]
+  const filasMensuales = (reporte.tablas[1]?.filas ?? []) as unknown as FilaMensual[]
 
   return (
     // Al refiltrar se conserva el render anterior atenuado: sin salto a esqueleto.
@@ -73,7 +74,7 @@ export function TabCircuito() {
               <CardContent><Embudo etapas={etapas} moneda={fila.moneda} /></CardContent>
             </Card>
 
-            {(mesesDeLaMoneda.length > 0 || mensual.error) && (
+            {mesesDeLaMoneda.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle>Actividad mensual ({fila.moneda})</CardTitle>
@@ -84,18 +85,14 @@ export function TabCircuito() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {mensual.error ? (
-                    <p className="text-sm text-destructive">{mensual.error}</p>
-                  ) : (
-                    <LineaTemporal
-                      datos={mesesDeLaMoneda}
-                      series={[
-                        { clave: "comprado", nombre: "Comprado" },
-                        { clave: "pagado", nombre: "Pagado" },
-                      ]}
-                      moneda={fila.moneda}
-                    />
-                  )}
+                  <LineaTemporal
+                    datos={mesesDeLaMoneda}
+                    series={[
+                      { clave: "comprado", nombre: "Comprado" },
+                      { clave: "pagado", nombre: "Pagado" },
+                    ]}
+                    moneda={fila.moneda}
+                  />
                 </CardContent>
               </Card>
             )}
